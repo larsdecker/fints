@@ -31,13 +31,13 @@ export function testSegment(segmentClass: Constructable<any>, testData: TestData
 
             if (direction === "out") {
                 test(`throws exception when deserializing test data set ${index}`, () => {
-                    expect(() => new segmentClass(serialized)).toThrowError();
+                    expect(() => new segmentClass(serialized)).toThrow();
                 });
             }
 
             if (direction === "in") {
                 test(`throws exception when serializing test data set ${index}`, () => {
-                    expect(() => String(new segmentClass(structured))).toThrowError();
+                    expect(() => String(new segmentClass(structured))).toThrow();
                 });
             }
         });
