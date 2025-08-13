@@ -27,16 +27,16 @@
     "author": "Frederick Gnodtke",
     "license": "MIT",
     "dependencies": {
-        "clime": "^0.5.9",
-        "date-fns": "^2.8.1",
+        "clime": "^0.5.16",
+        "date-fns": "^2.30.0",
         "fints": "^0.5.0",
-        "winston": "^3.1.0",
+        "winston": "^3.17.0",
         "yamljs": "^0.3.0"
     },
     "devDependencies": {
-        "@types/date-fns": "^2.6.0",
-        "@types/node": "^12.12.21",
+        "@types/node": "^12.20.55",
         "@types/winston": "^2.4.4",
-        "@types/yamljs": "^0.2.30"
+        "@types/yamljs": "^0.2.34",
+        "typescript": "^5.9.2"
     }
 }

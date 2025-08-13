@@ -37,13 +37,13 @@ export default class extends Command {
         setLevel(verbose);
         const client = new PinTanClient(config);
         const accounts = await client.accounts();
-        const account = accounts.find(current => current.iban === iban);
+        const account = accounts.find((current: any) => current.iban === iban);
         if (!account) {
             console.error("No account with specified iban found.");
             return;
         }
         const statements = await client.statements(account, startDate, endDate);
-        console.info(serializer(statements.reduce((result: Transaction[], statement) => {
+        console.info(serializer(statements.reduce((result: Transaction[], statement: any) => {
             result.push(...statement.transactions);
             return result;
         }, [])));
