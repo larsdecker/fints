@@ -6,7 +6,7 @@ const transport = new Winston.transports.Console({
     format: Winston.format.combine(
         Winston.format.timestamp({ format: "YYYY-MM-DDTHH:mm:ss" }),
         Winston.format.colorize(),
-        Winston.format.printf(param => `${param.timestamp} - ${param.level}: ${param.message}`),
+        Winston.format.printf((param: any) => `${param.timestamp} - ${param.level}: ${param.message}`),
     ),
 });
 
