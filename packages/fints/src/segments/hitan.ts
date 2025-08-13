@@ -48,7 +48,7 @@ export class HITAN extends SegmentClass(HITANProps) {
             if (transactionReference) { this.transactionReference = transactionReference[0]; }
             if (challengeText) { this.challengeText = challengeText[0]; }
             if (challengeHhdUc && challengeHhdUc.length > 0) {
-                [this.challengeMediaType, this.challengeMedia] = Parse.challengeHhdUc(challengeHhdUc as string[][]);
+                [this.challengeMediaType, this.challengeMedia] = Parse.challengeHhdUc(challengeHhdUc as unknown as string[][]);
             }
             if (challengeValidUntil && challengeValidUntil.length > 0) {
                 const [dateStr, timeStr] = challengeValidUntil as string[];
