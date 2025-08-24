@@ -6,7 +6,7 @@ import { ResponseError } from "../errors/response-error";
 describe("Dialog", () => {
     const baseConfig: DialogConfig = { blz: "1", name: "user", pin: "123", systemId: "0" } as any;
 
-    test("init adds HKTAN when version >= 6", async () => {
+    test("init adds HKTAN with highest supported version", async () => {
         const connection = {
             send: jest.fn().mockResolvedValue({
                 dialogId: "1",
@@ -15,11 +15,12 @@ describe("Dialog", () => {
             }),
         };
         const dialog = new Dialog(baseConfig, connection as any);
-        dialog.hktanVersion = 6;
+        dialog.hktanVersion = 7;
         await dialog.init();
         const req = connection.send.mock.calls[0][0];
-        const hasHKTAN = req.segments.some((seg: any) => seg.type === "HKTAN");
-        expect(hasHKTAN).toBe(true);
+        const hktan = req.segments.find((seg: any) => seg.type === "HKTAN");
+        expect(hktan).toBeDefined();
+        expect(hktan.version).toBe(7);
     });
 
     test("send throws ResponseError on failure", async () => {

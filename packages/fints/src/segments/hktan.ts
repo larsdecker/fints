@@ -25,8 +25,8 @@ export class HKTAN extends SegmentClass(HKTANProps) {
     if (!["2", "4"].includes(process)) {
       throw new Error(`HKTAN process ${process} not implemented.`);
     }
-    if (![3, 4, 5, 6].includes(version)) {
-      throw new Error(`HKTAN version ${process} not implemented.`);
+    if (![3, 4, 5, 6, 7].includes(version)) {
+      throw new Error(`HKTAN version ${version} not implemented.`);
     }
     if (process === "4") {
       if (medium) {
@@ -39,18 +39,18 @@ export class HKTAN extends SegmentClass(HKTANProps) {
         if (version === 5) {
           return [process, segmentReference, "", "", "", "", "", "", "", "", "", medium];
         }
-        if (version === 6) {
+        if (version === 6 || version === 7) {
           return [process, segmentReference, "", "", "", "", "", "", "", "", medium];
         }
       } else {
-        if (version === 6) {
+        if (version === 6 || version === 7) {
           return [process, "HKIDN"];
         } else {
           return [process];
         }
       }
     } else if (process === "2") {
-      if (version === 6) {
+      if (version === 6 || version === 7) {
         return [process, "", "", "", aref, "N"];
       }
       if (version === 5) {

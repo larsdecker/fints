@@ -131,7 +131,8 @@ export class Dialog extends DialogConfig {
             new HKVVB({ segNo: 4, productId: this.productId, lang: 0 }),
         ];
         if (this.hktanVersion >= 6) {
-            segments.push(new HKTAN({ segNo: 5, version: 6, process: "4" }));
+            const version = this.hktanVersion >= 7 ? 7 : 6;
+            segments.push(new HKTAN({ segNo: 5, version, process: "4" }));
         }
         const response: Response = await this.send(
             new Request({ blz, name, pin, systemId: "0", dialogId, msgNo, segments, tanMethods }),
