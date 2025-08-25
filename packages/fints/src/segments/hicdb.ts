@@ -1,7 +1,7 @@
 import { SegmentClass } from "./segment";
 import { StandingOrder } from "../types";
 import { Parse } from "../parse";
-import {
+import type {
     document,
     PaymentInstructionInformationSCT,
     CreditTransferTransactionInformationSCT,

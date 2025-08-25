@@ -122,10 +122,11 @@ export abstract class Client {
             }),
         );
         if (dialog.hktanVersion >= 6) {
+            const version = dialog.hktanVersion >= 7 ? 7 : 6;
             segments.push(
                 new HKTAN({
                     segNo: 4,
-                    version: 6,
+                    version,
                     process: "4",
                     segmentReference: "HKKAZ",
                     medium: dialog.tanMethods[0].name,
@@ -151,10 +152,11 @@ export abstract class Client {
         const dialog = this.createDialog(savedDialog);
         dialog.msgNo = dialog.msgNo + 1;
         const segments: Segment<any>[] = [];
+        const version = dialog.hktanVersion >= 7 ? 7 : 6;
         segments.push(
             new HKTAN({
                 segNo: 3,
-                version: 6,
+                version,
                 process: "2",
                 segmentReference: "HKKAZ",
                 aref: transactionReference,

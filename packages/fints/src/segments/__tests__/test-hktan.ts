@@ -47,6 +47,17 @@ testSegment(HKTAN, [
         },
     },
     {
+        serialized: "HKTAN:5:7+4++++++++++3'",
+        structured: {
+            type: "HKTAN",
+            segNo: 5,
+            version: 7,
+            process: "4",
+            aref: "3",
+            medium: "3",
+        },
+    },
+    {
         serialized: "HKTAN:5:6+4+HKIDN'",
         structured: {
             type: "HKTAN",
@@ -57,11 +68,32 @@ testSegment(HKTAN, [
         },
     },
     {
+        serialized: "HKTAN:5:7+4+HKIDN'",
+        structured: {
+            type: "HKTAN",
+            segNo: 5,
+            version: 7,
+            process: "4",
+            aref: "3",
+        },
+    },
+    {
         serialized: "HKTAN:5:6+2++++3+N'",
         structured: {
             type: "HKTAN",
             segNo: 5,
             version: 6,
+            process: "2",
+            aref: "3",
+            medium: "3",
+        },
+    },
+    {
+        serialized: "HKTAN:5:7+2++++3+N'",
+        structured: {
+            type: "HKTAN",
+            segNo: 5,
+            version: 7,
             process: "2",
             aref: "3",
             medium: "3",
