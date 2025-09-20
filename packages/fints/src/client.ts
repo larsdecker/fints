@@ -1,12 +1,13 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN } from "./segments";
+import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD } from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder } from "./types";
+import { SEPAAccount, Statement, Balance, StandingOrder, Holding } from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
+import { MT535Parser } from "./mt535";
 
 /**
  * An abstract class for communicating with a fints server.
@@ -64,7 +65,7 @@ export abstract class Client {
         await dialog.sync();
         await dialog.init();
         let touchdowns: Map<string, string>;
-        let touchdown: string;
+        let touchdown: string | undefined;
         const responses: Response[] = [];
         do {
             const request = this.createRequest(dialog, [
@@ -97,6 +98,53 @@ export abstract class Client {
             pendingBalance: hisal.pendingBalance,
             productName: hisal.productName,
         };
+    }
+
+    /**
+     * Fetch the list of holdings for a depot account.
+     *
+     * @param account The account to fetch holdings for.
+     *
+     * @return A list of holdings contained in the depot.
+     */
+    public async holdings(account: SEPAAccount): Promise<Holding[]> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        if (!dialog.hiwpdsVersion) {
+            throw new Error("Holdings are not supported by this bank.");
+        }
+        await dialog.init();
+        let touchdowns: Map<string, string>;
+        let touchdown: string | undefined;
+        const responses: Response[] = [];
+        do {
+            const request = this.createRequest(dialog, [
+                new HKWPD({
+                    segNo: 3,
+                    version: dialog.hiwpdsVersion,
+                    account,
+                    touchdown,
+                }),
+            ]);
+            const response = await dialog.send(request);
+            touchdowns = response.getTouchdowns(request);
+            touchdown = touchdowns.get("HKWPD");
+            responses.push(response);
+        } while (touchdown);
+        await dialog.end();
+        const parser = new MT535Parser();
+        return responses.reduce((result: Holding[], response: Response) => {
+            response.findSegments(HIWPD).forEach((segment) => {
+                const raw = segment.holdings;
+                if (!raw) { return; }
+                const lines = raw.split(/\r?\n/);
+                if (lines.length > 0 && lines[0] === "") {
+                    lines.shift();
+                }
+                result.push(...parser.parse(lines));
+            });
+            return result;
+        }, []);
     }
 
     /**

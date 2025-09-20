@@ -288,6 +288,44 @@ export interface Balance {
 }
 
 /**
+ * Represents a single security or holding entry returned by the bank.
+ */
+export interface Holding {
+    /**
+     * International Securities Identification Number of the holding.
+     */
+    isin?: string;
+    /**
+     * Human readable name of the holding.
+     */
+    name?: string;
+    /**
+     * Latest market price transmitted by the bank.
+     */
+    marketPrice?: number;
+    /**
+     * Currency in which all monetary values are denominated.
+     */
+    currency?: string;
+    /**
+     * Date of the valuation.
+     */
+    valuationDate?: Date;
+    /**
+     * Number of units held.
+     */
+    pieces?: number;
+    /**
+     * Total value of the position.
+     */
+    totalValue?: number;
+    /**
+     * Acquisition price communicated by the institute.
+     */
+    acquisitionPrice?: number;
+}
+
+/**
  * A connection used in the client to contact the server.
  */
 export interface Connection {

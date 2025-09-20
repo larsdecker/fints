@@ -9,6 +9,7 @@
         "lib": ["es7", "dom"],
         "emitDecoratorMetadata": true,
         "sourceMap": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "skipLibCheck": true
     }
 }
