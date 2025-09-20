@@ -34,6 +34,8 @@ console.info(statements); // List of all statements with transactions in specifi
 
 - Load list of accounts.
 - Load list of statements and transactions in specified range.
+- Fetch current account balances.
+- List depot holdings.
 - Parse statement [MT940](https://en.wikipedia.org/wiki/MT940) format.
 - Parse transaction descriptions.
 - Extract [reference tags](https://www.dzbank.de/content/dam/dzbank_de/de/home/produkte_services/Firmenkunden/PDF-Dokumente/transaction%20banking/elektronicBanking/SEPA-Belegungsregeln_MT940-DK_082016.~644b217ec96b35dfffcaf18dc2df800a.pdf) from transactions.
@@ -42,8 +44,6 @@ console.info(statements); // List of all statements with transactions in specifi
 
 ## Missing
 
-- Get current balance.
-- List holdings.
 - Initiate any kind of SEPA transfers or debits.
 
 ## Resources
