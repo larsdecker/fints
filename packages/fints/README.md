@@ -28,6 +28,26 @@ const statements = await client.statements(accounts[0], startDate, endDate);
 console.info(statements); // List of all statements with transactions in specified date range.
 ```
 
+
+### Handling login TAN challenges
+
+Some banks require a TAN as part of the login dialog. When that happens the library raises a `TanRequiredError`. You can
+complete the login by submitting the TAN and continue working with the returned dialog:
+
+```typescript
+import { TanRequiredError } from "fints";
+
+try {
+    const accounts = await client.accounts();
+} catch (error) {
+    if (error instanceof TanRequiredError) {
+        const dialog = await client.completeLogin(error.dialog, error.transactionReference, "123456");
+        const accounts = await client.accounts(dialog);
+        await dialog.end();
+    }
+}
+```
+
 [Submitting SEPA direct debits](#submitting-a-direct-debit)
 
 [Further code examples](README_advanced_usage.md)

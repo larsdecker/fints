@@ -174,6 +174,7 @@ export class Dialog extends DialogConfig {
         request.tanMethods = this.tanMethods;
 
         const response = await this.connection.send(request);
+        this.dialogId = response.dialogId;
         if (!response.success) {
             throw new ResponseError(response);
         }
