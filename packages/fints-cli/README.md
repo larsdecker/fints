@@ -14,6 +14,7 @@ A command line interface for communicating with [FinTS servers](https://www.hbci
 - Load list of transactions in specified range.
 - Fetch the current balance for an account.
 - List holdings for depot accounts.
+- Submit SEPA direct debits.
 
 ### List accounts
 
@@ -114,6 +115,53 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
 ```
 ./fints-cli list-holdings --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001
+```
+
+### Submit direct debit
+
+```
+  Submit a SEPA direct debit request.
+
+  USAGE
+
+    fints submit-direct-debit --url <url> --name <name> --pin <pin> --blz <blz> --account-iban <iban> --creditor-name <name> \
+      --creditor-id <id> --debtor-name <name> --debtor-iban <iban> --amount <amount> --mandate-id <id> --mandate-date <date> \
+      --collection-date <date> [...options]
+
+  OPTIONS
+
+    -u, --url <url>              - Endpoint URL.
+    -n, --name <name>            - Username used for connecting.
+    -p, --pin <pin>              - Pin used for connecting.
+    -b, --blz <blz>              - BLZ of the bank to connect to.
+    --account-iban <iban>        - IBAN of the creditor account.
+    --creditor-name <name>       - Name of the creditor.
+    --creditor-id <id>           - SEPA creditor identifier.
+    --debtor-name <name>         - Name of the debtor.
+    --debtor-iban <iban>         - IBAN of the debtor.
+    --amount <amount>            - Amount to collect.
+    --mandate-id <id>            - SEPA mandate identifier.
+    --mandate-date <date>        - Mandate signature date (YYYY-MM-DD).
+    --collection-date <date>     - Requested collection date (YYYY-MM-DD).
+    --sequence-type <type>       - Sequence type (OOFF, FRST, RCUR, FNAL).
+    --local-instrument <code>    - Local instrument (CORE or B2B).
+    --end-to-end-id <id>         - End-to-end reference.
+    --remittance <text>          - Unstructured remittance information.
+    --purpose-code <code>        - Purpose code for the debit.
+    --message-id <id>            - Optional message identifier.
+    --payment-information-id <id>- Optional payment information identifier.
+    --batch                      - Request batch booking.
+    --tan <tan>                  - Provide TAN to skip the interactive prompt.
+    -d, --debug
+    -v, --verbose
+    -j, --json
+```
+
+```
+./fints-cli submit-direct-debit --url https://example.com/fints --name username --pin 12345 --blz 12345678 \
+  --account-iban DE111234567800000001 --creditor-name "ACME GmbH" --creditor-id DE98ZZZ09999999999 \
+  --debtor-name "John Doe" --debtor-iban DE02120300000000202051 --amount 42.50 --mandate-id MANDATE-123 \
+  --mandate-date 2022-01-10 --collection-date 2022-01-15 --remittance "Invoice 0815"
 ```
 
 ## Resources
