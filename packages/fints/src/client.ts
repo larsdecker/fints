@@ -8,7 +8,7 @@ import { SEPAAccount, Statement, Balance, StandingOrder, Holding, CreditTransfer
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
-import { buildPain001Message, resolvePainDescriptor } from "./pain-formats";
+import { buildPain001Message, resolvePainDescriptor } from "./pain-builder";
 import { TanRequiredError } from "./errors/tan-required-error";
 
 export interface CreditTransferOptions {

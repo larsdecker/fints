@@ -7,6 +7,7 @@ export * from "./logger";
 export * from "./mt940-86-structured";
 export * from "./mt535";
 export * from "./parse";
+export * from "./pain-builder";
 export * from "./pin-tan-client";
 export * from "./request";
 export * from "./response";

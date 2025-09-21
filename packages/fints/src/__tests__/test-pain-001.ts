@@ -1,4 +1,4 @@
-import { buildPain001Message, resolvePainDescriptor } from "../pain-formats";
+import { buildPain001Message, resolvePainDescriptor } from "../pain-builder";
 import { CreditTransferParameters } from "../types";
 import { Parse } from "../parse";
 
