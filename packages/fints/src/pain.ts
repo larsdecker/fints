@@ -1,8 +1,16 @@
 import { format } from "date-fns";
-import { DirectDebitRequest, DirectDebitSubmission, SEPAAccount } from "./types";
+import { DirectDebitRequest, DirectDebitSubmission, SEPAAccount, CreditTransferRequest, CreditTransferSubmission } from "./types";
 import { unescapeFinTS } from "./utils";
 
 export interface Pain008Message {
+    xml: string;
+    messageId: string;
+    paymentInformationId: string;
+    endToEndId: string;
+    namespace: string;
+}
+
+export interface Pain001Message {
     xml: string;
     messageId: string;
     paymentInformationId: string;
@@ -60,6 +68,31 @@ function namespaceFromDescriptor(descriptor: string): string {
         return `urn:iso:std:iso:20022:tech:xsd:${versionMatch[0]}`;
     }
     return unescaped.replace(/\.xsd$/i, "");
+}
+
+function namespaceFromDescriptorPain001(descriptor: string): string {
+    const unescaped = unescapeFinTS(descriptor);
+    const versionMatch = unescaped.match(/pain\.001\.\d{3}\.\d{2}/);
+    if (versionMatch) {
+        return `urn:iso:std:iso:20022:tech:xsd:${versionMatch[0]}`;
+    }
+    return unescaped.replace(/\.xsd$/i, "");
+}
+
+export function selectPain001Descriptor(painFormats: string[]): string {
+    const preferredVersions = [
+        "pain.001.003.03",
+        "pain.001.001.03",
+        "pain.001.003.02",
+        "pain.001.001.02",
+    ];
+    for (const version of preferredVersions) {
+        const descriptor = painFormats.find(candidate => candidate.includes(version));
+        if (descriptor) { return descriptor; }
+    }
+    const fallback = painFormats.find(candidate => candidate.includes("pain.001"));
+    if (fallback) { return fallback; }
+    throw new Error("Bank does not advertise support for pain.001 credit transfer messages.");
 }
 
 export function selectPain008Descriptor(painFormats: string[]): string {
@@ -231,12 +264,161 @@ export function buildPain008(
     };
 }
 
+export function buildPain001(
+    request: CreditTransferRequest,
+    account: SEPAAccount,
+    descriptor: string,
+): Pain001Message {
+    ensureText(account.iban, "Debtor IBAN");
+    ensureText(account.bic, "Debtor BIC");
+    ensureText(request.debtorName, "Debtor name");
+    ensureText(request.creditor?.name, "Creditor name");
+    ensureText(request.creditor?.iban, "Creditor IBAN");
+    ensurePositiveAmount(request.amount);
+    if (request.executionDate) {
+        ensureDate(request.executionDate, "Requested execution date");
+    }
+
+    const createdAt = request.creationDateTime ? new Date(request.creationDateTime) : new Date();
+    const executionDate = request.executionDate ? new Date(request.executionDate) : new Date();
+    ensureDate(executionDate, "Requested execution date");
+
+    const messageId = request.messageId || `CT-${format(createdAt, "yyyyMMddHHmmssSSS")}`;
+    const paymentInformationId = request.paymentInformationId || messageId;
+    const endToEndId = request.endToEndId || "NOTPROVIDED";
+    const currency = request.currency || DEFAULT_CURRENCY;
+    const batchBooking = request.batchBooking === true;
+    const namespace = namespaceFromDescriptorPain001(descriptor);
+    const creditorBic = request.creditor.bic;
+    const amount = formatAmount(request.amount);
+    const debtorName = request.debtorName.trim();
+    const creditorName = request.creditor.name.trim();
+
+    const xmlParts = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        `<Document xmlns=\"${escapeXml(namespace)}\">`,
+        "  <CstmrCdtTrfInitn>",
+        "    <GrpHdr>",
+        `      <MsgId>${escapeXml(messageId)}</MsgId>`,
+        `      <CreDtTm>${formatDateTime(createdAt)}</CreDtTm>`,
+        "      <NbOfTxs>1</NbOfTxs>",
+        `      <CtrlSum>${amount}</CtrlSum>`,
+        "      <InitgPty>",
+        `        <Nm>${escapeXml(debtorName)}</Nm>`,
+        "      </InitgPty>",
+        "    </GrpHdr>",
+        "    <PmtInf>",
+        `      <PmtInfId>${escapeXml(paymentInformationId)}</PmtInfId>`,
+        "      <PmtMtd>TRF</PmtMtd>",
+        `      <BtchBookg>${batchBooking ? "true" : "false"}</BtchBookg>`,
+        "      <NbOfTxs>1</NbOfTxs>",
+        `      <CtrlSum>${amount}</CtrlSum>`,
+        "      <PmtTpInf>",
+        "        <SvcLvl>",
+        "          <Cd>SEPA</Cd>",
+        "        </SvcLvl>",
+        "      </PmtTpInf>",
+        `      <ReqdExctnDt>${formatDate(executionDate)}</ReqdExctnDt>`,
+        "      <Dbtr>",
+        `        <Nm>${escapeXml(debtorName)}</Nm>`,
+        "      </Dbtr>",
+        "      <DbtrAcct>",
+        "        <Id>",
+        `          <IBAN>${escapeXml(account.iban)}</IBAN>`,
+        "        </Id>",
+        "      </DbtrAcct>",
+        "      <DbtrAgt>",
+        "        <FinInstnId>",
+        `          <BIC>${escapeXml(account.bic)}</BIC>`,
+        "        </FinInstnId>",
+        "      </DbtrAgt>",
+        "      <ChrgBr>SLEV</ChrgBr>",
+        "      <CdtTrfTxInf>",
+        "        <PmtId>",
+        `          <EndToEndId>${escapeXml(endToEndId)}</EndToEndId>`,
+        "        </PmtId>",
+        "        <Amt>",
+        `          <InstdAmt Ccy=\"${escapeXml(currency)}\">${amount}</InstdAmt>`,
+        "        </Amt>",
+    ];
+
+    if (creditorBic) {
+        xmlParts.push(
+            "        <CdtrAgt>",
+            "          <FinInstnId>",
+            `            <BIC>${escapeXml(creditorBic)}</BIC>`,
+            "          </FinInstnId>",
+            "        </CdtrAgt>",
+        );
+    }
+
+    xmlParts.push(
+        "        <Cdtr>",
+        `          <Nm>${escapeXml(creditorName)}</Nm>`,
+        "        </Cdtr>",
+        "        <CdtrAcct>",
+        "          <Id>",
+        `            <IBAN>${escapeXml(request.creditor.iban)}</IBAN>`,
+        "          </Id>",
+        "        </CdtrAcct>",
+    );
+
+    if (request.purposeCode) {
+        xmlParts.push(
+            "        <Purp>",
+            `          <Cd>${escapeXml(request.purposeCode)}</Cd>`,
+            "        </Purp>",
+        );
+    }
+
+    if (request.remittanceInformation) {
+        xmlParts.push(
+            "        <RmtInf>",
+            `          <Ustrd>${escapeXml(request.remittanceInformation)}</Ustrd>`,
+            "        </RmtInf>",
+        );
+    }
+
+    xmlParts.push(
+        "      </CdtTrfTxInf>",
+        "    </PmtInf>",
+        "  </CstmrCdtTrfInitn>",
+        "</Document>",
+    );
+
+    const xml = xmlParts.join(" ");
+
+    return {
+        xml,
+        messageId,
+        paymentInformationId,
+        endToEndId,
+        namespace,
+    };
+}
+
 export function buildDirectDebitSubmission(
     request: DirectDebitRequest,
     account: SEPAAccount,
     descriptor: string,
 ): DirectDebitSubmission {
     const { xml, messageId, paymentInformationId, endToEndId } = buildPain008(request, account, descriptor);
+    return {
+        taskId: undefined,
+        messageId,
+        paymentInformationId,
+        endToEndId,
+        painDescriptor: descriptor,
+        xml,
+    };
+}
+
+export function buildCreditTransferSubmission(
+    request: CreditTransferRequest,
+    account: SEPAAccount,
+    descriptor: string,
+): CreditTransferSubmission {
+    const { xml, messageId, paymentInformationId, endToEndId } = buildPain001(request, account, descriptor);
     return {
         taskId: undefined,
         messageId,

@@ -1,5 +1,5 @@
 import { Connection } from "./types";
-import { HKIDN, HKVVB, HKSYN, HKTAN, HKEND, HISALS, HIKAZS, HICDBS, HIUPD, HITANS, HIWPDS, HIDSES, Segment } from "./segments";
+import { HKIDN, HKVVB, HKSYN, HKTAN, HKEND, HISALS, HIKAZS, HICDBS, HIUPD, HITANS, HIWPDS, HIDSES, HICCSS, Segment } from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
 import { TanMethod } from "./tan-method";
@@ -76,6 +76,7 @@ export class Dialog extends DialogConfig {
 
     public hktanVersion = 1;
     public hkdseVersion = 1;
+    public hkccsVersion = 1;
     /**
      * The server will only accept a certain version for the HIWPD segment.
      * Stores the maximum supported version parsed during synchronization.
@@ -120,6 +121,8 @@ export class Dialog extends DialogConfig {
         this.hicdbVersion = response.segmentMaxVersion(HICDBS);
         const hkdseVersion = response.segmentMaxVersion(HIDSES);
         this.hkdseVersion = hkdseVersion > 0 ? hkdseVersion : 1;
+        const hkccsVersion = response.segmentMaxVersion(HICCSS);
+        this.hkccsVersion = hkccsVersion > 0 ? hkccsVersion : 1;
         this.hiwpdsVersion = response.segmentMaxVersion(HIWPDS);
         this.hktanVersion = response.segmentMaxVersion(HITANS);
         this.tanMethods = response.supportedTanMethods;

@@ -14,6 +14,7 @@ A command line interface for communicating with [FinTS servers](https://www.hbci
 - Load list of transactions in specified range.
 - Fetch the current balance for an account.
 - List holdings for depot accounts.
+- Submit SEPA credit transfers.
 - Submit SEPA direct debits.
 
 ### List accounts
@@ -115,6 +116,47 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
 ```
 ./fints-cli list-holdings --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001
+```
+
+### Submit credit transfer
+
+```
+  Submit a SEPA credit transfer request.
+
+  USAGE
+
+    fints submit-credit-transfer --url <url> --name <name> --pin <pin> --blz <blz> --account-iban <iban> --creditor-name <name> \
+      --creditor-iban <iban> --amount <amount> [...options]
+
+  OPTIONS
+
+    -u, --url <url>              - Endpoint URL.
+    -n, --name <name>            - Username used for connecting.
+    -p, --pin <pin>              - Pin used for connecting.
+    -b, --blz <blz>              - BLZ of the bank to connect to.
+    --account-iban <iban>        - IBAN of the debtor account.
+    --debtor-name <name>         - Name of the debtor.
+    --creditor-name <name>       - Name of the creditor.
+    --creditor-iban <iban>       - IBAN of the creditor.
+    --creditor-bic <bic>         - BIC of the creditor (optional).
+    --amount <amount>            - Amount to transfer.
+    --execution-date <date>      - Requested execution date (YYYY-MM-DD).
+    --end-to-end-id <id>         - End-to-end reference.
+    --remittance <text>          - Unstructured remittance information.
+    --purpose-code <code>        - Purpose code for the transfer.
+    --message-id <id>            - Optional message identifier.
+    --payment-information-id <id>- Optional payment information identifier.
+    --batch                      - Request batch booking.
+    --tan <tan>                  - Provide TAN to skip the interactive prompt.
+    -d, --debug
+    -v, --verbose
+    -j, --json
+```
+
+```
+./fints-cli submit-credit-transfer --url https://example.com/fints --name username --pin 12345 --blz 12345678 \
+  --account-iban DE02120300000000202051 --debtor-name "John Doe" --creditor-name "ACME GmbH" \
+  --creditor-iban DE44500105175407324931 --amount 100.00 --remittance "Invoice 0815"
 ```
 
 ### Submit direct debit

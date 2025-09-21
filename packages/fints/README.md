@@ -48,6 +48,7 @@ try {
 }
 ```
 
+[Submitting SEPA credit transfers](#submitting-a-credit-transfer)
 [Submitting SEPA direct debits](#submitting-a-direct-debit)
 
 [Further code examples](README_advanced_usage.md)
@@ -58,6 +59,7 @@ try {
 - Load list of statements and transactions in specified range.
 - Fetch current account balances.
 - List depot holdings.
+- Initiate SEPA credit transfers (pain.001) with TAN handling.
 - Submit SEPA direct debit orders (pain.008) with TAN handling.
 - Parse statement [MT940](https://en.wikipedia.org/wiki/MT940) format.
 - Parse transaction descriptions.
@@ -67,7 +69,49 @@ try {
 
 ## Missing
 
-- Initiate SEPA credit transfers.
+
+## Submitting a credit transfer
+
+```typescript
+import { PinTanClient, TanRequiredError, CreditTransferRequest } from "fints";
+
+const client = new PinTanClient({
+    url: "https://example.com/fints",
+    name: "username",
+    pin: 12345,
+    blz: 12345678,
+});
+
+const accounts = await client.accounts();
+const account = accounts[0];
+
+const transfer: CreditTransferRequest = {
+    debtorName: "John Doe",
+    creditor: {
+        name: "ACME GmbH",
+        iban: "DE44500105175407324931",
+        bic: "INGDDEFFXXX",
+    },
+    amount: 100.0,
+    remittanceInformation: "Invoice 0815",
+};
+
+try {
+    const submission = await client.creditTransfer(account, transfer);
+    console.log(submission.taskId);
+} catch (error) {
+    if (error instanceof TanRequiredError) {
+        const submission = error.creditTransferSubmission!;
+        const completed = await client.completeCreditTransfer(
+            error.dialog,
+            error.transactionReference,
+            "123456",
+            submission,
+        );
+        console.log(completed.taskId);
+    }
+}
+```
 
 ## Submitting a direct debit
 
