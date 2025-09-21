@@ -66,7 +66,7 @@ export const Parse = {
      * @return The parsed object.
      */
     xml(str: string): unknown {
-        const parser = new XMLParser();
+        const parser = new XMLParser({ ignoreAttributes: false });
         return parser.parse(str);
     },
 

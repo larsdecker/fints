@@ -1,12 +1,9 @@
 import { SegmentClass } from "./segment";
 import { StandingOrder } from "../types";
 import { Parse } from "../parse";
-import type {
-    document,
-    PaymentInstructionInformationSCT,
-    CreditTransferTransactionInformationSCT,
-    CustomerCreditTransferInitiationV03,
-} from "../pain-formats";
+import type { Pain001Document } from "../pain-formats";
+import { parseStandingOrderPain001 } from "../pain-formats";
+import { parseStandingOrderSchedule } from "./standing-order-utils";
 
 export class HICDBProps {
     public segNo: number;
@@ -23,13 +20,10 @@ export class HICDB extends SegmentClass(HICDBProps) {
     protected serialize(): string[][] { throw new Error("Not implemented."); }
 
     protected deserialize(input: string[][]) {
-        const [
-            [],
-            [],
-            [ sepaMessage ],
-            [],
-            [ nextOrder, timeUnit, interval, orderDay, lastOrder ],
-        ] = input;
+        const [accountData = [], , [sepaMessage], orderData = [], scheduleData = []] = input;
+        const [iban = "", bic = ""] = accountData;
+        const [orderId] = orderData;
+        const schedule = parseStandingOrderSchedule(scheduleData);
 
         const parsed: unknown = Parse.xml(sepaMessage);
 
@@ -37,37 +31,30 @@ export class HICDB extends SegmentClass(HICDBProps) {
             throw new Error("Received sepa-message seems not to be a valid 'Document' object!");
         }
 
-        const jsonMessage: CustomerCreditTransferInitiationV03 = parsed.Document.CstmrCdtTrfInitn;
-        const instructionInfo: PaymentInstructionInformationSCT = Array.isArray(jsonMessage.PmtInf)
-            ? jsonMessage.PmtInf[0]
-            : jsonMessage.PmtInf as PaymentInstructionInformationSCT;
-        const creditTransaction: CreditTransferTransactionInformationSCT = Array.isArray(instructionInfo.CdtTrfTxInf)
-            ? instructionInfo.CdtTrfTxInf[0]
-            : instructionInfo.CdtTrfTxInf as CreditTransferTransactionInformationSCT;
+        const jsonMessage = parsed.Document.CstmrCdtTrfInitn;
+        const base = parseStandingOrderPain001(sepaMessage);
 
         this.standingOrder = {
-            nextOrderDate: Parse.date(nextOrder),
-            timeUnit,
-            interval: Parse.num(interval),
-            orderDay: Parse.num(orderDay),
-            lastOrderDate: lastOrder ? Parse.date(lastOrder) : null,
-            creationDate: new Date(jsonMessage.GrpHdr.CreDtTm),
-            amount: jsonMessage.GrpHdr.CtrlSum,
-            paymentPurpose: creditTransaction.RmtInf.Ustrd,
+            nextOrderDate: schedule.nextOrderDate,
+            timeUnit: schedule.timeUnit,
+            interval: schedule.interval,
+            orderDay: schedule.orderDay,
+            lastOrderDate: schedule.lastOrderDate || undefined,
+            creationDate: base.creationDate,
+            amount: base.amount || jsonMessage.GrpHdr.CtrlSum,
+            paymentPurpose: base.paymentPurpose,
             debitor: {
-                name: instructionInfo.Dbtr.Nm,
-                iban: instructionInfo.DbtrAcct.Id.IBAN,
-                bic: instructionInfo.DbtrAgt.FinInstnId.BIC,
+                name: base.debitor.name || "",
+                iban: base.debitor.iban || iban,
+                bic: base.debitor.bic || bic,
             },
-            creditor: {
-                name: creditTransaction.Cdtr.Nm,
-                iban: creditTransaction.CdtrAcct.Id.IBAN,
-                bic: creditTransaction.CdtrAgt.FinInstnId.BIC,
-            },
+            creditor: base.creditor,
+            orderId: orderId || undefined,
+            currency: base.currency,
         };
     }
 
-    private isDocument(d: any): d is document {
+    private isDocument(d: any): d is Pain001Document {
         return typeof d !== "undefined"
             && typeof d.Document !== "undefined"
             && typeof d.Document.CstmrCdtTrfInitn !== "undefined";
