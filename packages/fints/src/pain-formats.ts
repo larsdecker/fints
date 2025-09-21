@@ -3,9 +3,8 @@
  * The real XSD-derived types are not included in this repository.
  */
 
-import { formatISO } from "date-fns";
+import { formatISO, format } from "date-fns";
 import { Parse } from "./parse";
-import { Format } from "./format";
 import { SEPAAccount, StandingOrderPayment, StandingOrderSchedule } from "./types";
 
 export interface Pain001Document {
@@ -74,7 +73,7 @@ export function buildStandingOrderPain001(options: BuildStandingOrderPain001Opti
     const currency = payment.currency || "EUR";
     const instructionId = payment.instructionId || messageId;
     const endToEndId = payment.endToEndId || "NOTPROVIDED";
-    const executionDate = Format.date(schedule.startDate);
+    const executionDate = format(schedule.startDate || new Date(), "yyyy-MM-dd");
 
     return [
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",

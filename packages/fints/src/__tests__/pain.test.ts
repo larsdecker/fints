@@ -1,5 +1,6 @@
+import { buildStandingOrderPain001 } from "../pain-formats";
 import { buildPain008, selectPain008Descriptor } from "../pain";
-import { DirectDebitRequest, SEPAAccount } from "../types";
+import { DirectDebitRequest, SEPAAccount, StandingOrderPayment, StandingOrderSchedule } from "../types";
 
 describe("pain helpers", () => {
     test("selectPain008Descriptor prefers latest version", () => {
@@ -47,5 +48,34 @@ describe("pain helpers", () => {
         expect(xml).toContain("<IBAN>DE44500105175407324931</IBAN>");
         expect(xml).toContain("<IBAN>DE02120300000000202051</IBAN>");
         expect(xml).toContain("<RmtInf><Ustrd>Invoice 0815</Ustrd></RmtInf>");
+    });
+
+    test("buildStandingOrderPain001 formats execution date with hyphen separators", () => {
+        const account: SEPAAccount = {
+            iban: "DE27100777770209299700",
+            bic: "DEUTDEFF500",
+            accountNumber: "0123456789",
+            blz: "10050000",
+            accountOwnerName: "Max Mustermann",
+        };
+        const payment: StandingOrderPayment = {
+            amount: 123.45,
+            purpose: "Monthly rent",
+            creditor: {
+                name: "John Doe",
+                iban: "DE58140369180198038800",
+                bic: "DEU1GFAS800",
+            },
+        };
+        const schedule: StandingOrderSchedule = {
+            startDate: new Date("2024-04-15T00:00:00Z"),
+            timeUnit: "M",
+            interval: 1,
+        };
+
+        const xml = buildStandingOrderPain001({ account, payment, schedule });
+
+        expect(xml).toContain("<ReqdExctnDt>2024-04-15</ReqdExctnDt>");
+        expect(xml).toContain("<CreDtTm>2024-04-15T00:00:00Z</CreDtTm>");
     });
 });
