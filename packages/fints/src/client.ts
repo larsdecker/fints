@@ -1,14 +1,14 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD, HKDSE, HIDSE } from "./segments";
+import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD, HKDSE, HIDSE, HKCCS, HICCS } from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder, Holding, DirectDebitRequest, DirectDebitSubmission } from "./types";
+import { SEPAAccount, Statement, Balance, StandingOrder, Holding, DirectDebitRequest, DirectDebitSubmission, CreditTransferRequest, CreditTransferSubmission } from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
-import { selectPain008Descriptor, buildDirectDebitSubmission } from "./pain";
+import { selectPain008Descriptor, buildDirectDebitSubmission, selectPain001Descriptor, buildCreditTransferSubmission } from "./pain";
 import { TanRequiredError } from "./errors/tan-required-error";
 
 /**
@@ -355,6 +355,48 @@ export abstract class Client {
         return segments.map((s) => s.standingOrder);
     }
 
+    public async creditTransfer(account: SEPAAccount, request: CreditTransferRequest): Promise<CreditTransferSubmission> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const descriptor = selectPain001Descriptor(dialog.painFormats);
+        const submission = buildCreditTransferSubmission(request, account, descriptor);
+        const segments: Segment<any>[] = [
+            new HKCCS({
+                segNo: 3,
+                version: dialog.hkccsVersion || 1,
+                account,
+                painDescriptor: descriptor,
+                painMessage: submission.xml,
+            }),
+        ];
+        if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            segments.push(new HKTAN({
+                segNo: 4,
+                version,
+                process: "4",
+                segmentReference: "HKCCS",
+                medium: dialog.tanMethods[0].name,
+            }));
+        }
+        try {
+            const requestMessage = this.createRequest(dialog, segments);
+            const response = await dialog.send(requestMessage);
+            const acknowledgement = response.findSegmentForReference(HICCS, segments[0]) || response.findSegment(HICCS);
+            if (acknowledgement) {
+                submission.taskId = acknowledgement.taskId;
+            }
+            await dialog.end();
+            return submission;
+        } catch (error) {
+            if (error instanceof TanRequiredError) {
+                error.creditTransferSubmission = submission;
+            }
+            throw error;
+        }
+    }
+
     public async directDebit(account: SEPAAccount, request: DirectDebitRequest): Promise<DirectDebitSubmission> {
         const dialog = this.createDialog();
         await dialog.sync();
@@ -395,6 +437,34 @@ export abstract class Client {
             }
             throw error;
         }
+    }
+
+    public async completeCreditTransfer(
+        savedDialog: DialogConfig,
+        transactionReference: string,
+        tan: string,
+        submission: CreditTransferSubmission,
+    ): Promise<CreditTransferSubmission> {
+        const dialog = this.createDialog(savedDialog);
+        dialog.msgNo = dialog.msgNo + 1;
+        const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+        const segments: Segment<any>[] = [
+            new HKTAN({
+                segNo: 3,
+                version,
+                process: "2",
+                segmentReference: "HKCCS",
+                aref: transactionReference,
+                medium: dialog.tanMethods[0]?.name,
+            }),
+        ];
+        const response = await dialog.send(this.createRequest(dialog, segments, tan));
+        const acknowledgement = response.findSegment(HICCS);
+        if (acknowledgement) {
+            submission.taskId = acknowledgement.taskId;
+        }
+        await dialog.end();
+        return submission;
     }
 
     public async completeDirectDebit(

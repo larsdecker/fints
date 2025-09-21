@@ -1,5 +1,5 @@
 import { Dialog } from "../dialog";
-import { DirectDebitSubmission } from "../types";
+import { DirectDebitSubmission, CreditTransferSubmission } from "../types";
 
 export class TanRequiredError extends Error {
     public transactionReference: string;
@@ -7,6 +7,7 @@ export class TanRequiredError extends Error {
     public challengeMedia: Buffer;
     public dialog: Dialog;
     public directDebitSubmission?: DirectDebitSubmission;
+    public creditTransferSubmission?: CreditTransferSubmission;
 
     constructor(
         message: string,

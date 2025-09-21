@@ -258,6 +258,36 @@ export interface DirectDebitSubmission {
     xml: string;
 }
 
+export interface CreditTransferParty {
+    name: string;
+    iban: string;
+    bic?: string;
+}
+
+export interface CreditTransferRequest {
+    debtorName: string;
+    creditor: CreditTransferParty;
+    amount: number;
+    currency?: string;
+    endToEndId?: string;
+    remittanceInformation?: string;
+    purposeCode?: string;
+    executionDate?: Date;
+    batchBooking?: boolean;
+    messageId?: string;
+    paymentInformationId?: string;
+    creationDateTime?: Date;
+}
+
+export interface CreditTransferSubmission {
+    taskId?: string;
+    messageId: string;
+    paymentInformationId: string;
+    endToEndId: string;
+    painDescriptor: string;
+    xml: string;
+}
+
 /**
  * Represents a creditor or debitor identification object.
  */
