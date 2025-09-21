@@ -24,7 +24,7 @@ jest.mock(
 import GetBalanceCommand, { GetBalanceOptions } from "../commands/get-balance";
 
 const baseOptions: Omit<GetBalanceOptions, "serializer" | "json" | "verbose" | "iban"> = {
-    url: "https://bank.example", 
+    url: "https://bank.example",
     name: "user",
     pin: "12345",
     blz: "87654321",

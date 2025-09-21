@@ -299,6 +299,45 @@ export interface StandingOrderCommandResult {
     standingOrder?: StandingOrder;
 }
 
+export type DirectDebitScheme = "CORE" | "B2B" | "COR1";
+
+export type DirectDebitSequenceType = "OOFF" | "FRST" | "RCUR" | "FNAL";
+
+export interface DirectDebitParty {
+    name: string;
+    iban: string;
+    bic?: string;
+}
+
+export interface DirectDebitRequest {
+    creditorName: string;
+    creditorId: string;
+    debtor: DirectDebitParty;
+    amount: number;
+    currency?: string;
+    endToEndId?: string;
+    remittanceInformation?: string;
+    purposeCode?: string;
+    mandateId: string;
+    mandateSignatureDate: Date;
+    requestedCollectionDate: Date;
+    sequenceType?: DirectDebitSequenceType;
+    localInstrument?: DirectDebitScheme;
+    batchBooking?: boolean;
+    messageId?: string;
+    paymentInformationId?: string;
+    creationDateTime?: Date;
+}
+
+export interface DirectDebitSubmission {
+    taskId?: string;
+    messageId: string;
+    paymentInformationId: string;
+    endToEndId: string;
+    painDescriptor: string;
+    xml: string;
+}
+
 /**
  * Represents a creditor or debitor identification object.
  */

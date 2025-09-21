@@ -1,8 +1,9 @@
 import { SegmentClass } from "./segment";
 import { StandingOrder } from "../types";
 import { Parse } from "../parse";
-import type { document } from "../pain-formats";
+import type { Pain001Document } from "../pain-formats";
 import { parseStandingOrderPain001 } from "../pain-formats";
+import { parseStandingOrderSchedule } from "./standing-order-utils";
 
 export class HICDBProps {
     public segNo: number;
@@ -19,13 +20,10 @@ export class HICDB extends SegmentClass(HICDBProps) {
     protected serialize(): string[][] { throw new Error("Not implemented."); }
 
     protected deserialize(input: string[][]) {
-        const [
-            [ iban, bic ],
-            [],
-            [ sepaMessage ],
-            [ orderId ],
-            [ nextOrder, timeUnit, interval, orderDay, lastOrder ],
-        ] = input;
+        const [accountData = [], , [sepaMessage], orderData = [], scheduleData = []] = input;
+        const [iban = "", bic = ""] = accountData;
+        const [orderId] = orderData;
+        const schedule = parseStandingOrderSchedule(scheduleData);
 
         const parsed: unknown = Parse.xml(sepaMessage);
 
@@ -37,11 +35,11 @@ export class HICDB extends SegmentClass(HICDBProps) {
         const base = parseStandingOrderPain001(sepaMessage);
 
         this.standingOrder = {
-            nextOrderDate: Parse.date(nextOrder),
-            timeUnit,
-            interval: Parse.num(interval),
-            orderDay: Parse.num(orderDay),
-            lastOrderDate: lastOrder ? Parse.date(lastOrder) : null,
+            nextOrderDate: schedule.nextOrderDate,
+            timeUnit: schedule.timeUnit,
+            interval: schedule.interval,
+            orderDay: schedule.orderDay,
+            lastOrderDate: schedule.lastOrderDate || undefined,
             creationDate: base.creationDate,
             amount: base.amount || jsonMessage.GrpHdr.CtrlSum,
             paymentPurpose: base.paymentPurpose,
@@ -56,7 +54,7 @@ export class HICDB extends SegmentClass(HICDBProps) {
         };
     }
 
-    private isDocument(d: any): d is document {
+    private isDocument(d: any): d is Pain001Document {
         return typeof d !== "undefined"
             && typeof d.Document !== "undefined"
             && typeof d.Document.CstmrCdtTrfInitn !== "undefined";

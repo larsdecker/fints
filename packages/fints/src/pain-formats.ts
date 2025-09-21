@@ -3,7 +3,12 @@
  * The real XSD-derived types are not included in this repository.
  */
 
-export interface document {
+import { formatISO } from "date-fns";
+import { Parse } from "./parse";
+import { Format } from "./format";
+import { SEPAAccount, StandingOrderPayment, StandingOrderSchedule } from "./types";
+
+export interface Pain001Document {
     Document: { CstmrCdtTrfInitn: CustomerCreditTransferInitiationV03 };
 }
 
@@ -208,7 +213,3 @@ export function parseStandingOrderPain002(message: string): StandingOrderPain002
         } as StandingOrderPain002Status;
     });
 }
-import { formatISO } from "date-fns";
-import { Parse } from "./parse";
-import { Format } from "./format";
-import { SEPAAccount, StandingOrderPayment, StandingOrderSchedule } from "./types";
