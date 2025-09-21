@@ -1,10 +1,41 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD } from "./segments";
+import { Format } from "./format";
+import { buildStandingOrderPain001 } from "./pain-formats";
+import {
+    Segment,
+    HKSPA,
+    HISPA,
+    HKKAZ,
+    HIKAZ,
+    HKSAL,
+    HISAL,
+    HKCDB,
+    HICDB,
+    HKTAN,
+    HKWPD,
+    HIWPD,
+    HKCDA,
+    HICDA,
+    HKCDE,
+    HICDE,
+    HKCDL,
+    HICDL,
+} from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder, Holding } from "./types";
+import {
+    SEPAAccount,
+    Statement,
+    Balance,
+    StandingOrder,
+    StandingOrderCreation,
+    StandingOrderUpdate,
+    StandingOrderCommandResult,
+    StandingOrderSchedule,
+    Holding,
+} from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
@@ -239,6 +270,178 @@ export abstract class Client {
             });
             return { ...statement, transactions };
         });
+    }
+
+    private resolvePainDescriptor(dialog: Dialog): string {
+        const preferred = dialog.painFormats.find((format) => format.includes("pain.001.001.03"));
+        const fallback = dialog.painFormats.find((format) => format.includes("pain.001.003.03"));
+        return preferred || fallback || Format.sepaDescriptor();
+    }
+
+    private prepareStandingOrderPayment(account: SEPAAccount, payment: StandingOrderCreation["payment"]) {
+        if (payment.debitor) { return payment; }
+        return {
+            ...payment,
+            debitor: {
+                name: account.accountOwnerName || account.accountName || "",
+                iban: account.iban,
+                bic: account.bic,
+            },
+        };
+    }
+
+    private standingOrderToSchedule(order: StandingOrder): StandingOrderSchedule {
+        return {
+            startDate: order.nextOrderDate,
+            timeUnit: order.timeUnit,
+            interval: order.interval,
+            executionDay: order.orderDay,
+            endDate: order.lastOrderDate || undefined,
+        };
+    }
+
+    private standingOrderToPayment(order: StandingOrder) {
+        return {
+            amount: order.amount,
+            purpose: order.paymentPurpose,
+            creditor: order.creditor,
+            debitor: order.debitor,
+            currency: order.currency,
+        };
+    }
+
+    private addInitialTanSegment(dialog: Dialog, segments: Segment<any>[], segmentReference: string) {
+        if (dialog.hktanVersion >= 6) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            const segNo = (segments[0]?.segNo || 2) + segments.length;
+            segments.push(new HKTAN({
+                segNo,
+                version,
+                process: "4",
+                segmentReference,
+                aref: "",
+                medium: dialog.tanMethods.length > 0 ? dialog.tanMethods[0].name : "",
+            }));
+        }
+    }
+
+    private async completeStandingOrder(dialogConfig: DialogConfig, segmentReference: string, transactionReference: string, tan: string) {
+        const dialog = this.createDialog(dialogConfig);
+        dialog.msgNo = dialog.msgNo + 1;
+        const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+        const segments: Segment<any>[] = [
+            new HKTAN({
+                segNo: 3,
+                version,
+                process: "2",
+                segmentReference,
+                aref: transactionReference,
+                medium: dialog.tanMethods.length > 0 ? dialog.tanMethods[0].name : "",
+            }),
+        ];
+        const response = await dialog.send(this.createRequest(dialog, segments, tan));
+        await dialog.end();
+        return response;
+    }
+
+    private extractStandingOrderResult(segment: { standingOrder: StandingOrder }): StandingOrderCommandResult {
+        const { standingOrder } = segment;
+        return {
+            orderId: standingOrder.orderId || "",
+            standingOrder,
+        };
+    }
+
+    public async createStandingOrder(account: SEPAAccount, order: StandingOrderCreation): Promise<StandingOrderCommandResult> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const payment = this.prepareStandingOrderPayment(account, order.payment);
+        const sepaMessage = buildStandingOrderPain001({ account, payment, schedule: order.schedule });
+        const segments: Segment<any>[] = [
+            new HKCDA({
+                segNo: 3,
+                version: 1,
+                account,
+                painDescriptor: this.resolvePainDescriptor(dialog),
+                sepaMessage,
+                schedule: order.schedule,
+            }),
+        ];
+        this.addInitialTanSegment(dialog, segments, "HKCDA");
+        const response = await dialog.send(this.createRequest(dialog, segments));
+        await dialog.end();
+        const ack = response.findSegment(HICDA);
+        return this.extractStandingOrderResult(ack);
+    }
+
+    public async completeCreateStandingOrder(savedDialog: DialogConfig, transactionReference: string, tan: string): Promise<StandingOrderCommandResult> {
+        const response = await this.completeStandingOrder(savedDialog, "HKCDA", transactionReference, tan);
+        const ack = response.findSegment(HICDA);
+        return this.extractStandingOrderResult(ack);
+    }
+
+    public async updateStandingOrder(account: SEPAAccount, update: StandingOrderUpdate): Promise<StandingOrderCommandResult> {
+        if (!update.orderId) { throw new Error("orderId is required for updateStandingOrder"); }
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const payment = this.prepareStandingOrderPayment(account, update.payment);
+        const sepaMessage = buildStandingOrderPain001({ account, payment, schedule: update.schedule });
+        const segments: Segment<any>[] = [
+            new HKCDE({
+                segNo: 3,
+                version: 1,
+                account,
+                painDescriptor: this.resolvePainDescriptor(dialog),
+                sepaMessage,
+                schedule: update.schedule,
+                orderId: update.orderId,
+            }),
+        ];
+        this.addInitialTanSegment(dialog, segments, "HKCDE");
+        const response = await dialog.send(this.createRequest(dialog, segments));
+        await dialog.end();
+        const ack = response.findSegment(HICDE);
+        return this.extractStandingOrderResult(ack);
+    }
+
+    public async completeUpdateStandingOrder(savedDialog: DialogConfig, transactionReference: string, tan: string): Promise<StandingOrderCommandResult> {
+        const response = await this.completeStandingOrder(savedDialog, "HKCDE", transactionReference, tan);
+        const ack = response.findSegment(HICDE);
+        return this.extractStandingOrderResult(ack);
+    }
+
+    public async cancelStandingOrder(account: SEPAAccount, order: StandingOrder): Promise<StandingOrderCommandResult> {
+        if (!order.orderId) { throw new Error("orderId is required for cancelStandingOrder"); }
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const schedule = this.standingOrderToSchedule(order);
+        const payment = this.prepareStandingOrderPayment(account, this.standingOrderToPayment(order));
+        const sepaMessage = buildStandingOrderPain001({ account, payment, schedule });
+        const segments: Segment<any>[] = [
+            new HKCDL({
+                segNo: 3,
+                version: 1,
+                account,
+                painDescriptor: this.resolvePainDescriptor(dialog),
+                sepaMessage,
+                schedule,
+                orderId: order.orderId,
+            }),
+        ];
+        this.addInitialTanSegment(dialog, segments, "HKCDL");
+        const response = await dialog.send(this.createRequest(dialog, segments));
+        await dialog.end();
+        const ack = response.findSegment(HICDL);
+        return this.extractStandingOrderResult(ack);
+    }
+
+    public async completeCancelStandingOrder(savedDialog: DialogConfig, transactionReference: string, tan: string): Promise<StandingOrderCommandResult> {
+        const response = await this.completeStandingOrder(savedDialog, "HKCDL", transactionReference, tan);
+        const ack = response.findSegment(HICDL);
+        return this.extractStandingOrderResult(ack);
     }
 
     /**

@@ -217,6 +217,86 @@ export interface StandingOrder {
      * The payment purpose (text of the transaction).
      */
     paymentPurpose: string;
+
+    /**
+     * Identifier assigned by the bank for this standing order if available.
+     */
+    orderId?: string;
+
+    /**
+     * Currency that is used for the standing order amount.
+     */
+    currency?: string;
+}
+
+/**
+ * Schedule definition for standing order execution.
+ */
+export interface StandingOrderSchedule {
+    /**
+     * Date of the first execution.
+     */
+    startDate: Date;
+    /**
+     * Interval unit (e.g. D, W, M).
+     */
+    timeUnit: string;
+    /**
+     * Interval multiplier.
+     */
+    interval: number;
+    /**
+     * Optional day of execution for monthly schedules.
+     */
+    executionDay?: number;
+    /**
+     * Optional end date.
+     */
+    endDate?: Date | null;
+}
+
+/**
+ * Payment information used when creating or updating a standing order.
+ */
+export interface StandingOrderPayment {
+    amount: number;
+    currency?: string;
+    purpose: string;
+    creditor: PartyIdentification;
+    debitor?: PartyIdentification;
+    endToEndId?: string;
+    instructionId?: string;
+}
+
+/**
+ * Parameters describing a new standing order to create.
+ */
+export interface StandingOrderCreation {
+    payment: StandingOrderPayment;
+    schedule: StandingOrderSchedule;
+}
+
+/**
+ * Parameters describing an update to an existing standing order.
+ */
+export interface StandingOrderUpdate extends StandingOrderCreation {
+    orderId: string;
+}
+
+/**
+ * Parameters describing a standing order cancellation.
+ */
+export interface StandingOrderCancellation {
+    orderId: string;
+    account: SEPAAccount;
+}
+
+/**
+ * Result returned from standing order maintenance commands.
+ */
+export interface StandingOrderCommandResult {
+    orderId: string;
+    standingOrder?: StandingOrder;
 }
 
 /**

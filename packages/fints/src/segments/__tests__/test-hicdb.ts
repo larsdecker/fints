@@ -21,6 +21,8 @@ const standingOrder: StandingOrder = {
         iban: "DE58140369180198038800",
         bic: "DEU1GFAS800",
     },
+    orderId: "97841129195143109616",
+    currency: "EUR",
 };
 
 testSegment(
