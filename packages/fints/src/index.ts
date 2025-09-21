@@ -6,6 +6,8 @@ export * from "./http-connection";
 export * from "./logger";
 export * from "./mt940-86-structured";
 export * from "./mt535";
+export * from "./pain";
+export * from "./pain-formats";
 export * from "./parse";
 export * from "./pin-tan-client";
 export * from "./request";
