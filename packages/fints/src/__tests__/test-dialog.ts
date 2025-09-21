@@ -38,9 +38,18 @@ describe("Dialog", () => {
                 success: true,
                 returnValues: () => new Map([["0030", { message: "TAN required" }]]),
                 findSegment: () => hitan,
+                dialogId: "4711",
             }),
         };
         const dialog = new Dialog(baseConfig, connection as any);
-        await expect(dialog.send(new Request(baseConfig))).rejects.toBeInstanceOf(TanRequiredError);
+        expect.assertions(3);
+        try {
+            await dialog.send(new Request(baseConfig));
+            throw new Error("Expected TAN challenge to trigger TanRequiredError.");
+        } catch (error) {
+            expect(error).toBeInstanceOf(TanRequiredError);
+            expect((error as TanRequiredError).dialog.dialogId).toBe("4711");
+            expect(dialog.dialogId).toBe("4711");
+        }
     });
 });

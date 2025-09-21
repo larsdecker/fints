@@ -2,7 +2,7 @@ import { SegmentClass } from "./segment";
 import { StandingOrder } from "../types";
 import { Parse } from "../parse";
 import type {
-    document,
+    Pain001Document,
     PaymentInstructionInformationSCT,
     CreditTransferTransactionInformationSCT,
     CustomerCreditTransferInitiationV03,
@@ -52,7 +52,7 @@ export class HICDB extends SegmentClass(HICDBProps) {
             orderDay: Parse.num(orderDay),
             lastOrderDate: lastOrder ? Parse.date(lastOrder) : null,
             creationDate: new Date(jsonMessage.GrpHdr.CreDtTm),
-            amount: jsonMessage.GrpHdr.CtrlSum,
+            amount: Number(jsonMessage.GrpHdr.CtrlSum),
             paymentPurpose: creditTransaction.RmtInf.Ustrd,
             debitor: {
                 name: instructionInfo.Dbtr.Nm,
@@ -67,7 +67,7 @@ export class HICDB extends SegmentClass(HICDBProps) {
         };
     }
 
-    private isDocument(d: any): d is document {
+    private isDocument(d: any): d is Pain001Document {
         return typeof d !== "undefined"
             && typeof d.Document !== "undefined"
             && typeof d.Document.CstmrCdtTrfInitn !== "undefined";

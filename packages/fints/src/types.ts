@@ -6,6 +6,8 @@ export interface Constructable<T> {
     new (...args: any[]): T;
 }
 
+export type Pain001Schema = "pain.001.001.03" | "pain.001.003.03" | "pain.001.001.09";
+
 /**
  * A payment reference as wrapped in a structured description in the 86 section of the MT 940 format.
  * Most properties will likely be `undefined` if no matching tags were found.
@@ -217,6 +219,75 @@ export interface StandingOrder {
      * The payment purpose (text of the transaction).
      */
     paymentPurpose: string;
+}
+
+export type DirectDebitScheme = "CORE" | "B2B" | "COR1";
+
+export type DirectDebitSequenceType = "OOFF" | "FRST" | "RCUR" | "FNAL";
+
+export interface DirectDebitParty {
+    name: string;
+    iban: string;
+    bic?: string;
+}
+
+export interface DirectDebitRequest {
+    creditorName: string;
+    creditorId: string;
+    debtor: DirectDebitParty;
+    amount: number;
+    currency?: string;
+    endToEndId?: string;
+    remittanceInformation?: string;
+    purposeCode?: string;
+    mandateId: string;
+    mandateSignatureDate: Date;
+    requestedCollectionDate: Date;
+    sequenceType?: DirectDebitSequenceType;
+    localInstrument?: DirectDebitScheme;
+    batchBooking?: boolean;
+    messageId?: string;
+    paymentInformationId?: string;
+    creationDateTime?: Date;
+}
+
+export interface DirectDebitSubmission {
+    taskId?: string;
+    messageId: string;
+    paymentInformationId: string;
+    endToEndId: string;
+    painDescriptor: string;
+    xml: string;
+}
+
+export interface CreditTransferTransaction {
+    creditor: PartyIdentification;
+    amount: number;
+    currency?: string;
+    remittanceInformation?: string;
+    endToEndId?: string;
+}
+
+export interface CreditTransferParameters {
+    debtor: PartyIdentification;
+    debtorName: string;
+    initiatingPartyName?: string;
+    messageId?: string;
+    paymentInformationId?: string;
+    creationDateTime?: Date;
+    executionDate?: Date;
+    chargeBearer?: string;
+    schema?: Pain001Schema;
+    transactions: CreditTransferTransaction[];
+}
+
+export interface CreditTransferReceipt {
+    orderId?: string;
+    consentCode?: string;
+    orderStatus?: string;
+    messageId: string;
+    paymentInformationId: string;
+    schema: Pain001Schema;
 }
 
 /**

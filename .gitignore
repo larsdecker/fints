@@ -4,4 +4,7 @@ dist/
 docs/
 generated/
 node_modules
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
 xmlns/

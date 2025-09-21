@@ -1,13 +1,49 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD } from "./segments";
+import {
+    Segment,
+    HKSPA,
+    HISPA,
+    HKKAZ,
+    HIKAZ,
+    HKSAL,
+    HISAL,
+    HKCDB,
+    HICDB,
+    HKCCS,
+    HICCS,
+    HKTAN,
+    HKWPD,
+    HIWPD,
+    HKDSE,
+    HIDSE,
+} from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder, Holding } from "./types";
+import {
+    SEPAAccount,
+    Statement,
+    Balance,
+    StandingOrder,
+    Holding,
+    CreditTransferParameters,
+    CreditTransferReceipt,
+    DirectDebitRequest,
+    DirectDebitSubmission,
+} from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
+import { buildPain001Message, resolvePainDescriptor } from "./pain-builder";
+import { selectPain008Descriptor, buildDirectDebitSubmission } from "./pain";
+import { TanRequiredError } from "./errors/tan-required-error";
+
+export interface CreditTransferOptions {
+    tan?: string;
+    transactionReference?: string;
+    dialog?: Dialog;
+}
 
 /**
  * An abstract class for communicating with a fints server.
@@ -26,14 +62,20 @@ export abstract class Client {
     /**
      * Fetch a list of all SEPA accounts accessible by the user.
      *
+     * @param existingDialog Optionally reuse an already authenticated dialog instance.
      * @return An array of all SEPA accounts.
      */
-    public async accounts(): Promise<SEPAAccount[]> {
-        const dialog = this.createDialog();
-        await dialog.sync();
-        await dialog.init();
+    public async accounts(existingDialog?: Dialog): Promise<SEPAAccount[]> {
+        const dialog = existingDialog ?? this.createDialog();
+        const shouldInitializeDialog = !existingDialog;
+        if (shouldInitializeDialog) {
+            await dialog.sync();
+            await dialog.init();
+        }
         const response = await dialog.send(this.createRequest(dialog, [new HKSPA({ segNo: 3 })]));
-        await dialog.end();
+        if (shouldInitializeDialog) {
+            await dialog.end();
+        }
         const hispa = response.findSegment(HISPA);
 
         hispa.accounts.map((account) => {
@@ -57,13 +99,17 @@ export abstract class Client {
      * Fetch the balance for a SEPA account.
      *
      * @param account The SEPA account to fetch the balance for.
+     * @param existingDialog Optionally reuse an already authenticated dialog instance.
      *
      * @return The balance of the given SEPA account.
      */
-    public async balance(account: SEPAAccount): Promise<Balance> {
-        const dialog = this.createDialog();
-        await dialog.sync();
-        await dialog.init();
+    public async balance(account: SEPAAccount, existingDialog?: Dialog): Promise<Balance> {
+        const dialog = existingDialog ?? this.createDialog();
+        const shouldInitializeDialog = !existingDialog;
+        if (shouldInitializeDialog) {
+            await dialog.sync();
+            await dialog.init();
+        }
         let touchdowns: Map<string, string>;
         let touchdown: string | undefined;
         const responses: Response[] = [];
@@ -81,7 +127,9 @@ export abstract class Client {
             touchdown = touchdowns.get("HKSAL");
             responses.push(response);
         } while (touchdown);
-        await dialog.end();
+        if (shouldInitializeDialog) {
+            await dialog.end();
+        }
         const segments: HISAL[] = responses.reduce((result, response: Response) => {
             result.push(...response.findSegments(HISAL));
             return result;
@@ -104,16 +152,22 @@ export abstract class Client {
      * Fetch the list of holdings for a depot account.
      *
      * @param account The account to fetch holdings for.
+     * @param existingDialog Optionally reuse an already authenticated dialog instance.
      *
      * @return A list of holdings contained in the depot.
      */
-    public async holdings(account: SEPAAccount): Promise<Holding[]> {
-        const dialog = this.createDialog();
-        await dialog.sync();
+    public async holdings(account: SEPAAccount, existingDialog?: Dialog): Promise<Holding[]> {
+        const dialog = existingDialog ?? this.createDialog();
+        const shouldInitializeDialog = !existingDialog;
+        if (shouldInitializeDialog) {
+            await dialog.sync();
+        }
         if (!dialog.hiwpdsVersion) {
             throw new Error("Holdings are not supported by this bank.");
         }
-        await dialog.init();
+        if (shouldInitializeDialog) {
+            await dialog.init();
+        }
         let touchdowns: Map<string, string>;
         let touchdown: string | undefined;
         const responses: Response[] = [];
@@ -131,7 +185,9 @@ export abstract class Client {
             touchdown = touchdowns.get("HKWPD");
             responses.push(response);
         } while (touchdown);
-        await dialog.end();
+        if (shouldInitializeDialog) {
+            await dialog.end();
+        }
         const parser = new MT535Parser();
         return responses.reduce((result: Holding[], response: Response) => {
             response.findSegments(HIWPD).forEach((segment) => {
@@ -152,13 +208,22 @@ export abstract class Client {
      *
      * @param startDate The start of the range for which the statements should be fetched.
      * @param endDate The end of the range for which the statements should be fetched.
+     * @param existingDialog Optionally reuse an already authenticated dialog instance.
      *
      * @return A list of all statements in the specified range.
      */
-    public async statements(account: SEPAAccount, startDate?: Date, endDate?: Date): Promise<Statement[]> {
-        const dialog = this.createDialog();
-        await dialog.sync();
-        await dialog.init();
+    public async statements(
+        account: SEPAAccount,
+        startDate?: Date,
+        endDate?: Date,
+        existingDialog?: Dialog,
+    ): Promise<Statement[]> {
+        const dialog = existingDialog ?? this.createDialog();
+        const shouldInitializeDialog = !existingDialog;
+        if (shouldInitializeDialog) {
+            await dialog.sync();
+            await dialog.init();
+        }
         const segments: Segment<any>[] = [];
         segments.push(
             new HKKAZ({
@@ -181,7 +246,7 @@ export abstract class Client {
                 }),
             );
         }
-        return await this.sendStatementRequest(dialog, segments);
+        return await this.sendStatementRequest(dialog, segments, undefined, shouldInitializeDialog);
     }
 
     /**
@@ -214,7 +279,44 @@ export abstract class Client {
         return await this.sendStatementRequest(dialog, segments, tan);
     }
 
-    private async sendStatementRequest(dialog: Dialog, segments: Segment<any>[], tan?: string): Promise<Statement[]> {
+    /**
+     * Complete a login flow that has been interrupted by a TAN challenge.
+     *
+     * @param savedDialog The dialog data returned with the {@link TanRequiredError}.
+     * @param transactionReference The transaction reference from the challenge message.
+     * @param tan The TAN that should be used to authorize the login.
+     *
+     * @return A dialog that can be reused to continue the original request. The caller is responsible for ending the dialog
+     * once no further messages should be sent.
+     */
+    public async completeLogin(
+        savedDialog: DialogConfig,
+        transactionReference: string,
+        tan: string,
+    ): Promise<Dialog> {
+        const dialog = this.createDialog(savedDialog);
+        dialog.msgNo = dialog.msgNo + 1;
+        const version = dialog.hktanVersion >= 7 ? 7 : 6;
+        const segments: Segment<any>[] = [
+            new HKTAN({
+                segNo: 3,
+                version,
+                process: "2",
+                segmentReference: "HKIDN",
+                aref: transactionReference,
+                medium: dialog.tanMethods[0].name,
+            }),
+        ];
+        await dialog.send(this.createRequest(dialog, segments, tan));
+        return dialog;
+    }
+
+    private async sendStatementRequest(
+        dialog: Dialog,
+        segments: Segment<any>[],
+        tan?: string,
+        shouldEndDialog = true,
+    ): Promise<Statement[]> {
         let touchdowns: Map<string, string>;
         let touchdown: string;
         const responses: Response[] = [];
@@ -225,7 +327,9 @@ export abstract class Client {
             touchdown = touchdowns.get("HKKAZ");
             responses.push(response);
         } while (touchdown);
-        await dialog.end();
+        if (shouldEndDialog) {
+            await dialog.end();
+        }
         const responseSegments: HIKAZ[] = responses.reduce((result, response: Response) => {
             result.push(...response.findSegments(HIKAZ));
             return result;
@@ -245,13 +349,17 @@ export abstract class Client {
      * Fetch a list of standing orders for the given account.
      *
      * @param account The account to fetch standing orders for.
+     * @param existingDialog Optionally reuse an already authenticated dialog instance.
      *
      * @return A list of all standing orders for the given account.
      */
-    public async standingOrders(account: SEPAAccount): Promise<StandingOrder[]> {
-        const dialog = this.createDialog();
-        await dialog.sync();
-        await dialog.init();
+    public async standingOrders(account: SEPAAccount, existingDialog?: Dialog): Promise<StandingOrder[]> {
+        const dialog = existingDialog ?? this.createDialog();
+        const shouldInitializeDialog = !existingDialog;
+        if (shouldInitializeDialog) {
+            await dialog.sync();
+            await dialog.init();
+        }
         let touchdowns: Map<string, string>;
         let touchdown: string;
         const responses: Response[] = [];
@@ -270,12 +378,183 @@ export abstract class Client {
             touchdown = touchdowns.get("HKCDB");
             responses.push(response);
         } while (touchdown);
-        await dialog.end();
+        if (shouldInitializeDialog) {
+            await dialog.end();
+        }
         const segments: HICDB[] = responses.reduce((result, response: Response) => {
             result.push(...response.findSegments(HICDB));
             return result;
         }, []);
 
         return segments.map((s) => s.standingOrder);
+    }
+
+    public async creditTransfer(
+        account: SEPAAccount,
+        transfer: CreditTransferParameters,
+        options: CreditTransferOptions = {},
+    ): Promise<CreditTransferReceipt> {
+        if (options.transactionReference) {
+            if (!options.dialog) {
+                throw new Error("A dialog instance is required to complete a TAN-protected transfer.");
+            }
+            if (!options.tan) {
+                throw new Error("A TAN must be provided when submitting the confirmation step of a transfer.");
+            }
+            const dialog = this.createDialog(options.dialog);
+            dialog.msgNo = dialog.msgNo + 1;
+            const version = dialog.hktanVersion >= 7 ? 7 : 6;
+            const segments: Segment<any>[] = [
+                new HKTAN({
+                    segNo: 3,
+                    version,
+                    process: "2",
+                    segmentReference: "HKCCS",
+                    aref: options.transactionReference,
+                    medium: dialog.tanMethods.length > 0 ? dialog.tanMethods[0].name : undefined,
+                }),
+            ];
+            const response = await dialog.send(this.createRequest(dialog, segments, options.tan));
+            await dialog.end();
+            const receipt = response.findSegment(HICCS);
+            const messageId = transfer.messageId;
+            if (!messageId) {
+                throw new Error("The original message id must be provided when completing a transfer.");
+            }
+            const paymentInformationId = transfer.paymentInformationId ?? messageId;
+            return {
+                orderId: receipt ? receipt.orderId : undefined,
+                consentCode: receipt ? receipt.consentCode : undefined,
+                orderStatus: receipt ? receipt.orderStatus : undefined,
+                messageId,
+                paymentInformationId,
+                schema: transfer.schema ?? "pain.001.003.03",
+            };
+        }
+
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+
+        const painMessage = buildPain001Message({
+            ...transfer,
+            debtor: {
+                name: transfer.debtorName,
+                iban: account.iban,
+                bic: account.bic,
+            },
+        });
+        const descriptor = resolvePainDescriptor(dialog.painFormats, painMessage.schema);
+        const segments: Segment<any>[] = [
+            new HKCCS({
+                segNo: 3,
+                version: 1,
+                account,
+                sepaDescriptor: descriptor,
+                sepaMessage: painMessage.xml,
+            }),
+        ];
+        if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            segments.push(new HKTAN({
+                segNo: 4,
+                version,
+                process: "4",
+                segmentReference: "HKCCS",
+                medium: dialog.tanMethods[0].name,
+            }));
+        }
+        try {
+            const response = await dialog.send(this.createRequest(dialog, segments));
+            await dialog.end();
+            const receipt = response.findSegment(HICCS);
+            return {
+                orderId: receipt ? receipt.orderId : undefined,
+                consentCode: receipt ? receipt.consentCode : undefined,
+                orderStatus: receipt ? receipt.orderStatus : undefined,
+                messageId: painMessage.messageId,
+                paymentInformationId: painMessage.paymentInformationId,
+                schema: painMessage.schema,
+            };
+        } catch (error) {
+            if (error instanceof TanRequiredError) {
+                error.context = {
+                    messageId: painMessage.messageId,
+                    paymentInformationId: painMessage.paymentInformationId,
+                    schema: painMessage.schema,
+                };
+            }
+            throw error;
+        }
+    }
+
+    public async directDebit(account: SEPAAccount, request: DirectDebitRequest): Promise<DirectDebitSubmission> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const descriptor = selectPain008Descriptor(dialog.painFormats);
+        const submission = buildDirectDebitSubmission(request, account, descriptor);
+        const segments: Segment<any>[] = [
+            new HKDSE({
+                segNo: 3,
+                version: dialog.hkdseVersion || 1,
+                account,
+                painDescriptor: descriptor,
+                painMessage: submission.xml,
+            }),
+        ];
+        if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            segments.push(new HKTAN({
+                segNo: 4,
+                version,
+                process: "4",
+                segmentReference: "HKDSE",
+                medium: dialog.tanMethods[0].name,
+            }));
+        }
+        try {
+            const requestMessage = this.createRequest(dialog, segments);
+            const response = await dialog.send(requestMessage);
+            const acknowledgement = response.findSegmentForReference(HIDSE, segments[0]) || response.findSegment(HIDSE);
+            if (acknowledgement) {
+                submission.taskId = acknowledgement.taskId;
+            }
+            await dialog.end();
+            return submission;
+        } catch (error) {
+            if (error instanceof TanRequiredError) {
+                error.directDebitSubmission = submission;
+            }
+            throw error;
+        }
+    }
+
+    public async completeDirectDebit(
+        savedDialog: DialogConfig,
+        transactionReference: string,
+        tan: string,
+        submission: DirectDebitSubmission,
+    ): Promise<DirectDebitSubmission> {
+        const dialog = this.createDialog(savedDialog);
+        dialog.msgNo = dialog.msgNo + 1;
+        const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+        const segments: Segment<any>[] = [
+            new HKTAN({
+                segNo: 3,
+                version,
+                process: "2",
+                segmentReference: "HKDSE",
+                aref: transactionReference,
+                medium: dialog.tanMethods[0]?.name,
+            }),
+        ];
+        const response = await dialog.send(this.createRequest(dialog, segments, tan));
+        const acknowledgement = response.findSegment(HIDSE);
+        if (acknowledgement) {
+            submission.taskId = acknowledgement.taskId;
+        }
+        await dialog.end();
+        return submission;
     }
 }

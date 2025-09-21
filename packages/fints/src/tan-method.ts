@@ -198,9 +198,9 @@ export class TanMethod {
 
     constructor(version: number, config?: string[]) {
         this.version = version;
-        const argumentList = tanMethodArgumentMap.get(version);
+        const argumentList = tanMethodArgumentMap.get(version) ?? [];
         const map = argumentList.reduce((result, argumentName, index) => {
-            result.set(argumentName, config[index]);
+            result.set(argumentName, config ? config[index] : undefined);
             return result;
         }, new Map<string, string>());
         this.allowedFormat = map.get("allowedFormat");
