@@ -52,7 +52,7 @@ export class HICDB extends SegmentClass(HICDBProps) {
             orderDay: Parse.num(orderDay),
             lastOrderDate: lastOrder ? Parse.date(lastOrder) : null,
             creationDate: new Date(jsonMessage.GrpHdr.CreDtTm),
-            amount: jsonMessage.GrpHdr.CtrlSum,
+            amount: Number(jsonMessage.GrpHdr.CtrlSum),
             paymentPurpose: creditTransaction.RmtInf.Ustrd,
             debitor: {
                 name: instructionInfo.Dbtr.Nm,

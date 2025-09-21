@@ -5,6 +5,7 @@ export class TanRequiredError extends Error {
     public challengeText: string;
     public challengeMedia: Buffer;
     public dialog: Dialog;
+    public context?: Record<string, any>;
 
     constructor(
         message: string,
@@ -12,11 +13,13 @@ export class TanRequiredError extends Error {
         challengeText: string,
         challengeMedia: Buffer,
         dialog: Dialog,
+        context?: Record<string, any>,
     ) {
         super(message);
         this.transactionReference = transactionReference;
         this.challengeText = challengeText;
         this.challengeMedia = challengeMedia;
         this.dialog = dialog;
+        this.context = context;
     }
 }

@@ -41,10 +41,7 @@ console.info(statements); // List of all statements with transactions in specifi
 - Extract [reference tags](https://www.dzbank.de/content/dam/dzbank_de/de/home/produkte_services/Firmenkunden/PDF-Dokumente/transaction%20banking/elektronicBanking/SEPA-Belegungsregeln_MT940-DK_082016.~644b217ec96b35dfffcaf18dc2df800a.pdf) from transactions.
 - List supported TAN methods.
 - Parse basic metadata.
-
-## Missing
-
-- Initiate any kind of SEPA transfers or debits.
+- Initiate SEPA credit transfers.
 
 ## Resources
 

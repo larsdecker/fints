@@ -1,13 +1,21 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD } from "./segments";
+import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKCCS, HICCS, HKTAN, HKWPD, HIWPD } from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder, Holding } from "./types";
+import { SEPAAccount, Statement, Balance, StandingOrder, Holding, CreditTransferParameters, CreditTransferReceipt } from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
+import { buildPain001Message, resolvePainDescriptor } from "./pain-formats";
+import { TanRequiredError } from "./errors/tan-required-error";
+
+export interface CreditTransferOptions {
+    tan?: string;
+    transactionReference?: string;
+    dialog?: Dialog;
+}
 
 /**
  * An abstract class for communicating with a fints server.
@@ -277,5 +285,104 @@ export abstract class Client {
         }, []);
 
         return segments.map((s) => s.standingOrder);
+    }
+
+    public async creditTransfer(
+        account: SEPAAccount,
+        transfer: CreditTransferParameters,
+        options: CreditTransferOptions = {},
+    ): Promise<CreditTransferReceipt> {
+        if (options.transactionReference) {
+            if (!options.dialog) {
+                throw new Error("A dialog instance is required to complete a TAN-protected transfer.");
+            }
+            if (!options.tan) {
+                throw new Error("A TAN must be provided when submitting the confirmation step of a transfer.");
+            }
+            const dialog = this.createDialog(options.dialog);
+            dialog.msgNo = dialog.msgNo + 1;
+            const version = dialog.hktanVersion >= 7 ? 7 : 6;
+            const segments: Segment<any>[] = [
+                new HKTAN({
+                    segNo: 3,
+                    version,
+                    process: "2",
+                    segmentReference: "HKCCS",
+                    aref: options.transactionReference,
+                    medium: dialog.tanMethods && dialog.tanMethods.length > 0 ? dialog.tanMethods[0].name : undefined,
+                }),
+            ];
+            const response = await dialog.send(this.createRequest(dialog, segments, options.tan));
+            await dialog.end();
+            const receipt = response.findSegment(HICCS);
+            const messageId = transfer.messageId;
+            if (!messageId) {
+                throw new Error("The original message id must be provided when completing a transfer.");
+            }
+            const paymentInformationId = transfer.paymentInformationId ?? messageId;
+            return {
+                orderId: receipt ? receipt.orderId : undefined,
+                consentCode: receipt ? receipt.consentCode : undefined,
+                orderStatus: receipt ? receipt.orderStatus : undefined,
+                messageId,
+                paymentInformationId,
+                schema: transfer.schema ?? "pain.001.003.03",
+            };
+        }
+
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+
+        const painMessage = buildPain001Message({
+            ...transfer,
+            debtor: {
+                name: transfer.debtorName,
+                iban: account.iban,
+                bic: account.bic,
+            },
+        });
+        const descriptor = resolvePainDescriptor(dialog.painFormats, painMessage.schema);
+        const segments: Segment<any>[] = [
+            new HKCCS({
+                segNo: 3,
+                version: 1,
+                account,
+                sepaDescriptor: descriptor,
+                sepaMessage: painMessage.xml,
+            }),
+        ];
+        if (dialog.hktanVersion >= 6) {
+            const version = dialog.hktanVersion >= 7 ? 7 : 6;
+            segments.push(new HKTAN({
+                segNo: 4,
+                version,
+                process: "4",
+                segmentReference: "HKCCS",
+                medium: dialog.tanMethods && dialog.tanMethods.length > 0 ? dialog.tanMethods[0].name : undefined,
+            }));
+        }
+        try {
+            const response = await dialog.send(this.createRequest(dialog, segments));
+            await dialog.end();
+            const receipt = response.findSegment(HICCS);
+            return {
+                orderId: receipt ? receipt.orderId : undefined,
+                consentCode: receipt ? receipt.consentCode : undefined,
+                orderStatus: receipt ? receipt.orderStatus : undefined,
+                messageId: painMessage.messageId,
+                paymentInformationId: painMessage.paymentInformationId,
+                schema: painMessage.schema,
+            };
+        } catch (error) {
+            if (error instanceof TanRequiredError) {
+                error.context = {
+                    messageId: painMessage.messageId,
+                    paymentInformationId: painMessage.paymentInformationId,
+                    schema: painMessage.schema,
+                };
+            }
+            throw error;
+        }
     }
 }
