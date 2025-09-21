@@ -1,13 +1,15 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD } from "./segments";
+import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD, HKDSE, HIDSE } from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder, Holding } from "./types";
+import { SEPAAccount, Statement, Balance, StandingOrder, Holding, DirectDebitRequest, DirectDebitSubmission } from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
+import { selectPain008Descriptor, buildDirectDebitSubmission } from "./pain";
+import { TanRequiredError } from "./errors/tan-required-error";
 
 /**
  * An abstract class for communicating with a fints server.
@@ -351,5 +353,75 @@ export abstract class Client {
         }, []);
 
         return segments.map((s) => s.standingOrder);
+    }
+
+    public async directDebit(account: SEPAAccount, request: DirectDebitRequest): Promise<DirectDebitSubmission> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const descriptor = selectPain008Descriptor(dialog.painFormats);
+        const submission = buildDirectDebitSubmission(request, account, descriptor);
+        const segments: Segment<any>[] = [
+            new HKDSE({
+                segNo: 3,
+                version: dialog.hkdseVersion || 1,
+                account,
+                painDescriptor: descriptor,
+                painMessage: submission.xml,
+            }),
+        ];
+        if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            segments.push(new HKTAN({
+                segNo: 4,
+                version,
+                process: "4",
+                segmentReference: "HKDSE",
+                medium: dialog.tanMethods[0].name,
+            }));
+        }
+        try {
+            const requestMessage = this.createRequest(dialog, segments);
+            const response = await dialog.send(requestMessage);
+            const acknowledgement = response.findSegmentForReference(HIDSE, segments[0]) || response.findSegment(HIDSE);
+            if (acknowledgement) {
+                submission.taskId = acknowledgement.taskId;
+            }
+            await dialog.end();
+            return submission;
+        } catch (error) {
+            if (error instanceof TanRequiredError) {
+                error.directDebitSubmission = submission;
+            }
+            throw error;
+        }
+    }
+
+    public async completeDirectDebit(
+        savedDialog: DialogConfig,
+        transactionReference: string,
+        tan: string,
+        submission: DirectDebitSubmission,
+    ): Promise<DirectDebitSubmission> {
+        const dialog = this.createDialog(savedDialog);
+        dialog.msgNo = dialog.msgNo + 1;
+        const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+        const segments: Segment<any>[] = [
+            new HKTAN({
+                segNo: 3,
+                version,
+                process: "2",
+                segmentReference: "HKDSE",
+                aref: transactionReference,
+                medium: dialog.tanMethods[0]?.name,
+            }),
+        ];
+        const response = await dialog.send(this.createRequest(dialog, segments, tan));
+        const acknowledgement = response.findSegment(HIDSE);
+        if (acknowledgement) {
+            submission.taskId = acknowledgement.taskId;
+        }
+        await dialog.end();
+        return submission;
     }
 }

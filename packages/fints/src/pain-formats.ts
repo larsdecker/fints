@@ -3,7 +3,7 @@
  * The real XSD-derived types are not included in this repository.
  */
 
-export interface document {
+export interface Pain001Document {
     Document: { CstmrCdtTrfInitn: CustomerCreditTransferInitiationV03 };
 }
 

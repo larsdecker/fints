@@ -28,6 +28,7 @@ const statements = await client.statements(accounts[0], startDate, endDate);
 console.info(statements); // List of all statements with transactions in specified date range.
 ```
 
+
 ### Handling login TAN challenges
 
 Some banks require a TAN as part of the login dialog. When that happens the library raises a `TanRequiredError`. You can
@@ -47,6 +48,8 @@ try {
 }
 ```
 
+[Submitting SEPA direct debits](#submitting-a-direct-debit)
+
 [Further code examples](README_advanced_usage.md)
 
 ## Features
@@ -55,6 +58,7 @@ try {
 - Load list of statements and transactions in specified range.
 - Fetch current account balances.
 - List depot holdings.
+- Submit SEPA direct debit orders (pain.008) with TAN handling.
 - Parse statement [MT940](https://en.wikipedia.org/wiki/MT940) format.
 - Parse transaction descriptions.
 - Extract [reference tags](https://www.dzbank.de/content/dam/dzbank_de/de/home/produkte_services/Firmenkunden/PDF-Dokumente/transaction%20banking/elektronicBanking/SEPA-Belegungsregeln_MT940-DK_082016.~644b217ec96b35dfffcaf18dc2df800a.pdf) from transactions.
@@ -63,7 +67,53 @@ try {
 
 ## Missing
 
-- Initiate any kind of SEPA transfers or debits.
+- Initiate SEPA credit transfers.
+
+## Submitting a direct debit
+
+```typescript
+import { PinTanClient, TanRequiredError, DirectDebitRequest } from "fints";
+
+const client = new PinTanClient({
+    url: "https://example.com/fints",
+    name: "username",
+    pin: 12345,
+    blz: 12345678,
+});
+
+const accounts = await client.accounts();
+const account = accounts[0];
+
+const debit: DirectDebitRequest = {
+    creditorName: "ACME GmbH",
+    creditorId: "DE98ZZZ09999999999",
+    debtor: {
+        name: "John Doe",
+        iban: "DE02120300000000202051",
+    },
+    amount: 42.5,
+    mandateId: "MANDATE-123",
+    mandateSignatureDate: new Date("2022-01-10"),
+    requestedCollectionDate: new Date(),
+    remittanceInformation: "Invoice 0815",
+};
+
+try {
+    const submission = await client.directDebit(account, debit);
+    console.log(submission.taskId);
+} catch (error) {
+    if (error instanceof TanRequiredError) {
+        const submission = error.directDebitSubmission!;
+        const completed = await client.completeDirectDebit(
+            error.dialog,
+            error.transactionReference,
+            "123456",
+            submission,
+        );
+        console.log(completed.taskId);
+    }
+}
+```
 
 ## Resources
 
