@@ -24,6 +24,11 @@ FinTS is a complex and old format and this library wouldn't have been possible w
 - [Open-Fin-TS-JS-Client](https://github.com/jschyma/open_fints_js_client) provides a demo server used for testing this library.
 - [mt940-js](https://github.com/webschik/mt940-js) is used internally for parsing the [MT940](https://en.wikipedia.org/wiki/MT940) format.
 
+## Documentation
+
+- **[Project Overview & Publishing Guide (Deutsch)](PROJEKT_UEBERSICHT.md)** - Comprehensive guide in German on how to publish this project under a new name on npm and what new features could be added
+- **[Publishing Guide (English)](PUBLISHING_GUIDE.md)** - Quick guide for publishing this project under a new name on npm
+
 ## Resources
 
 - [API Reference](https://prior99.gitlab.io/fints)
