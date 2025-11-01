@@ -49,7 +49,7 @@ Das Projekt ist als **Monorepo** mit Lerna organisiert und enthält zwei Pakete:
 
 ## Veröffentlichung unter einem neuen Namen auf npm
 
-Wenn Sie dieses Projekt unter einem neuem Namen auf npm veröffentlichen möchten, müssen Sie folgende Schritte durchführen:
+Wenn Sie dieses Projekt unter einem neuen Namen auf npm veröffentlichen möchten, müssen Sie folgende Schritte durchführen:
 
 ### 1. Paket-Namen ändern
 
