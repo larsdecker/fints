@@ -199,10 +199,10 @@ export class Dialog extends DialogConfig {
         if (response.returnValues().has("0030")) {
             const hitan = response.findSegment(HITAN);
             const returnValue = response.returnValues().get("0030");
-            
+
             // Determine which segment triggered the TAN requirement
             const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
-            
+
             throw new TanRequiredError(
                 returnValue.message,
                 hitan.transactionReference,

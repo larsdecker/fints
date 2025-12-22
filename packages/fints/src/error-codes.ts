@@ -1,7 +1,7 @@
 /**
  * FinTS Error and Return Code Mappings
  * Based on FinTS 3.0 specification
- * 
+ *
  * Code ranges:
  * 0xxx - Success messages
  * 3xxx - Warnings

@@ -44,24 +44,24 @@ export class HttpConnection extends ConnectionConfig implements Connection {
         const { url } = this;
         verbose(`Sending Request: ${request}`);
         if (this.debug) { verbose(`Parsed Request:\n${request.debugString}`); }
-        
+
         let lastError: Error | null = null;
         let attempt = 0;
-        
+
         while (attempt <= this.maxRetries) {
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-                
+
                 try {
                     const httpRequest = await fetch(url, {
                         method: "POST",
                         body: encodeBase64(String(request)),
                         signal: controller.signal,
                     });
-                    
+
                     clearTimeout(timeoutId);
-                    
+
                     if (!httpRequest.ok) {
                         throw new Error(`Received bad status code ${httpRequest.status} from FinTS endpoint.`);
                     }
@@ -77,10 +77,10 @@ export class HttpConnection extends ConnectionConfig implements Connection {
             } catch (error) {
                 lastError = error as Error;
                 attempt++;
-                
+
                 // Check if error is due to timeout
                 const isTimeout = error.name === "AbortError" || error.message?.includes("timeout");
-                
+
                 if (attempt <= this.maxRetries) {
                     // Calculate exponential backoff delay
                     const delay = this.retryDelay * Math.pow(2, attempt - 1);
@@ -95,7 +95,7 @@ export class HttpConnection extends ConnectionConfig implements Connection {
                 }
             }
         }
-        
+
         // This should never be reached, but TypeScript needs it
         throw lastError || new Error("Unknown error during FinTS request");
     }

@@ -49,20 +49,20 @@ export class TanRequiredError extends Error {
         this.processStep = processStep;
         this.triggeringSegment = triggeringSegment;
         this.context = context;
-        
+
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         if (Error.captureStackTrace) {
             Error.captureStackTrace(this, TanRequiredError);
         }
     }
-    
+
     /**
      * Helper to check if this is a multi-step TAN flow
      */
     public isMultiStep(): boolean {
         return this.processStep !== TanProcessStep.COMPLETED;
     }
-    
+
     /**
      * Get a user-friendly description of the current step
      */
