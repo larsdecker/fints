@@ -20,7 +20,7 @@ import { Response } from "./response";
 import { TanMethod } from "./tan-method";
 import { escapeFinTS } from "./utils";
 import { ResponseError } from "./errors/response-error";
-import { TanRequiredError } from "./errors/tan-required-error";
+import { TanRequiredError, TanProcessStep } from "./errors/tan-required-error";
 import { HITAN } from "./segments/hitan";
 import { PRODUCT_NAME } from "./constants";
 
@@ -209,7 +209,7 @@ export class Dialog extends DialogConfig {
                 hitan.challengeText,
                 hitan.challengeMedia,
                 this,
-                undefined, // Use default process step
+                TanProcessStep.CHALLENGE_RESPONSE_NEEDED,
                 triggeringSegment,
                 {
                     returnCode: "0030",

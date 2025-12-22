@@ -52,10 +52,10 @@ export class PinTanClient extends Client {
         const { url, debug, timeout, maxRetries, retryDelay } = config;
         const connectionConfig: ConnectionConfig = {
             url,
-            debug: debug || false,
-            timeout: timeout !== undefined ? timeout : 30000,
-            maxRetries: maxRetries !== undefined ? maxRetries : 3,
-            retryDelay: retryDelay !== undefined ? retryDelay : 1000,
+            debug: debug ?? false,
+            timeout: timeout ?? 30000,
+            maxRetries: maxRetries ?? 3,
+            retryDelay: retryDelay ?? 1000,
         };
         this.connection = new HttpConnection(connectionConfig);
     }

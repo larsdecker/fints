@@ -92,12 +92,18 @@ export class InvalidSystemIdError extends FinTSError {
 }
 
 /**
+ * Type alias for error class constructors
+ */
+type ErrorConstructor = new (
+    message: string,
+    code: string,
+    returnValue?: ReturnValue,
+) => FinTSError;
+
+/**
  * Mapping of error codes to error class constructors
  */
-const ERROR_CODE_MAPPINGS: Record<
-    string,
-    new (message: string, code: string, returnValue?: ReturnValue) => FinTSError
-> = {
+const ERROR_CODE_MAPPINGS: Record<string, ErrorConstructor> = {
     // PIN errors
     9942: PinError,
     // Authentication errors
