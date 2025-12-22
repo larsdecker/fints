@@ -92,44 +92,47 @@ export class InvalidSystemIdError extends FinTSError {
 }
 
 /**
+ * Mapping of error codes to error class constructors
+ */
+const ERROR_CODE_MAPPINGS: Record<
+    string,
+    new (message: string, code: string, returnValue?: ReturnValue) => FinTSError
+> = {
+    // PIN errors
+    9942: PinError,
+    // Authentication errors
+    9110: AuthenticationError,
+    // Strong authentication required (PSD2)
+    3076: StrongAuthenticationRequiredError,
+    3956: StrongAuthenticationRequiredError,
+    // Order/transaction errors
+    9120: OrderRejectedError,
+    9140: OrderRejectedError,
+    9340: OrderRejectedError,
+    // Dialog errors
+    9380: DialogAbortedError,
+    9800: DialogAbortedError,
+    // Message structure errors
+    9010: MessageStructureError,
+    9030: MessageStructureError,
+    9040: MessageStructureError,
+    // System ID errors
+    9931: InvalidSystemIdError,
+    9070: InvalidSystemIdError,
+};
+
+/**
  * Factory function to create appropriate error based on error code
  */
 export function createFinTSError(code: string, message: string, returnValue?: ReturnValue): FinTSError {
     const formattedMessage = formatErrorCode(code, message);
 
-    // Authentication errors
-    if (["9110", "9942"].includes(code)) {
-        if (code === "9942") {
-            return new PinError(formattedMessage, code, returnValue);
-        }
-        return new AuthenticationError(formattedMessage, code, returnValue);
+    // Look up the appropriate error class based on error code
+    const ErrorClass = ERROR_CODE_MAPPINGS[code];
+    if (ErrorClass) {
+        return new ErrorClass(formattedMessage, code, returnValue);
     }
 
-    // Strong authentication required (PSD2)
-    if (["3076", "3956"].includes(code)) {
-        return new StrongAuthenticationRequiredError(formattedMessage, code, returnValue);
-    }
-
-    // Order/transaction errors
-    if (["9120", "9140", "9340"].includes(code)) {
-        return new OrderRejectedError(formattedMessage, code, returnValue);
-    }
-
-    // Dialog errors
-    if (["9380", "9800"].includes(code)) {
-        return new DialogAbortedError(formattedMessage, code, returnValue);
-    }
-
-    // Message structure errors
-    if (["9010", "9030", "9040"].includes(code)) {
-        return new MessageStructureError(formattedMessage, code, returnValue);
-    }
-
-    // System ID errors
-    if (["9931", "9070"].includes(code)) {
-        return new InvalidSystemIdError(formattedMessage, code, returnValue);
-    }
-
-    // Generic FinTS error
+    // Generic FinTS error for unmapped codes
     return new FinTSError(formattedMessage, code, returnValue);
 }

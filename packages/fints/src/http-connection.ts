@@ -60,8 +60,6 @@ export class HttpConnection extends ConnectionConfig implements Connection {
                         signal: controller.signal,
                     });
 
-                    clearTimeout(timeoutId);
-
                     if (!httpRequest.ok) {
                         throw new Error(`Received bad status code ${httpRequest.status} from FinTS endpoint.`);
                     }
@@ -78,8 +76,8 @@ export class HttpConnection extends ConnectionConfig implements Connection {
                 lastError = error as Error;
                 attempt++;
 
-                // Check if error is due to timeout
-                const isTimeout = error.name === "AbortError" || error.message?.includes("timeout");
+                // Check if error is due to timeout (AbortError is thrown when fetch is aborted)
+                const isTimeout = error.name === "AbortError";
 
                 if (attempt <= this.maxRetries) {
                     // Calculate exponential backoff delay
