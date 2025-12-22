@@ -1,5 +1,5 @@
 import { Command, command, metadata, option } from "clime";
-import { PinTanClient, DirectDebitRequest, DirectDebitSubmission, TanRequiredError } from "fints";
+import { PinTanClient, DirectDebitRequest, DirectDebitSubmission, TanRequiredError } from "fints-lib";
 import { setLevel } from "../logger";
 import { BaseConfig } from "../config";
 import * as readline from "readline";
@@ -134,13 +134,13 @@ export default class extends Command {
             return;
         }
 
-        const normalizedSequenceType = sequenceType.toUpperCase();
+        const normalizedSequenceType = sequenceType.toUpperCase() as "OOFF" | "FRST" | "RCUR" | "FNAL";
         if (!["OOFF", "FRST", "RCUR", "FNAL"].includes(normalizedSequenceType)) {
             console.error("Sequence type must be one of OOFF, FRST, RCUR, FNAL.");
             return;
         }
 
-        const normalizedInstrument = localInstrument.toUpperCase();
+        const normalizedInstrument = localInstrument.toUpperCase() as "CORE" | "B2B";
         if (!["CORE", "B2B"].includes(normalizedInstrument)) {
             console.error("Local instrument must be either CORE or B2B.");
             return;

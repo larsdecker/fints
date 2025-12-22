@@ -1,5 +1,5 @@
 import { Command, command, metadata, option } from "clime";
-import { PinTanClient, CreditTransferRequest, CreditTransferSubmission, TanRequiredError } from "fints";
+import { PinTanClient, CreditTransferRequest, CreditTransferSubmission, TanRequiredError } from "fints-lib";
 import { setLevel } from "../logger";
 import { BaseConfig } from "../config";
 import * as readline from "readline";
