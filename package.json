@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "lint": "tslint --format stylish --project tsconfig.json"
+    "lint": "tslint --format stylish --project tsconfig.json",
+    "build": "lerna run build --stream"
   },
   "workspaces": [
     "packages/*"
