@@ -1,0 +1,8 @@
+src/
+__tests__/
+*.test.ts
+*.test.js
+tsconfig.json
+jest.config.js
+.DS_Store
+*.map

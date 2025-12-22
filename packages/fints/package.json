@@ -9,7 +9,14 @@
         "api",
         "ios",
         "nodejs",
-        "node"
+        "node",
+        "psd2",
+        "sepa",
+        "mt940",
+        "pain.001",
+        "pain.008",
+        "german-banking",
+        "online-banking"
     ],
     "scripts": {
         "prebuild": "cxsd -t generated https://raw.githubusercontent.com/hbci4j/hbci4java/master/src/main/resources/pain.001.001.03.xsd",
@@ -38,6 +45,10 @@
             "name": "Mathias Arens",
             "email": "github@mathiasarens.de",
             "url": "https://github.com/mathiasarens"
+        },
+        {
+            "name": "Lars Decker",
+            "url": "https://github.com/larsdecker"
         }
     ],
     "license": "MIT",

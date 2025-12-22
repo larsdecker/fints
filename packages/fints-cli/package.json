@@ -7,7 +7,12 @@
         "hbci",
         "banking",
         "api",
-        "cli"
+        "cli",
+        "command-line",
+        "psd2",
+        "sepa",
+        "german-banking",
+        "online-banking"
     ],
     "bin": {
         "fints-lib": "dist/index.js"
@@ -26,6 +31,12 @@
     ],
     "repository": "https://github.com/larsdecker/fints",
     "author": "Frederick Gnodtke",
+    "contributors": [
+        {
+            "name": "Lars Decker",
+            "url": "https://github.com/larsdecker"
+        }
+    ],
     "license": "MIT",
     "dependencies": {
         "clime": "^0.5.16",

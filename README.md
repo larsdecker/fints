@@ -33,6 +33,39 @@ npm install -g fints-lib-cli
 yarn global add fints-lib-cli
 ```
 
+## 🚀 Quick Start
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({
+    url: "https://example.com/fints",
+    name: "username",
+    pin: "12345",
+    blz: "12345678",
+});
+
+// List accounts
+const accounts = await client.accounts();
+console.log(accounts);
+
+// Fetch statements
+const startDate = new Date("2024-01-01");
+const endDate = new Date("2024-12-31");
+const statements = await client.statements(accounts[0], startDate, endDate);
+console.log(statements);
+```
+
+For CLI usage:
+
+```bash
+# List accounts
+fints-lib list-accounts --url https://example.com/fints -n username -p 12345 -b 12345678
+
+# Fetch transactions
+fints-lib fetch-transactions --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001 -s 2024-01-01 -e 2024-12-31
+```
+
 > Before using any FinTS library you have to register your application with Die Deutsche Kreditwirtschaft in order to get your registration number. Note that this process can take several weeks. First you receive your registration number after a couple days, but then you have to wait anywhere between 0 and 8+ weeks for the registration to reach your bank's server. If you have multiple banks, it probably reaches them at different times.
 >
 > -- https://github.com/nemiah/phpFinTS
