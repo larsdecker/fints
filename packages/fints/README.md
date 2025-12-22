@@ -1,15 +1,24 @@
-# fints
+# fints-lib
 
-[![npm](https://img.shields.io/npm/v/fints.svg)](https://www.npmjs.com/package/fints)
-[![pipeline status](https://gitlab.com/prior99/fints/badges/master/pipeline.svg)](https://github.com/Prior99/fints)
-[![coverage report](https://gitlab.com/prior99/fints/badges/master/coverage.svg)](https://github.com/Prior99/fints)
+[![npm](https://img.shields.io/npm/v/fints-lib.svg)](https://www.npmjs.com/package/fints-lib)
+[![CI](https://github.com/larsdecker/fints/actions/workflows/ci.yml/badge.svg)](https://github.com/larsdecker/fints/actions/workflows/ci.yml)
 
 A client library for communicating with [FinTS servers](https://www.hbci-zka.de/).
+
+> **Note:** This is a fork and continuation of [Prior99/fints](https://github.com/Prior99/fints). Published as `fints-lib` on npm.
+
+## Installation
+
+```bash
+npm install fints-lib
+# or
+yarn add fints-lib
+```
 
 ## Example
 
 ```typescript
-import { PinTanClient } from "fints";
+import { PinTanClient } from "fints-lib";
 
 const startDate = new Date("2018-08-10T12:00:00Z");
 const endDate = new Date("2018-10-10T12:00:00Z");
@@ -35,7 +44,7 @@ Some banks require a TAN as part of the login dialog. When that happens the libr
 complete the login by submitting the TAN and continue working with the returned dialog:
 
 ```typescript
-import { TanRequiredError } from "fints";
+import { TanRequiredError } from "fints-lib";
 
 try {
     const accounts = await client.accounts();
@@ -73,7 +82,7 @@ try {
 ## Submitting a credit transfer
 
 ```typescript
-import { PinTanClient, TanRequiredError, CreditTransferRequest } from "fints";
+import { PinTanClient, TanRequiredError, CreditTransferRequest } from "fints-lib";
 
 const client = new PinTanClient({
     url: "https://example.com/fints",
@@ -116,7 +125,7 @@ try {
 ## Submitting a direct debit
 
 ```typescript
-import { PinTanClient, TanRequiredError, DirectDebitRequest } from "fints";
+import { PinTanClient, TanRequiredError, DirectDebitRequest } from "fints-lib";
 
 const client = new PinTanClient({
     url: "https://example.com/fints",

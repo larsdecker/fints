@@ -1,11 +1,20 @@
-# fints-cli
+# fints-lib-cli
 
-[![npm](https://img.shields.io/npm/v/fints-cli.svg)](https://www.npmjs.com/package/fints-cli)
-[![pipeline status](https://gitlab.com/prior99/fints/badges/master/pipeline.svg)](https://github.com/Prior99/fints)
-[![coverage report](https://gitlab.com/prior99/fints/badges/master/coverage.svg)](https://github.com/Prior99/fints)
+[![npm](https://img.shields.io/npm/v/fints-lib-cli.svg)](https://www.npmjs.com/package/fints-lib-cli)
+[![CI](https://github.com/larsdecker/fints/actions/workflows/ci.yml/badge.svg)](https://github.com/larsdecker/fints/actions/workflows/ci.yml)
 
 
 A command line interface for communicating with [FinTS servers](https://www.hbci-zka.de/).
+
+> **Note:** This is a fork and continuation of [Prior99/fints](https://github.com/Prior99/fints). Published as `fints-lib-cli` on npm.
+
+## Installation
+
+```bash
+npm install -g fints-lib-cli
+# or
+yarn global add fints-lib-cli
+```
 
 
 ## Features
@@ -24,7 +33,7 @@ A command line interface for communicating with [FinTS servers](https://www.hbci
 
   USAGE
 
-    fints list-accounts --url <url> --name <name> --pin <pin> --blz <blz> [...options]
+    fints-lib list-accounts --url <url> --name <name> --pin <pin> --blz <blz> [...options]
 
   OPTIONS
 
@@ -38,7 +47,7 @@ A command line interface for communicating with [FinTS servers](https://www.hbci
 ```
 
 ```
-fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 12345678
+fints-lib list-accounts --url https://example.com/fints -n username -p 12345 -b 12345678
 ```
 
 ### Fetching transactions
@@ -48,7 +57,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
   USAGE
 
-    fints fetch-transactions --url <url> --name <name> --pin <pin> --blz <blz> --iban <iban> [...options]
+    fints-lib fetch-transactions --url <url> --name <name> --pin <pin> --blz <blz> --iban <iban> [...options]
 
   OPTIONS
 
@@ -65,7 +74,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 ```
 
 ```
-./fints-cli fetch-transactions --url http://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001 -s 2018-01-01 -e 2018-10-01
+fints-lib fetch-transactions --url http://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001 -s 2018-01-01 -e 2018-10-01
 ```
 
 ### Fetch current balance
@@ -75,7 +84,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
   USAGE
 
-    fints get-balance --url <url> --name <name> --pin <pin> --blz <blz> --iban <iban> [...options]
+    fints-lib get-balance --url <url> --name <name> --pin <pin> --blz <blz> --iban <iban> [...options]
 
   OPTIONS
 
@@ -90,7 +99,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 ```
 
 ```
-./fints-cli get-balance --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001
+fints-lib get-balance --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001
 ```
 
 ### List holdings
@@ -100,7 +109,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
   USAGE
 
-    fints list-holdings --url <url> --name <name> --pin <pin> --blz <blz> --iban <iban> [...options]
+    fints-lib list-holdings --url <url> --name <name> --pin <pin> --blz <blz> --iban <iban> [...options]
 
   OPTIONS
 
@@ -115,7 +124,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 ```
 
 ```
-./fints-cli list-holdings --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001
+fints-lib list-holdings --url https://example.com/fints -n username -p 12345 -b 12345678 -i DE111234567800000001
 ```
 
 ### Submit credit transfer
@@ -125,7 +134,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
   USAGE
 
-    fints submit-credit-transfer --url <url> --name <name> --pin <pin> --blz <blz> --account-iban <iban> --creditor-name <name> \
+    fints-lib submit-credit-transfer --url <url> --name <name> --pin <pin> --blz <blz> --account-iban <iban> --creditor-name <name> \
       --creditor-iban <iban> --amount <amount> [...options]
 
   OPTIONS
@@ -154,7 +163,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 ```
 
 ```
-./fints-cli submit-credit-transfer --url https://example.com/fints --name username --pin 12345 --blz 12345678 \
+fints-lib submit-credit-transfer --url https://example.com/fints --name username --pin 12345 --blz 12345678 \
   --account-iban DE02120300000000202051 --debtor-name "John Doe" --creditor-name "ACME GmbH" \
   --creditor-iban DE44500105175407324931 --amount 100.00 --remittance "Invoice 0815"
 ```
@@ -166,7 +175,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 
   USAGE
 
-    fints submit-direct-debit --url <url> --name <name> --pin <pin> --blz <blz> --account-iban <iban> --creditor-name <name> \
+    fints-lib submit-direct-debit --url <url> --name <name> --pin <pin> --blz <blz> --account-iban <iban> --creditor-name <name> \
       --creditor-id <id> --debtor-name <name> --debtor-iban <iban> --amount <amount> --mandate-id <id> --mandate-date <date> \
       --collection-date <date> [...options]
 
@@ -200,7 +209,7 @@ fint-cli list-accounts --url https://example.com/fints -n username -p 12345 -b 1
 ```
 
 ```
-./fints-cli submit-direct-debit --url https://example.com/fints --name username --pin 12345 --blz 12345678 \
+fints-lib submit-direct-debit --url https://example.com/fints --name username --pin 12345 --blz 12345678 \
   --account-iban DE111234567800000001 --creditor-name "ACME GmbH" --creditor-id DE98ZZZ09999999999 \
   --debtor-name "John Doe" --debtor-iban DE02120300000000202051 --amount 42.50 --mandate-id MANDATE-123 \
   --mandate-date 2022-01-10 --collection-date 2022-01-15 --remittance "Invoice 0815"
