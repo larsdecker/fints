@@ -37,11 +37,7 @@ jobs:
 
       - name: Build packages
         run: |
-          cd packages/fints
           yarn build
-          cd ../fints-cli
-          yarn build
-
       - name: Publish fints-lib
         if: github.event.inputs.package == 'all' || github.event.inputs.package == 'fints-lib' || github.event_name == 'release'
         working-directory: packages/fints
