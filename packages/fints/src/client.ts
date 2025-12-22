@@ -1,14 +1,46 @@
 import "isomorphic-fetch";
 import { Dialog, DialogConfig } from "./dialog";
 import { Parse } from "./parse";
-import { Segment, HKSPA, HISPA, HKKAZ, HIKAZ, HKSAL, HISAL, HKCDB, HICDB, HKTAN, HKWPD, HIWPD, HKDSE, HIDSE, HKCCS, HICCS } from "./segments";
+import {
+    Segment,
+    HKSPA,
+    HISPA,
+    HKKAZ,
+    HIKAZ,
+    HKSAL,
+    HISAL,
+    HKCDB,
+    HICDB,
+    HKTAN,
+    HKWPD,
+    HIWPD,
+    HKDSE,
+    HIDSE,
+    HKCCS,
+    HICCS,
+} from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
-import { SEPAAccount, Statement, Balance, StandingOrder, Holding, DirectDebitRequest, DirectDebitSubmission, CreditTransferRequest, CreditTransferSubmission } from "./types";
+import {
+    SEPAAccount,
+    Statement,
+    Balance,
+    StandingOrder,
+    Holding,
+    DirectDebitRequest,
+    DirectDebitSubmission,
+    CreditTransferRequest,
+    CreditTransferSubmission,
+} from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
 import { MT535Parser } from "./mt535";
-import { selectPain008Descriptor, buildDirectDebitSubmission, selectPain001Descriptor, buildCreditTransferSubmission } from "./pain";
+import {
+    selectPain008Descriptor,
+    buildDirectDebitSubmission,
+    selectPain001Descriptor,
+    buildCreditTransferSubmission,
+} from "./pain";
 import { TanRequiredError } from "./errors/tan-required-error";
 
 /**
@@ -101,7 +133,9 @@ export abstract class Client {
             return result;
         }, []);
         const hisal: HISAL = segments.find(
-            (s) => s.account.accountNumber === account.accountNumber && s.account.blz === account.blz,
+            (s) =>
+                s.account.accountNumber === account.accountNumber &&
+                s.account.blz === account.blz,
         );
         return {
             account,
@@ -252,8 +286,9 @@ export abstract class Client {
      * @param transactionReference The transaction reference from the challenge message.
      * @param tan The TAN that should be used to authorize the login.
      *
-     * @return A dialog that can be reused to continue the original request. The caller is responsible for ending the dialog
-     * once no further messages should be sent.
+     * @return A dialog that can be reused to continue the original request.
+     * The caller is responsible for ending the dialog once no further messages
+     * should be sent.
      */
     public async completeLogin(
         savedDialog: DialogConfig,
@@ -355,7 +390,10 @@ export abstract class Client {
         return segments.map((s) => s.standingOrder);
     }
 
-    public async creditTransfer(account: SEPAAccount, request: CreditTransferRequest): Promise<CreditTransferSubmission> {
+    public async creditTransfer(
+        account: SEPAAccount,
+        request: CreditTransferRequest,
+    ): Promise<CreditTransferSubmission> {
         const dialog = this.createDialog();
         await dialog.sync();
         await dialog.init();

@@ -1,6 +1,6 @@
 import { parse as parseDate } from "date-fns";
 import { XMLParser } from "fast-xml-parser";
-import { encode } from "iconv-lite";
+import iconv from "iconv-lite";
 
 /**
  * A set of utilities for parsing data from the fints data formats.
@@ -81,7 +81,7 @@ export const Parse = {
         // 2 bytes = length of data
 
         if (str && str[0]) {
-            const buffer = encode(str[0][0], "ISO-8859-1");
+            const buffer = iconv.encode(str[0][0], "ISO-8859-1");
             const mediaTypeLength = buffer.readUIntBE(0, 2);
             const mediaType = buffer.toString("utf8", 2, 2 + mediaTypeLength);
             const imageLength = buffer.readUIntBE(2 + mediaTypeLength, 2);

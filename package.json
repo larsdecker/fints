@@ -8,6 +8,7 @@
   "private": true,
   "devDependencies": {
     "lerna": "^3.22.1",
+    "node-gyp": "^12.1.0",
     "prettier": "^2.8.8"
   },
   "resolutions": {

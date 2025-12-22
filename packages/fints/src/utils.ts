@@ -1,4 +1,4 @@
-import { decode, encode } from "iconv-lite";
+import iconv from "iconv-lite";
 
 /**
  * Base 64 encode a string for use with fints. Fints uses ISO-8859-1 encoding which will be the encoding used
@@ -9,7 +9,7 @@ import { decode, encode } from "iconv-lite";
  * @return The encoded string.
  */
 export function encodeBase64(input: string): string {
-    return Buffer.from(encode(input, "ISO-8859-1")).toString("base64");
+    return Buffer.from(iconv.encode(input, "ISO-8859-1")).toString("base64");
 }
 
 /**
@@ -21,7 +21,7 @@ export function encodeBase64(input: string): string {
  * @return The decoded string.
  */
 export function decodeBase64(input: string): string {
-    return decode(Buffer.from(input, "base64"), "ISO-8859-1");
+    return iconv.decode(Buffer.from(input, "base64"), "ISO-8859-1");
 }
 
 /**

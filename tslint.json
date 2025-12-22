@@ -36,7 +36,8 @@
         "no-trailing-whitespace": true,
         "trailing-comma": [true, {
             "multiline": "always",
-            "singleline": "never"
+            "singleline": "never",
+            "esSpecCompliant": true
         }],
         "typedef-whitespace": [true, {
                 "call-signature": "nospace",

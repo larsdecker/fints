@@ -104,7 +104,7 @@ export default class extends Command {
             paymentInformationId,
             batchBooking,
             tan,
-            ...config,
+            ...config
         } = options;
 
         setLevel(verbose);
