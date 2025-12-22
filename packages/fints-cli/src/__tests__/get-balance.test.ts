@@ -6,7 +6,7 @@ const balanceMock = jest.fn();
 const holdingsMock = jest.fn();
 
 jest.mock(
-    "fints",
+    "fints-lib",
     () => ({
         __esModule: true,
         PinTanClient: jest.fn().mockImplementation((config: any) => {

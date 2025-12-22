@@ -1,0 +1,53 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish (fints-lib, fints-lib-cli, or all)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - fints-lib
+          - fints-lib-cli
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build packages
+        run: |
+          yarn build
+      - name: Publish fints-lib
+        if: github.event.inputs.package == 'all' || github.event.inputs.package == 'fints-lib' || github.event_name == 'release'
+        working-directory: packages/fints
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish fints-lib-cli
+        if: github.event.inputs.package == 'all' || github.event.inputs.package == 'fints-lib-cli' || github.event_name == 'release'
+        working-directory: packages/fints-cli
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

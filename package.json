@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "lint": "tslint --format stylish --project tsconfig.json"
+    "lint": "tslint --format stylish --project tsconfig.json",
+    "build": "lerna run build --stream"
   },
   "workspaces": [
     "packages/*"
@@ -8,6 +9,7 @@
   "private": true,
   "devDependencies": {
     "lerna": "^3.22.1",
+    "node-gyp": "^12.1.0",
     "prettier": "^2.8.8"
   },
   "resolutions": {

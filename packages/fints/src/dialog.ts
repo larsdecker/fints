@@ -1,5 +1,20 @@
 import { Connection } from "./types";
-import { HKIDN, HKVVB, HKSYN, HKTAN, HKEND, HISALS, HIKAZS, HICDBS, HIUPD, HITANS, HIWPDS, HIDSES, HICCSS, Segment } from "./segments";
+import {
+    HKIDN,
+    HKVVB,
+    HKSYN,
+    HKTAN,
+    HKEND,
+    HISALS,
+    HIKAZS,
+    HICDBS,
+    HIUPD,
+    HITANS,
+    HIWPDS,
+    HIDSES,
+    HICCSS,
+    Segment,
+} from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
 import { TanMethod } from "./tan-method";

@@ -1,4 +1,4 @@
-import { logger as libLogger } from "fints";
+import { logger as libLogger } from "fints-lib";
 import * as Winston from "winston";
 
 const transport = new Winston.transports.Console({
