@@ -198,12 +198,23 @@ export class Dialog extends DialogConfig {
         }
         if (response.returnValues().has("0030")) {
             const hitan = response.findSegment(HITAN);
+            const returnValue = response.returnValues().get("0030");
+            
+            // Determine which segment triggered the TAN requirement
+            const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
+            
             throw new TanRequiredError(
-                response.returnValues().get("0030").message,
+                returnValue.message,
                 hitan.transactionReference,
                 hitan.challengeText,
                 hitan.challengeMedia,
                 this,
+                undefined, // Use default process step
+                triggeringSegment,
+                {
+                    returnCode: "0030",
+                    requestSegments: request.segments.map(s => s.type),
+                },
             );
         }
         this.msgNo++;

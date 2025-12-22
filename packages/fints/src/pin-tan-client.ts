@@ -1,7 +1,7 @@
 import { Client } from "./client";
 import { Dialog, DialogConfig } from "./dialog";
 import { Request } from "./request";
-import { HttpConnection } from "./http-connection";
+import { HttpConnection, ConnectionConfig } from "./http-connection";
 import { Segment } from "./segments";
 import { Connection } from "./types";
 import { PRODUCT_NAME } from "./constants";
@@ -9,7 +9,7 @@ import { PRODUCT_NAME } from "./constants";
 /**
  * Set of options needed to construct a `PinTanClient`.
  */
-export interface PinTanClientConfig {
+export interface PinTanClientConfig extends Partial<ConnectionConfig> {
     /**
      * The fints product identification.
      */
@@ -49,8 +49,15 @@ export class PinTanClient extends Client {
     constructor(config: PinTanClientConfig) {
         super();
         this.config = config;
-        const { url, debug } = config;
-        this.connection = new HttpConnection({ url, debug });
+        const { url, debug, timeout, maxRetries, retryDelay } = config;
+        const connectionConfig: ConnectionConfig = {
+            url,
+            debug: debug || false,
+            timeout: timeout !== undefined ? timeout : 30000,
+            maxRetries: maxRetries !== undefined ? maxRetries : 3,
+            retryDelay: retryDelay !== undefined ? retryDelay : 1000,
+        };
+        this.connection = new HttpConnection(connectionConfig);
     }
 
     public createDialog(dialogConfig?: DialogConfig) {
