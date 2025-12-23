@@ -1,19 +1,21 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.ts'],
-  roots: ['<rootDir>/src'],
-  clearMocks: true,
-  globals: {
-    'ts-jest': {
+  collectCoverage: false,
+  moduleFileExtensions: ["ts", "js"],
+  transform: {
+    "^.+\\.ts$": ["ts-jest", {
       tsconfig: {
-        lib: ['es2015'],
+        target: "es6",
+        module: "commonjs",
         esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
         skipLibCheck: true,
-        types: ['jest', 'node'],
-        noImplicitAny: false,
+        strict: false,
+        types: ["jest", "node"],
+        isolatedModules: true,
       },
-    },
+    }],
   },
+  testEnvironment: "node",
+  testMatch: ["**/src/**/__tests__/*.test.ts"],
+  roots: ["<rootDir>/src"],
+  clearMocks: true,
 };
