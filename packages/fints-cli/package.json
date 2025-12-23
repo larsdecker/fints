@@ -45,7 +45,7 @@
     "dependencies": {
         "clime": "^0.5.16",
         "date-fns": "^4.1.0",
-        "fints-lib": "^0.5.0",
+        "fints-lib": "*",
         "winston": "^3.19.0",
         "yamljs": "^0.3.0"
     },

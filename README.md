@@ -19,6 +19,8 @@ This fork includes several enhancements over the original project:
 
 ## 📦 Installation
 
+For end users installing the library:
+
 ```bash
 npm install fints-lib
 # or
@@ -31,6 +33,24 @@ For the CLI tool:
 npm install -g fints-lib-cli
 # or
 yarn global add fints-lib-cli
+```
+
+### Development Setup
+
+This project uses **Yarn** as the package manager. To set up the development environment:
+
+```bash
+# Install dependencies
+yarn install
+
+# Build all packages
+yarn build
+
+# Run tests
+yarn test
+
+# Run linting
+yarn lint
 ```
 
 ## 🚀 Quick Start
