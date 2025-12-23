@@ -20,16 +20,12 @@ export class HICDBProps {
 export class HICDB extends SegmentClass(HICDBProps) {
     public type = "HICDB";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
     protected deserialize(input: string[][]) {
-        const [
-            [],
-            [],
-            [ sepaMessage ],
-            [],
-            [ nextOrder, timeUnit, interval, orderDay, lastOrder ],
-        ] = input;
+        const [[], [], [sepaMessage], [], [nextOrder, timeUnit, interval, orderDay, lastOrder]] = input;
 
         const parsed: unknown = Parse.xml(sepaMessage);
 
@@ -40,10 +36,10 @@ export class HICDB extends SegmentClass(HICDBProps) {
         const jsonMessage: CustomerCreditTransferInitiationV03 = parsed.Document.CstmrCdtTrfInitn;
         const instructionInfo: PaymentInstructionInformationSCT = Array.isArray(jsonMessage.PmtInf)
             ? jsonMessage.PmtInf[0]
-            : jsonMessage.PmtInf as PaymentInstructionInformationSCT;
+            : (jsonMessage.PmtInf as PaymentInstructionInformationSCT);
         const creditTransaction: CreditTransferTransactionInformationSCT = Array.isArray(instructionInfo.CdtTrfTxInf)
             ? instructionInfo.CdtTrfTxInf[0]
-            : instructionInfo.CdtTrfTxInf as CreditTransferTransactionInformationSCT;
+            : (instructionInfo.CdtTrfTxInf as CreditTransferTransactionInformationSCT);
 
         this.standingOrder = {
             nextOrderDate: Parse.date(nextOrder),
@@ -68,8 +64,10 @@ export class HICDB extends SegmentClass(HICDBProps) {
     }
 
     private isDocument(d: any): d is Pain001Document {
-        return typeof d !== "undefined"
-            && typeof d.Document !== "undefined"
-            && typeof d.Document.CstmrCdtTrfInitn !== "undefined";
+        return (
+            typeof d !== "undefined" &&
+            typeof d.Document !== "undefined" &&
+            typeof d.Document.CstmrCdtTrfInitn !== "undefined"
+        );
     }
 }

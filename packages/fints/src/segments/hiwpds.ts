@@ -14,10 +14,12 @@ export class HIWPDSProps {
 export class HIWPDS extends SegmentClass(HIWPDSProps) {
     public type = "HIWPDS";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
     protected deserialize(input: string[][]) {
-        const [ maxRequestsGroup = [], minSignaturesGroup = [] ] = input;
+        const [maxRequestsGroup = [], minSignaturesGroup = []] = input;
         if (maxRequestsGroup[0]) {
             this.maxRequestCount = Parse.num(maxRequestsGroup[0]);
         }

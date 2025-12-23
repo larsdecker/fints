@@ -4,25 +4,29 @@ import { HKSYN } from "../hksyn";
 
 describe("Segment HNVSD", () => {
     test(`serializes "HNVSD:999:1+@26@HKSYN:5:3+0'HKTAB:8:5+0+A''"`, () => {
-        expect(String(new HNVSD({
-            type: "HNVSD",
-            segNo: 999,
-            version: 1,
-            segments: [
-                new HKSYN({
-                    type: "HKSYN",
-                    segNo: 5,
-                    version: 3,
-                    mode: 0,
+        expect(
+            String(
+                new HNVSD({
+                    type: "HNVSD",
+                    segNo: 999,
+                    version: 1,
+                    segments: [
+                        new HKSYN({
+                            type: "HKSYN",
+                            segNo: 5,
+                            version: 3,
+                            mode: 0,
+                        }),
+                        new HKTAB({
+                            type: "HKTAB",
+                            segNo: 8,
+                            version: 5,
+                            mode: 0,
+                        }),
+                    ],
                 }),
-                new HKTAB({
-                    type: "HKTAB",
-                    segNo: 8,
-                    version: 5,
-                    mode: 0,
-                }),
-            ],
-        }))).toBe("HNVSD:999:1+@26@HKSYN:5:3+0'HKTAB:8:5+0+A''");
+            ),
+        ).toBe("HNVSD:999:1+@26@HKSYN:5:3+0'HKTAB:8:5+0+A''");
     });
 
     test(`deserializes "HNVSD:999:1+@12@HKSYN:5:3+0''"`, () => {
@@ -30,12 +34,7 @@ describe("Segment HNVSD", () => {
             type: "HNVSD",
             segNo: 999,
             version: 1,
-            rawSegments: [
-                [
-                    [ "HKSYN", "5", "3" ],
-                    [ "0" ],
-                ],
-            ],
+            rawSegments: [[["HKSYN", "5", "3"], ["0"]]],
         });
     });
 });

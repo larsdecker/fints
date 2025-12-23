@@ -133,9 +133,7 @@ export abstract class Client {
             return result;
         }, []);
         const hisal: HISAL = segments.find(
-            (s) =>
-                s.account.accountNumber === account.accountNumber &&
-                s.account.blz === account.blz,
+            (s) => s.account.accountNumber === account.accountNumber && s.account.blz === account.blz,
         );
         return {
             account,
@@ -192,7 +190,9 @@ export abstract class Client {
         return responses.reduce((result: Holding[], response: Response) => {
             response.findSegments(HIWPD).forEach((segment) => {
                 const raw = segment.holdings;
-                if (!raw) { return; }
+                if (!raw) {
+                    return;
+                }
                 const lines = raw.split(/\r?\n/);
                 if (lines.length > 0 && lines[0] === "") {
                     lines.shift();
@@ -290,11 +290,7 @@ export abstract class Client {
      * The caller is responsible for ending the dialog once no further messages
      * should be sent.
      */
-    public async completeLogin(
-        savedDialog: DialogConfig,
-        transactionReference: string,
-        tan: string,
-    ): Promise<Dialog> {
+    public async completeLogin(savedDialog: DialogConfig, transactionReference: string, tan: string): Promise<Dialog> {
         const dialog = this.createDialog(savedDialog);
         dialog.msgNo = dialog.msgNo + 1;
         const version = dialog.hktanVersion >= 7 ? 7 : 6;
@@ -410,13 +406,15 @@ export abstract class Client {
         ];
         if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
             const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
-            segments.push(new HKTAN({
-                segNo: 4,
-                version,
-                process: "4",
-                segmentReference: "HKCCS",
-                medium: dialog.tanMethods[0].name,
-            }));
+            segments.push(
+                new HKTAN({
+                    segNo: 4,
+                    version,
+                    process: "4",
+                    segmentReference: "HKCCS",
+                    medium: dialog.tanMethods[0].name,
+                }),
+            );
         }
         try {
             const requestMessage = this.createRequest(dialog, segments);
@@ -452,13 +450,15 @@ export abstract class Client {
         ];
         if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
             const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
-            segments.push(new HKTAN({
-                segNo: 4,
-                version,
-                process: "4",
-                segmentReference: "HKDSE",
-                medium: dialog.tanMethods[0].name,
-            }));
+            segments.push(
+                new HKTAN({
+                    segNo: 4,
+                    version,
+                    process: "4",
+                    segmentReference: "HKDSE",
+                    medium: dialog.tanMethods[0].name,
+                }),
+            );
         }
         try {
             const requestMessage = this.createRequest(dialog, segments);

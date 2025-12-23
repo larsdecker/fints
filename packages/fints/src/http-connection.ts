@@ -17,6 +17,18 @@ export class ConnectionConfig {
      * If set to `true`, will log all requests performed and responses received.
      */
     public debug = false;
+    /**
+     * Timeout in milliseconds for HTTP requests. Default: 30000 (30 seconds)
+     */
+    public timeout = 30000;
+    /**
+     * Maximum number of retry attempts for failed requests. Default: 3
+     */
+    public maxRetries = 3;
+    /**
+     * Base delay in milliseconds for exponential backoff. Default: 1000 (1 second)
+     */
+    public retryDelay = 1000;
 }
 
 /**
@@ -31,17 +43,66 @@ export class HttpConnection extends ConnectionConfig implements Connection {
     public async send(request: Request): Promise<Response> {
         const { url } = this;
         verbose(`Sending Request: ${request}`);
-        if (this.debug) { verbose(`Parsed Request:\n${request.debugString}`); }
-        const httpRequest = await fetch(url, {
-            method: "POST",
-            body: encodeBase64(String(request)),
-        });
-        if (!httpRequest.ok) { throw new Error(`Received bad status code ${httpRequest.status} from FinTS endpoint.`); }
+        if (this.debug) {
+            verbose(`Parsed Request:\n${request.debugString}`);
+        }
 
-        const responseString = decodeBase64(await httpRequest.text());
-        verbose(`Received Response: ${responseString}`);
-        const response = new Response(responseString);
-        if (this.debug) { verbose(`Parsed Response:\n${response.debugString}`); }
-        return response;
+        let lastError: Error | null = null;
+        let attempt = 0;
+
+        while (attempt <= this.maxRetries) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+                try {
+                    const httpRequest = await fetch(url, {
+                        method: "POST",
+                        body: encodeBase64(String(request)),
+                        signal: controller.signal,
+                    });
+
+                    if (!httpRequest.ok) {
+                        throw new Error(`Received bad status code ${httpRequest.status} from FinTS endpoint.`);
+                    }
+
+                    const responseString = decodeBase64(await httpRequest.text());
+                    verbose(`Received Response: ${responseString}`);
+                    const response = new Response(responseString);
+                    if (this.debug) {
+                        verbose(`Parsed Response:\n${response.debugString}`);
+                    }
+                    return response;
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            } catch (error) {
+                lastError = error as Error;
+                attempt++;
+
+                // Check if error is due to timeout (AbortError is thrown when fetch is aborted)
+                const isTimeout = error.name === "AbortError";
+
+                if (attempt <= this.maxRetries) {
+                    // Calculate exponential backoff delay
+                    const delay = this.retryDelay * Math.pow(2, attempt - 1);
+                    verbose(
+                        `Request failed (attempt ${attempt}/${this.maxRetries + 1}), retrying in ${delay}ms: ${error.message}`,
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                } else {
+                    // Max retries reached
+                    if (isTimeout) {
+                        throw new Error(
+                            `FinTS request timed out after ${this.maxRetries + 1} attempts (timeout: ${this.timeout}ms)`,
+                        );
+                    }
+                    throw new Error(`FinTS request failed after ${this.maxRetries + 1} attempts: ${lastError.message}`);
+                }
+            }
+        }
+
+        // This should never be reached, but TypeScript needs it
+        throw lastError || new Error("Unknown error during FinTS request");
     }
 }

@@ -32,5 +32,7 @@ export class HKVVB extends SegmentClass(HKVVBProps) {
         ];
     }
 
-    protected deserialize() { throw new Error("Not implemented."); }
+    protected deserialize() {
+        throw new Error("Not implemented.");
+    }
 }

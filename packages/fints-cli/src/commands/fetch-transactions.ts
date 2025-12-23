@@ -19,6 +19,7 @@ export class FetchStatementOptions extends BaseConfig {
 @command({ description: "Fetch the statements for a specified account." })
 export default class extends Command {
     @metadata
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async execute({ verbose, json, serializer, iban, start, end, ...config }: FetchStatementOptions) {
         const endDate = end ? new Date(end) : new Date();
         if (isNaN(endDate.getTime())) {
@@ -43,9 +44,13 @@ export default class extends Command {
             return;
         }
         const statements = await client.statements(account, startDate, endDate);
-        console.info(serializer(statements.reduce((result: Transaction[], statement: any) => {
-            result.push(...statement.transactions);
-            return result;
-        }, [])));
+        console.info(
+            serializer(
+                statements.reduce((result: Transaction[], statement: any) => {
+                    result.push(...statement.transactions);
+                    return result;
+                }, []),
+            ),
+        );
     }
 }

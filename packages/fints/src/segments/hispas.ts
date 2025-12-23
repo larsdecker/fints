@@ -11,16 +11,13 @@ export class HISPASProps {
 export class HISPAS extends SegmentClass(HISPASProps) {
     public type = "HISPAS";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
     protected deserialize(input: string[][]) {
-        const [
-            [ ],
-            [ ],
-            [ ],
-            [ ...painFormats ],
-        ] = input;
+        const [[], [], [], [...painFormats]] = input;
 
-        this.painFormats = painFormats.filter(x => x.indexOf("pain") !== -1);
+        this.painFormats = painFormats.filter((x) => x.indexOf("pain") !== -1);
     }
 }

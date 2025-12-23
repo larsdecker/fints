@@ -1,6 +1,7 @@
 export * from "./client";
 export * from "./constants";
 export * from "./dialog";
+export * from "./error-codes";
 export * from "./format";
 export * from "./http-connection";
 export * from "./logger";
@@ -19,3 +20,4 @@ export * from "./types";
 export * from "./utils";
 export * from "./errors/response-error";
 export * from "./errors/tan-required-error";
+export * from "./errors/fints-error";

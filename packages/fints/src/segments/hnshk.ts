@@ -41,5 +41,7 @@ export class HNSHK extends SegmentClass(HNSHKProps) {
         ];
     }
 
-    protected deserialize() { throw new Error("Not implemented."); }
+    protected deserialize() {
+        throw new Error("Not implemented.");
+    }
 }

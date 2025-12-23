@@ -71,7 +71,7 @@ export class Request extends RequestConfig {
      * This determines whether profile version 2 can be used.
      */
     private get hasNo999SecurityFunction() {
-        return this.tanMethods.length > 0 && !this.tanMethods.some(method => method.securityFunction === "999");
+        return this.tanMethods.length > 0 && !this.tanMethods.some((method) => method.securityFunction === "999");
     }
 
     /**
@@ -136,25 +136,20 @@ export class Request extends RequestConfig {
             HEADER_LENGTH +
             dialogId.length +
             String(msgNo).length;
-        return [
-            new HNHBK({ segNo: 1, msgLength: length, dialogId, msgNo }),
-            ...segmentsWithoutHeader,
-        ];
+        return [new HNHBK({ segNo: 1, msgLength: length, dialogId, msgNo }), ...segmentsWithoutHeader];
     }
 
     /**
      * Generate a textual representation for debug purposes.
      */
     public get debugString(): string {
-        return this.segments.map(segment => segment.debugString).join("\n");
+        return this.segments.map((segment) => segment.debugString).join("\n");
     }
 
     /**
      * Serialize the whole request into a string that can be sent to the server.
      */
     public toString() {
-        return this.fullSegments
-            .map(segment => String(segment))
-            .join("");
+        return this.fullSegments.map((segment) => String(segment)).join("");
     }
 }

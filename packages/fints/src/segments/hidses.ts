@@ -10,7 +10,11 @@ export class HIDSESProps {
 export class HIDSES extends SegmentClass(HIDSESProps) {
     public type = "HIDSES";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
-    protected deserialize(): void { return; }
+    protected deserialize(): void {
+        return;
+    }
 }

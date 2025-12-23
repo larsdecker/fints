@@ -11,10 +11,14 @@ export class HICCSProps {
 export class HICCS extends SegmentClass(HICCSProps) {
     public type = "HICCS";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
     protected deserialize(input: string[][]) {
-        if (input.length === 0) { return; }
+        if (input.length === 0) {
+            return;
+        }
         const [[taskId = ""] = []] = input;
         this.taskId = taskId || undefined;
     }

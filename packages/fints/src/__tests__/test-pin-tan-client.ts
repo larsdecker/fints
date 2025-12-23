@@ -1,9 +1,10 @@
 import { format } from "date-fns";
 import { readFileSync } from "fs";
-import fetchMock from "fetch-mock";
 import { PinTanClient } from "../pin-tan-client";
 import { encodeBase64, decodeBase64 } from "../utils";
 import { Format } from "../format";
+
+declare const Response: any;
 
 const url = "https://example.com/fints";
 const name = "test1";
@@ -14,8 +15,8 @@ const productId = "fints";
 let client: PinTanClient;
 
 beforeEach(() => {
-    jest.spyOn(Format, "date").mockImplementation(date => date ? format(date, "HHMMss") : "20180101");
-    jest.spyOn(Format, "time").mockImplementation(time => time ? format(time, "HHMMss") : "120000");
+    jest.spyOn(Format, "date").mockImplementation((date) => (date ? format(date, "HHMMss") : "20180101"));
+    jest.spyOn(Format, "time").mockImplementation((time) => (time ? format(time, "HHMMss") : "120000"));
     jest.spyOn(Math, "random").mockReturnValue(0.5);
     client = new PinTanClient({ blz, name, pin, url, productId });
 });
@@ -23,27 +24,36 @@ beforeEach(() => {
 test("accounts", async () => {
     const responseFixtures: string[] = JSON.parse(readFileSync(`${__dirname}/fixture-accounts.json`, "utf8"));
     let responseNo = 0;
-    const mock = fetchMock.post(url, () => {
+    const sentBodies: string[] = [];
+
+    const fetchSpy = jest.spyOn(global, "fetch" as any).mockImplementation((input: any, init: any) => {
+        const body = String(init?.body ?? "");
+        sentBodies.push(body);
         const response = encodeBase64(responseFixtures[responseNo]);
         responseNo++;
-        return response;
+        return Promise.resolve(new Response(response));
     });
 
     const result = await client.accounts();
     expect(result).toMatchSnapshot();
-    const calls = (mock.calls() as any).map((call: any) => decodeBase64(String(call[1].body)));
+    const calls = sentBodies.map((body) => decodeBase64(String(body)));
     expect(calls).toMatchSnapshot();
-    mock.restore();
+    fetchSpy.mockRestore();
 });
 
 test("statements", async () => {
     const responseFixtures: string[] = JSON.parse(readFileSync(`${__dirname}/fixture-statements.json`, "utf8"));
     let responseNo = 0;
-    const mock = fetchMock.post(url, () => {
+    const sentBodies: string[] = [];
+
+    const fetchSpy = jest.spyOn(global, "fetch" as any).mockImplementation((input: any, init: any) => {
+        const body = String(init?.body ?? "");
+        sentBodies.push(body);
         const response = encodeBase64(responseFixtures[responseNo]);
         responseNo++;
-        return response;
+        return Promise.resolve(new Response(response));
     });
+
     const account = {
         accountNumber: "2",
         bic: "GENODE00TES",
@@ -53,19 +63,24 @@ test("statements", async () => {
     };
     const result = await client.statements(account, new Date("2018-01-01T12:00:00Z"), new Date("2018-10-01T12:00:00Z"));
     expect(result).toMatchSnapshot();
-    const calls = (mock.calls() as any).map((call: any) => decodeBase64(String(call[1].body)));
+    const calls = sentBodies.map((body) => decodeBase64(String(body)));
     expect(calls).toMatchSnapshot();
-    mock.restore();
+    fetchSpy.mockRestore();
 });
 
 test("balance", async () => {
     const responseFixtures: string[] = JSON.parse(readFileSync(`${__dirname}/fixture-balance.json`, "utf8"));
     let responseNo = 0;
-    const mock = fetchMock.post(url, () => {
+    const sentBodies: string[] = [];
+
+    const fetchSpy = jest.spyOn(global, "fetch" as any).mockImplementation((input: any, init: any) => {
+        const body = String(init?.body ?? "");
+        sentBodies.push(body);
         const response = encodeBase64(responseFixtures[responseNo]);
         responseNo++;
-        return response;
+        return Promise.resolve(new Response(response));
     });
+
     const account = {
         accountNumber: "2",
         bic: "GENODE00TES",
@@ -75,19 +90,24 @@ test("balance", async () => {
     };
     const result = await client.balance(account);
     expect(result).toMatchSnapshot();
-    const calls = (mock.calls() as any).map((call: any) => decodeBase64(String(call[1].body)));
+    const calls = sentBodies.map((body) => decodeBase64(String(body)));
     expect(calls).toMatchSnapshot();
-    mock.restore();
+    fetchSpy.mockRestore();
 });
 
 test("standingOrders", async () => {
     let responseFixtures: string[] = JSON.parse(readFileSync(`${__dirname}/fixture-standingOrders.json`, "utf8"));
     let responseNo = 0;
-    const mock = fetchMock.post(url, () => {
+    const sentBodies: string[] = [];
+
+    const fetchSpy = jest.spyOn(global, "fetch" as any).mockImplementation((input: any, init: any) => {
+        const body = String(init?.body ?? "");
+        sentBodies.push(body);
         const response = encodeBase64(responseFixtures[responseNo]);
         responseNo++;
-        return response;
+        return Promise.resolve(new Response(response));
     });
+
     const account = {
         accountNumber: "2",
         bic: "DEUTDEFF500",
@@ -97,7 +117,7 @@ test("standingOrders", async () => {
     };
     const result = await client.standingOrders(account);
     expect(result).toMatchSnapshot();
-    const calls = (mock.calls() as any).map((call: any) => decodeBase64(String(call[1].body)));
+    const calls = sentBodies.map((body) => decodeBase64(String(body)));
     expect(calls).toMatchSnapshot();
-    mock.restore();
+    fetchSpy.mockRestore();
 });

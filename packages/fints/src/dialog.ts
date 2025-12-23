@@ -20,7 +20,7 @@ import { Response } from "./response";
 import { TanMethod } from "./tan-method";
 import { escapeFinTS } from "./utils";
 import { ResponseError } from "./errors/response-error";
-import { TanRequiredError } from "./errors/tan-required-error";
+import { TanRequiredError, TanProcessStep } from "./errors/tan-required-error";
 import { HITAN } from "./segments/hitan";
 import { PRODUCT_NAME } from "./constants";
 
@@ -198,12 +198,23 @@ export class Dialog extends DialogConfig {
         }
         if (response.returnValues().has("0030")) {
             const hitan = response.findSegment(HITAN);
+            const returnValue = response.returnValues().get("0030");
+
+            // Determine which segment triggered the TAN requirement
+            const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
+
             throw new TanRequiredError(
-                response.returnValues().get("0030").message,
+                returnValue.message,
                 hitan.transactionReference,
                 hitan.challengeText,
                 hitan.challengeMedia,
                 this,
+                TanProcessStep.CHALLENGE_RESPONSE_NEEDED,
+                triggeringSegment,
+                {
+                    returnCode: "0030",
+                    requestSegments: request.segments.map((s) => s.type),
+                },
             );
         }
         this.msgNo++;

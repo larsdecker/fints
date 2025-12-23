@@ -21,12 +21,10 @@ export class HNSHA extends SegmentClass(HNSHAProps) {
 
     protected serialize() {
         const { secRef, pin, tan } = this;
-        return [
-            Format.num(secRef),
-            Format.empty(),
-            tan ? [pin, tan] : pin,
-        ];
+        return [Format.num(secRef), Format.empty(), tan ? [pin, tan] : pin];
     }
 
-    protected deserialize() { throw new Error("Not implemented."); }
+    protected deserialize() {
+        throw new Error("Not implemented.");
+    }
 }

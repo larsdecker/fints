@@ -1,4 +1,3 @@
-/* tslint:disable:no-console */
 import * as fs from "fs";
 import { TanRequiredError } from "../errors/tan-required-error";
 import { PinTanClient } from "../pin-tan-client";

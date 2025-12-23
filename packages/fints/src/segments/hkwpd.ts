@@ -36,5 +36,7 @@ export class HKWPD extends SegmentClass(HKWPDProps) {
         ];
     }
 
-    protected deserialize() { throw new Error("Not implemented."); }
+    protected deserialize() {
+        throw new Error("Not implemented.");
+    }
 }

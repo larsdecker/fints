@@ -40,16 +40,22 @@ console.info(statements); // List of all statements with transactions in specifi
 
 ### Handling login TAN challenges
 
-Some banks require a TAN as part of the login dialog. When that happens the library raises a `TanRequiredError`. You can
-complete the login by submitting the TAN and continue working with the returned dialog:
+Some banks require a TAN as part of the login dialog. When that happens the library raises a `TanRequiredError`. The error now includes enhanced information about the TAN process state and context. You can complete the login by submitting the TAN and continue working with the returned dialog:
 
 ```typescript
-import { TanRequiredError } from "fints-lib";
+import { TanRequiredError, TanProcessStep } from "fints-lib";
 
 try {
     const accounts = await client.accounts();
 } catch (error) {
     if (error instanceof TanRequiredError) {
+        // Enhanced error information
+        console.log("TAN Challenge:", error.challengeText);
+        console.log("Process Step:", error.getStepDescription());
+        console.log("Triggering Segment:", error.triggeringSegment);
+        console.log("Is Multi-Step:", error.isMultiStep());
+        
+        // Complete the login with TAN
         const dialog = await client.completeLogin(error.dialog, error.transactionReference, "123456");
         const accounts = await client.accounts(dialog);
         await dialog.end();
@@ -64,6 +70,10 @@ try {
 
 ## Features
 
+- **FinTS 3.0 Compatibility**: Full support for FinTS 3.0 (HBCI version 300) protocol
+- **Enhanced Error Handling**: Comprehensive error code mapping with specific exception types
+- **Timeout & Retry**: Configurable HTTP timeouts and automatic retry with exponential backoff
+- **Multi-Step TAN Flows**: Enhanced support for complex TAN authentication flows
 - Load list of accounts.
 - Load list of statements and transactions in specified range.
 - Fetch current account balances.
@@ -75,6 +85,84 @@ try {
 - Extract [reference tags](https://www.dzbank.de/content/dam/dzbank_de/de/home/produkte_services/Firmenkunden/PDF-Dokumente/transaction%20banking/elektronicBanking/SEPA-Belegungsregeln_MT940-DK_082016.~644b217ec96b35dfffcaf18dc2df800a.pdf) from transactions.
 - List supported TAN methods.
 - Parse basic metadata.
+
+## Configuration Options
+
+### Basic Configuration
+
+```typescript
+const client = new PinTanClient({
+    url: "https://example.com/fints",
+    name: "username",
+    pin: 12345,
+    blz: 12345678,
+});
+```
+
+### Advanced Configuration with Timeout & Retry
+
+```typescript
+const client = new PinTanClient({
+    url: "https://example.com/fints",
+    name: "username",
+    pin: 12345,
+    blz: 12345678,
+    // Optional: Configure HTTP timeout (default: 30000ms)
+    timeout: 45000,
+    // Optional: Configure max retry attempts (default: 3)
+    maxRetries: 5,
+    // Optional: Configure retry delay for exponential backoff (default: 1000ms)
+    retryDelay: 2000,
+    // Optional: Enable debug mode
+    debug: true,
+});
+```
+
+## Error Handling
+
+The library now provides comprehensive error handling with specific exception types:
+
+```typescript
+import {
+    FinTSError,
+    AuthenticationError,
+    PinError,
+    OrderRejectedError,
+    DialogAbortedError,
+    StrongAuthenticationRequiredError,
+} from "fints-lib";
+
+try {
+    const accounts = await client.accounts();
+} catch (error) {
+    if (error instanceof PinError) {
+        console.error("PIN is incorrect:", error.message);
+    } else if (error instanceof AuthenticationError) {
+        console.error("Authentication failed:", error.message);
+    } else if (error instanceof StrongAuthenticationRequiredError) {
+        console.error("Strong customer authentication (PSD2) required:", error.message);
+    } else if (error instanceof FinTSError) {
+        console.error("FinTS error:", error.code, error.message);
+    }
+}
+```
+
+### Error Code Mapping
+
+All FinTS error codes are now mapped to descriptive messages:
+
+```typescript
+import { formatErrorCode, getErrorCodeInfo } from "fints-lib";
+
+// Get detailed information about an error code
+const info = getErrorCodeInfo("9942"); // PIN incorrect
+console.log(info.category); // "error"
+console.log(info.message); // "PIN falsch"
+
+// Format error code with message
+const formatted = formatErrorCode("9942", "Custom message");
+// Output: "[9942] PIN falsch - Custom message"
+```
 
 ## Missing
 

@@ -25,9 +25,10 @@ export class HKKAZ extends SegmentClass(HKKAZProps) {
         if (![4, 5, 6, 7].includes(version)) {
             throw new Error(`Unsupported HKKAZ version ${version}.`);
         }
-        const serializedAccount = version === 7 ?
-            [iban, bic, accountNumber, subAccount, String(COUNTRY_CODE), blz] :
-            [accountNumber, subAccount, String(COUNTRY_CODE), blz];
+        const serializedAccount =
+            version === 7
+                ? [iban, bic, accountNumber, subAccount, String(COUNTRY_CODE), blz]
+                : [accountNumber, subAccount, String(COUNTRY_CODE), blz];
         return [
             serializedAccount,
             Format.jn(false),
@@ -38,5 +39,7 @@ export class HKKAZ extends SegmentClass(HKKAZProps) {
         ];
     }
 
-    protected deserialize() { throw new Error("Not implemented."); }
+    protected deserialize() {
+        throw new Error("Not implemented.");
+    }
 }

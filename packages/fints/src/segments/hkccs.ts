@@ -27,5 +27,7 @@ export class HKCCS extends SegmentClass(HKCCSProps) {
         ];
     }
 
-    protected deserialize(): string[][] { throw new Error("Not implemented."); }
+    protected deserialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 }

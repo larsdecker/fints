@@ -6,6 +6,7 @@ import { BaseConfig } from "../config";
 @command({ description: "List the accounts available for the specified user." })
 export default class extends Command {
     @metadata
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async execute({ verbose, json, serializer, ...config }: BaseConfig) {
         setLevel(verbose);
         const client = new PinTanClient(config);

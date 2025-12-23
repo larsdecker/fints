@@ -5,7 +5,10 @@ import { Request } from "../request";
 import { TanMethod } from "../tan-method";
 
 class TestClient extends Client {
-    constructor(private readonly baseConfig: DialogConfig, private readonly mockConnection: any) {
+    constructor(
+        private readonly baseConfig: DialogConfig,
+        private readonly mockConnection: any,
+    ) {
         super();
     }
 

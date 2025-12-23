@@ -20,16 +20,12 @@ export class HKCDB extends SegmentClass(HKCDBProps) {
     protected serialize() {
         const { account, touchdown, painFormats } = this;
         const { iban, bic } = account;
-        const pain0101: string = painFormats.find(x => x.startsWith("urn") && x.indexOf("pain.001.001.03") !== -1);
-        const pain0103: string = painFormats.find(x => x.startsWith("urn") && x.indexOf("pain.001.003.03") !== -1);
-        return [
-            [iban, bic],
-            pain0101 || pain0103,
-            Format.empty(),
-            Format.empty(),
-            Format.stringEscaped(touchdown),
-        ];
+        const pain0101: string = painFormats.find((x) => x.startsWith("urn") && x.indexOf("pain.001.001.03") !== -1);
+        const pain0103: string = painFormats.find((x) => x.startsWith("urn") && x.indexOf("pain.001.003.03") !== -1);
+        return [[iban, bic], pain0101 || pain0103, Format.empty(), Format.empty(), Format.stringEscaped(touchdown)];
     }
 
-    protected deserialize() { throw new Error("Not implemented."); }
+    protected deserialize() {
+        throw new Error("Not implemented.");
+    }
 }
