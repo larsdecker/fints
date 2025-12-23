@@ -143,7 +143,7 @@ export function buildPain008(request: DirectDebitRequest, account: SEPAAccount, 
 
     const xmlParts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        `<Document xmlns=\"${escapeXml(namespace)}\">`,
+        `<Document xmlns="${escapeXml(namespace)}">`,
         "  <CstmrDrctDbtInitn>",
         "    <GrpHdr>",
         `      <MsgId>${escapeXml(messageId)}</MsgId>`,
@@ -200,7 +200,7 @@ export function buildPain008(request: DirectDebitRequest, account: SEPAAccount, 
         "        <PmtId>",
         `          <EndToEndId>${escapeXml(endToEndId)}</EndToEndId>`,
         "        </PmtId>",
-        `        <InstdAmt Ccy=\"${escapeXml(currency)}\">${amount}</InstdAmt>`,
+        `        <InstdAmt Ccy="${escapeXml(currency)}">${amount}</InstdAmt>`,
         "        <DrctDbtTx>",
         "          <MndtRltdInf>",
         `            <MndtId>${escapeXml(request.mandateId)}</MndtId>`,
@@ -283,7 +283,7 @@ export function buildPain001(request: CreditTransferRequest, account: SEPAAccoun
 
     const xmlParts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        `<Document xmlns=\"${escapeXml(namespace)}\">`,
+        `<Document xmlns="${escapeXml(namespace)}">`,
         "  <CstmrCdtTrfInitn>",
         "    <GrpHdr>",
         `      <MsgId>${escapeXml(messageId)}</MsgId>`,
@@ -325,7 +325,7 @@ export function buildPain001(request: CreditTransferRequest, account: SEPAAccoun
         `          <EndToEndId>${escapeXml(endToEndId)}</EndToEndId>`,
         "        </PmtId>",
         "        <Amt>",
-        `          <InstdAmt Ccy=\"${escapeXml(currency)}\">${amount}</InstdAmt>`,
+        `          <InstdAmt Ccy="${escapeXml(currency)}">${amount}</InstdAmt>`,
         "        </Amt>",
     ];
 

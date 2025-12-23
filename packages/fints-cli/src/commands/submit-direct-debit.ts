@@ -80,10 +80,9 @@ function prompt(question: string): Promise<string> {
 export default class extends Command {
     @metadata
     public async execute(options: DirectDebitCommandOptions) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {
             verbose,
-            json,
+            json: _json,
             serializer,
             accountIban,
             creditorName,

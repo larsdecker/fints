@@ -65,10 +65,9 @@ function prompt(question: string): Promise<string> {
 export default class extends Command {
     @metadata
     public async execute(options: CreditTransferCommandOptions) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {
             verbose,
-            json,
+            json: _json,
             serializer,
             accountIban,
             debtorName,

@@ -96,5 +96,23 @@ export default [
         }
       ]
     }
+  },
+  {
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts", "**/*.spec.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off"
+    }
+  },
+  {
+    files: ["packages/fints/src/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off"
+    }
+  },
+  {
+    files: ["packages/fints-cli/src/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off"
+    }
   }
 ];

@@ -92,6 +92,7 @@ export class Response {
         if (segment) {
             return segment.bankName;
         }
+        return undefined;
     }
 
     /**
