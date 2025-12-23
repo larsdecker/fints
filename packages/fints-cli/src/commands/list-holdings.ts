@@ -11,6 +11,7 @@ export class ListHoldingsOptions extends BaseConfig {
 @command({ description: "List the holdings for a specified depot account." })
 export default class extends Command {
     @metadata
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async execute({ verbose, json, serializer, iban, ...config }: ListHoldingsOptions) {
         setLevel(verbose);
         const client = new PinTanClient(config);

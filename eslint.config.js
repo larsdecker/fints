@@ -12,6 +12,8 @@ export default [
       "coverage/**",
       "*.config.js",
       "generated/**",
+      "xmlns/**",
+      "packages/*/generated/**",
       "packages/*/dist/**",
       "packages/*/coverage/**"
     ]
@@ -55,7 +57,15 @@ export default [
         // Node.js globals
         Buffer: "readonly",
         process: "readonly",
-        global: "readonly"
+        global: "readonly",
+        console: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        Response: "readonly",
+        fetch: "readonly",
+        AbortController: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly"
       }
     },
     plugins: {

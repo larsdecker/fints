@@ -11,6 +11,7 @@ export class GetBalanceOptions extends BaseConfig {
 @command({ description: "Fetch the current balance for a specified account." })
 export default class extends Command {
     @metadata
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async execute({ verbose, json, serializer, iban, ...config }: GetBalanceOptions) {
         setLevel(verbose);
         const client = new PinTanClient(config);

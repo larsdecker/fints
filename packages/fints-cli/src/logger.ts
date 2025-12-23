@@ -18,7 +18,7 @@ export function setLevel(isVerbose: boolean) {
     transport.level = level;
 }
 
-export const logger = Winston.createLogger({ transports: [ transport ] });
+export const logger = Winston.createLogger({ transports: [transport] });
 
 export const verbose = logger.verbose;
 export const info = logger.info;

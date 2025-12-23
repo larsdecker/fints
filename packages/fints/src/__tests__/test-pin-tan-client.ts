@@ -4,6 +4,8 @@ import { PinTanClient } from "../pin-tan-client";
 import { encodeBase64, decodeBase64 } from "../utils";
 import { Format } from "../format";
 
+declare const Response: any;
+
 const url = "https://example.com/fints";
 const name = "test1";
 const pin = "12345";

@@ -68,7 +68,7 @@ export class DirectDebitCommandOptions extends BaseConfig {
 
 function prompt(question: string): Promise<string> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         rl.question(question, (answer) => {
             rl.close();
             resolve(answer.trim());
@@ -80,6 +80,7 @@ function prompt(question: string): Promise<string> {
 export default class extends Command {
     @metadata
     public async execute(options: DirectDebitCommandOptions) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const {
             verbose,
             json,
