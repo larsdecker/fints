@@ -77,13 +77,15 @@ Example: `0.5.0` → `0.5.1` (patch) or `0.6.0` (minor) or `1.0.0` (major)
 
 Before publishing, ensure:
 
-- [ ] All tests pass (`yarn test` in both packages)
+- [ ] All tests pass (`yarn test` in both packages or `make test` from root)
 - [ ] Linting passes (`yarn lint` at root)
-- [ ] Both packages build successfully (`yarn build` in both packages)
+- [ ] Both packages build successfully (`yarn build` in both packages or `make build` from root)
 - [ ] Version numbers are updated in both package.json files
 - [ ] CHANGELOG is updated (if exists)
 - [ ] README files are up to date
 - [ ] Dependencies are up to date
+
+**Note:** This project uses Yarn as the package manager for development.
 
 ## Post-Publishing Verification
 
@@ -97,6 +99,9 @@ After publishing:
    ```bash
    npm install fints-lib
    npm install -g fints-lib-cli
+   # or
+   yarn add fints-lib
+   yarn global add fints-lib-cli
    ```
 
 3. Verify the CLI works:
