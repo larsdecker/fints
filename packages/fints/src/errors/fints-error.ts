@@ -94,11 +94,7 @@ export class InvalidSystemIdError extends FinTSError {
 /**
  * Type alias for error class constructors
  */
-type ErrorConstructor = new (
-    message: string,
-    code: string,
-    returnValue?: ReturnValue,
-) => FinTSError;
+type ErrorConstructor = new (message: string, code: string, returnValue?: ReturnValue) => FinTSError;
 
 /**
  * Mapping of error codes to error class constructors

@@ -82,7 +82,7 @@ describe("is86Structured", () => {
         "MIETE November 2018",
         "/Something/Formatted?/In/a:different:way?",
         "012abc?a321423?abc231234421231?bde",
-    ].forEach(str => {
+    ].forEach((str) => {
         test(`detects "${str}" as invalid`, () => {
             expect(is86Structured(str)).toBe(false);
         });

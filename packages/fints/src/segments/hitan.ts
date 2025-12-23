@@ -44,12 +44,19 @@ export class HITAN extends SegmentClass(HITANProps) {
                 tanMedium,
             ] = input;
             this.process = Parse.num(process as string);
-            if (transactionHash) { this.transactionHash = transactionHash[0]; }
-            if (transactionReference) { this.transactionReference = transactionReference[0]; }
-            if (challengeText) { this.challengeText = challengeText[0]; }
+            if (transactionHash) {
+                this.transactionHash = transactionHash[0];
+            }
+            if (transactionReference) {
+                this.transactionReference = transactionReference[0];
+            }
+            if (challengeText) {
+                this.challengeText = challengeText[0];
+            }
             if (challengeHhdUc && challengeHhdUc.length > 0) {
-                [this.challengeMediaType, this.challengeMedia] =
-                    Parse.challengeHhdUc(challengeHhdUc as unknown as string[][]);
+                [this.challengeMediaType, this.challengeMedia] = Parse.challengeHhdUc(
+                    challengeHhdUc as unknown as string[][],
+                );
             }
             if (challengeValidUntil && challengeValidUntil.length > 0) {
                 const [dateStr, timeStr] = challengeValidUntil as string[];
@@ -64,7 +71,9 @@ export class HITAN extends SegmentClass(HITANProps) {
                     this.challengeValidUntil = date;
                 }
             }
-            if (tanMedium) { this.tanMedium = tanMedium[0]; }
+            if (tanMedium) {
+                this.tanMedium = tanMedium[0];
+            }
         }
     }
 }

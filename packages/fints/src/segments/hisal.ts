@@ -20,17 +20,19 @@ export class HISALProps {
 export class HISAL extends SegmentClass(HISALProps) {
     public type = "HISAL";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
     protected deserialize(input: string[][]) {
         const [
-            [ accountNumber, subAccount, _country, blz ],
-            [ productName ],
-            [ currency ],
-            [ _cb, booked ],
-            [ _cp, pending ],
-            [ dispo ],
-            [ available ],
+            [accountNumber, subAccount, _country, blz],
+            [productName],
+            [currency],
+            [_cb, booked],
+            [_cp, pending],
+            [dispo],
+            [available],
         ] = input;
         this.account = { accountNumber, subAccount, blz, iban: null, bic: null };
         this.productName = productName;

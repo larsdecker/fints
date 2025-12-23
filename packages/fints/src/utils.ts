@@ -84,7 +84,9 @@ export function parse(input: string): string[][][] {
                 let lengthString = "";
                 for (; i < input.length; ++i) {
                     const subCharacter = input.charAt(i);
-                    if (subCharacter === "@") { break; }
+                    if (subCharacter === "@") {
+                        break;
+                    }
                     lengthString += subCharacter;
                 }
                 i++;
@@ -125,7 +127,9 @@ export function parse(input: string): string[][][] {
  * @return The padded string.
  */
 export function leftPad(str: string, count: number, character = "0"): string {
-    while (str.length < count) { str = `${character}${str}`; }
+    while (str.length < count) {
+        str = `${character}${str}`;
+    }
     return str;
 }
 
@@ -137,7 +141,9 @@ export function leftPad(str: string, count: number, character = "0"): string {
  * @return The escaped string.
  */
 export function escapeFinTS(content: string): string {
-    if (typeof content === "undefined") { return ""; }
+    if (typeof content === "undefined") {
+        return "";
+    }
     return content
         .replace(/\?/g, "??")
         .replace(/\+/g, "?+")
@@ -154,7 +160,9 @@ export function escapeFinTS(content: string): string {
  * @return The unescaped string.
  */
 export function unescapeFinTS(content: string): string {
-    if (typeof content === "undefined") { return ""; }
+    if (typeof content === "undefined") {
+        return "";
+    }
     return content
         .replace(/\?\?/g, "?")
         .replace(/\?\+/g, "+")

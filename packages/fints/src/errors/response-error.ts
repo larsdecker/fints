@@ -7,8 +7,8 @@ export class ResponseError extends Error {
 
     constructor(response: Response) {
         const errors = Array.from(response.returnValues().values())
-            .filter(value => value.error)
-            .map(value => formatErrorCode(value.code, value.message));
+            .filter((value) => value.error)
+            .map((value) => formatErrorCode(value.code, value.message));
 
         super(`Error(s) in dialog: ${errors.join(", ")}.`);
         this.response = response;

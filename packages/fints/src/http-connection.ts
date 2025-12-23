@@ -43,7 +43,9 @@ export class HttpConnection extends ConnectionConfig implements Connection {
     public async send(request: Request): Promise<Response> {
         const { url } = this;
         verbose(`Sending Request: ${request}`);
-        if (this.debug) { verbose(`Parsed Request:\n${request.debugString}`); }
+        if (this.debug) {
+            verbose(`Parsed Request:\n${request.debugString}`);
+        }
 
         let lastError: Error | null = null;
         let attempt = 0;
@@ -67,7 +69,9 @@ export class HttpConnection extends ConnectionConfig implements Connection {
                     const responseString = decodeBase64(await httpRequest.text());
                     verbose(`Received Response: ${responseString}`);
                     const response = new Response(responseString);
-                    if (this.debug) { verbose(`Parsed Response:\n${response.debugString}`); }
+                    if (this.debug) {
+                        verbose(`Parsed Response:\n${response.debugString}`);
+                    }
                     return response;
                 } finally {
                     clearTimeout(timeoutId);
@@ -82,12 +86,16 @@ export class HttpConnection extends ConnectionConfig implements Connection {
                 if (attempt <= this.maxRetries) {
                     // Calculate exponential backoff delay
                     const delay = this.retryDelay * Math.pow(2, attempt - 1);
-                    verbose(`Request failed (attempt ${attempt}/${this.maxRetries + 1}), retrying in ${delay}ms: ${error.message}`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    verbose(
+                        `Request failed (attempt ${attempt}/${this.maxRetries + 1}), retrying in ${delay}ms: ${error.message}`,
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, delay));
                 } else {
                     // Max retries reached
                     if (isTimeout) {
-                        throw new Error(`FinTS request timed out after ${this.maxRetries + 1} attempts (timeout: ${this.timeout}ms)`);
+                        throw new Error(
+                            `FinTS request timed out after ${this.maxRetries + 1} attempts (timeout: ${this.timeout}ms)`,
+                        );
                     }
                     throw new Error(`FinTS request failed after ${this.maxRetries + 1} attempts: ${lastError.message}`);
                 }

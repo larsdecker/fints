@@ -19,10 +19,7 @@ describe("pain helpers", () => {
     });
 
     test("selectPain008Descriptor falls back to generic descriptor", () => {
-        const formats = [
-            "urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.008.xsd",
-            "random-format",
-        ];
+        const formats = ["urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.008.xsd", "random-format"];
         expect(selectPain008Descriptor(formats)).toBe("urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.008.xsd");
     });
 
@@ -45,10 +42,7 @@ describe("pain helpers", () => {
     });
 
     test("selectPain001Descriptor falls back to generic descriptor", () => {
-        const formats = [
-            "urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.xsd",
-            "unrelated",
-        ];
+        const formats = ["urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.xsd", "unrelated"];
         expect(selectPain001Descriptor(formats)).toBe("urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.xsd");
     });
 
@@ -93,7 +87,7 @@ describe("pain helpers", () => {
         expect(namespace).toBe("urn:iso:std:iso:20022:tech:xsd:pain.008.003.02");
         expect(xml).toContain("<MsgId>MSG-1</MsgId>");
         expect(xml).toContain("<PmtInfId>PMT-1</PmtInfId>");
-        expect(xml).toContain("<InstdAmt Ccy=\"EUR\">99.50</InstdAmt>");
+        expect(xml).toContain('<InstdAmt Ccy="EUR">99.50</InstdAmt>');
         expect(xml).toContain("<IBAN>DE44500105175407324931</IBAN>");
         expect(xml).toContain("<IBAN>DE02120300000000202051</IBAN>");
         expect(xml).toContain("<RmtInf>");
@@ -129,7 +123,7 @@ describe("pain helpers", () => {
         expect(namespace).toBe("urn:iso:std:iso:20022:tech:xsd:pain.001.003.03");
         expect(xml).toContain("<MsgId>MSG-42</MsgId>");
         expect(xml).toContain("<PmtInfId>PMT-42</PmtInfId>");
-        expect(xml).toContain("<InstdAmt Ccy=\"EUR\">120.45</InstdAmt>");
+        expect(xml).toContain('<InstdAmt Ccy="EUR">120.45</InstdAmt>');
         expect(xml).toContain("<IBAN>DE02120300000000202051</IBAN>");
         expect(xml).toContain("<IBAN>DE44500105175407324931</IBAN>");
         expect(xml).toContain("<RmtInf>");
@@ -210,18 +204,10 @@ describe("pain helpers", () => {
             "Direct debit amount must be greater than zero.",
         );
         expect(() =>
-            buildPain008(
-                { ...baseRequest, mandateSignatureDate: new Date("invalid-date") },
-                account,
-                descriptor,
-            ),
+            buildPain008({ ...baseRequest, mandateSignatureDate: new Date("invalid-date") }, account, descriptor),
         ).toThrow("Mandate signature date must be a valid date.");
         expect(() =>
-            buildPain008(
-                { ...baseRequest, debtor: { ...baseRequest.debtor, name: "" } },
-                account,
-                descriptor,
-            ),
+            buildPain008({ ...baseRequest, debtor: { ...baseRequest.debtor, name: "" } }, account, descriptor),
         ).toThrow("Debtor name must be provided.");
     });
 
@@ -253,7 +239,7 @@ describe("pain helpers", () => {
             const xml = result.xml;
             expect(xml).toContain("<CreDtTm>2020-04-05T06:07:08</CreDtTm>");
             expect(xml).toContain("<BtchBookg>false</BtchBookg>");
-            expect(xml).toContain("<InstdAmt Ccy=\"EUR\">42.00</InstdAmt>");
+            expect(xml).toContain('<InstdAmt Ccy="EUR">42.00</InstdAmt>');
             expect(xml).toContain("<EndToEndId>NOTPROVIDED</EndToEndId>");
             expect(xml).toContain("<ReqdExctnDt>2020-04-05</ReqdExctnDt>");
             expect(xml).not.toContain("<CdtrAgt>");

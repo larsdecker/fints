@@ -121,7 +121,7 @@ describe("tan-required-error", () => {
                 TanProcessStep.CHALLENGE_RESPONSE_NEEDED,
             ];
 
-            steps.forEach(step => {
+            steps.forEach((step) => {
                 const error = new TanRequiredError(
                     "TAN required",
                     "ref123",

@@ -41,18 +41,20 @@ describe("Client holdings", () => {
         const response1 = {
             getTouchdowns: jest.fn().mockReturnValue(new Map([["HKWPD", "TD123"]])),
             findSegments: jest.fn((segmentClass: any) =>
-                segmentClass === HIWPD ? [new HIWPD({ segNo: 4, version: 6, holdings: holdingsSample("LU0000000001", "Fund A") })] : [],
+                segmentClass === HIWPD
+                    ? [new HIWPD({ segNo: 4, version: 6, holdings: holdingsSample("LU0000000001", "Fund A") })]
+                    : [],
             ),
         };
         const response2 = {
             getTouchdowns: jest.fn().mockReturnValue(new Map()),
             findSegments: jest.fn((segmentClass: any) =>
-                segmentClass === HIWPD ? [new HIWPD({ segNo: 4, version: 6, holdings: holdingsSample("LU0000000002", "Fund B") })] : [],
+                segmentClass === HIWPD
+                    ? [new HIWPD({ segNo: 4, version: 6, holdings: holdingsSample("LU0000000002", "Fund B") })]
+                    : [],
             ),
         };
-        const send = jest.fn()
-            .mockResolvedValueOnce(response1)
-            .mockResolvedValueOnce(response2);
+        const send = jest.fn().mockResolvedValueOnce(response1).mockResolvedValueOnce(response2);
         const dialog = {
             hiwpdsVersion: 6,
             sync: jest.fn().mockResolvedValue(undefined),

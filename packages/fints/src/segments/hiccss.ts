@@ -10,7 +10,11 @@ export class HICCSSProps {
 export class HICCSS extends SegmentClass(HICCSSProps) {
     public type = "HICCSS";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
-    protected deserialize(): void { return; }
+    protected deserialize(): void {
+        return;
+    }
 }

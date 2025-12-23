@@ -19,12 +19,10 @@ export class HKDSE extends SegmentClass(HKDSEProps) {
     protected serialize() {
         const { account, painDescriptor, painMessage } = this;
         const { iban, bic } = account;
-        return [
-            [iban, bic],
-            painDescriptor,
-            Format.stringWithLength(painMessage),
-        ];
+        return [[iban, bic], painDescriptor, Format.stringWithLength(painMessage)];
     }
 
-    protected deserialize(): string[][] { throw new Error("Not implemented."); }
+    protected deserialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 }

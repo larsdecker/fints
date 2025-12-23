@@ -12,7 +12,9 @@ export class HIWPDProps {
 export class HIWPD extends SegmentClass(HIWPDProps) {
     public type = "HIWPD";
 
-    protected serialize(): string[][] { throw new Error("Not implemented."); }
+    protected serialize(): string[][] {
+        throw new Error("Not implemented.");
+    }
 
     protected deserialize(input: string[][]) {
         const group = input[0] || [];

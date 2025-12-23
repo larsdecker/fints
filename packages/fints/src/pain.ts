@@ -1,5 +1,11 @@
 import { format } from "date-fns";
-import { DirectDebitRequest, DirectDebitSubmission, SEPAAccount, CreditTransferRequest, CreditTransferSubmission } from "./types";
+import {
+    DirectDebitRequest,
+    DirectDebitSubmission,
+    SEPAAccount,
+    CreditTransferRequest,
+    CreditTransferSubmission,
+} from "./types";
 import { unescapeFinTS } from "./utils";
 
 export interface Pain008Message {
@@ -80,42 +86,36 @@ function namespaceFromDescriptorPain001(descriptor: string): string {
 }
 
 export function selectPain001Descriptor(painFormats: string[]): string {
-    const preferredVersions = [
-        "pain.001.003.03",
-        "pain.001.001.03",
-        "pain.001.003.02",
-        "pain.001.001.02",
-    ];
+    const preferredVersions = ["pain.001.003.03", "pain.001.001.03", "pain.001.003.02", "pain.001.001.02"];
     for (const version of preferredVersions) {
-        const descriptor = painFormats.find(candidate => candidate.includes(version));
-        if (descriptor) { return descriptor; }
+        const descriptor = painFormats.find((candidate) => candidate.includes(version));
+        if (descriptor) {
+            return descriptor;
+        }
     }
-    const fallback = painFormats.find(candidate => candidate.includes("pain.001"));
-    if (fallback) { return fallback; }
+    const fallback = painFormats.find((candidate) => candidate.includes("pain.001"));
+    if (fallback) {
+        return fallback;
+    }
     throw new Error("Bank does not advertise support for pain.001 credit transfer messages.");
 }
 
 export function selectPain008Descriptor(painFormats: string[]): string {
-    const preferredVersions = [
-        "pain.008.003.02",
-        "pain.008.003.01",
-        "pain.008.002.02",
-        "pain.008.001.02",
-    ];
+    const preferredVersions = ["pain.008.003.02", "pain.008.003.01", "pain.008.002.02", "pain.008.001.02"];
     for (const version of preferredVersions) {
-        const descriptor = painFormats.find(candidate => candidate.includes(version));
-        if (descriptor) { return descriptor; }
+        const descriptor = painFormats.find((candidate) => candidate.includes(version));
+        if (descriptor) {
+            return descriptor;
+        }
     }
-    const fallback = painFormats.find(candidate => candidate.includes("pain.008"));
-    if (fallback) { return fallback; }
+    const fallback = painFormats.find((candidate) => candidate.includes("pain.008"));
+    if (fallback) {
+        return fallback;
+    }
     throw new Error("Bank does not advertise support for pain.008 direct debit messages.");
 }
 
-export function buildPain008(
-    request: DirectDebitRequest,
-    account: SEPAAccount,
-    descriptor: string,
-): Pain008Message {
+export function buildPain008(request: DirectDebitRequest, account: SEPAAccount, descriptor: string): Pain008Message {
     ensureText(account.iban, "Creditor IBAN");
     ensureText(account.bic, "Creditor BIC");
     ensureText(request.creditorName, "Creditor name");
@@ -142,7 +142,7 @@ export function buildPain008(
     const debtorName = request.debtor.name.trim();
 
     const xmlParts = [
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        '<?xml version="1.0" encoding="UTF-8"?>',
         `<Document xmlns=\"${escapeXml(namespace)}\">`,
         "  <CstmrDrctDbtInitn>",
         "    <GrpHdr>",
@@ -231,11 +231,7 @@ export function buildPain008(
     );
 
     if (request.purposeCode) {
-        xmlParts.push(
-            "        <Purp>",
-            `          <Cd>${escapeXml(request.purposeCode)}</Cd>`,
-            "        </Purp>",
-        );
+        xmlParts.push("        <Purp>", `          <Cd>${escapeXml(request.purposeCode)}</Cd>`, "        </Purp>");
     }
 
     if (request.remittanceInformation) {
@@ -246,12 +242,7 @@ export function buildPain008(
         );
     }
 
-    xmlParts.push(
-        "      </DrctDbtTxInf>",
-        "    </PmtInf>",
-        "  </CstmrDrctDbtInitn>",
-        "</Document>",
-    );
+    xmlParts.push("      </DrctDbtTxInf>", "    </PmtInf>", "  </CstmrDrctDbtInitn>", "</Document>");
 
     const xml = xmlParts.join(" ");
 
@@ -264,11 +255,7 @@ export function buildPain008(
     };
 }
 
-export function buildPain001(
-    request: CreditTransferRequest,
-    account: SEPAAccount,
-    descriptor: string,
-): Pain001Message {
+export function buildPain001(request: CreditTransferRequest, account: SEPAAccount, descriptor: string): Pain001Message {
     ensureText(account.iban, "Debtor IBAN");
     ensureText(account.bic, "Debtor BIC");
     ensureText(request.debtorName, "Debtor name");
@@ -295,7 +282,7 @@ export function buildPain001(
     const creditorName = request.creditor.name.trim();
 
     const xmlParts = [
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        '<?xml version="1.0" encoding="UTF-8"?>',
         `<Document xmlns=\"${escapeXml(namespace)}\">`,
         "  <CstmrCdtTrfInitn>",
         "    <GrpHdr>",
@@ -364,11 +351,7 @@ export function buildPain001(
     );
 
     if (request.purposeCode) {
-        xmlParts.push(
-            "        <Purp>",
-            `          <Cd>${escapeXml(request.purposeCode)}</Cd>`,
-            "        </Purp>",
-        );
+        xmlParts.push("        <Purp>", `          <Cd>${escapeXml(request.purposeCode)}</Cd>`, "        </Purp>");
     }
 
     if (request.remittanceInformation) {
@@ -379,12 +362,7 @@ export function buildPain001(
         );
     }
 
-    xmlParts.push(
-        "      </CdtTrfTxInf>",
-        "    </PmtInf>",
-        "  </CstmrCdtTrfInitn>",
-        "</Document>",
-    );
+    xmlParts.push("      </CdtTrfTxInf>", "    </PmtInf>", "  </CstmrCdtTrfInitn>", "</Document>");
 
     const xml = xmlParts.join(" ");
 

@@ -213,7 +213,7 @@ export class Dialog extends DialogConfig {
                 triggeringSegment,
                 {
                     returnCode: "0030",
-                    requestSegments: request.segments.map(s => s.type),
+                    requestSegments: request.segments.map((s) => s.type),
                 },
             );
         }

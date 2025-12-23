@@ -40,7 +40,7 @@ export class HNVSK extends SegmentClass(HNVSKProps) {
     }
 
     protected deserialize(input: string[][]) {
-        const [ [profile, profileVersion] ] = input;
+        const [[profile, profileVersion]] = input;
         if (profile !== "PIN") {
             throw new Error(`Unsupported profile: ${profile}`);
         }
