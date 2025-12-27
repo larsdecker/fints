@@ -100,7 +100,7 @@ describe("parsePaymentReferenceDate security", () => {
         const longContent = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(1000);
         expect(() => {
             parsePaymentReferenceDate(longContent);
-        }).toThrow("Parse Payment Reference Date is too long");
+        }).toThrow("Payment reference date content exceeds maximum length of 1000 characters");
     });
 
     test("accepts content with exactly 1000 characters", () => {
@@ -125,7 +125,7 @@ describe("parsePaymentReferenceTan security", () => {
         const longContent = "1. TAN 123456" + "x".repeat(1000);
         expect(() => {
             parsePaymentReferenceTan(longContent);
-        }).toThrow("Parse Payment Reference Tan is too long");
+        }).toThrow("Payment reference tan content exceeds maximum length of 1000 characters");
     });
 
     test("accepts content with exactly 1000 characters", () => {
@@ -154,7 +154,7 @@ describe("assemblePaymentReference security", () => {
         ];
         expect(() => {
             assemblePaymentReference(sections);
-        }).toThrow("Assemble Payment Reference the content is too long. Exceeds 10000 Chars");
+        }).toThrow("Assemble payment reference section content exceeds maximum length of 10000 characters");
     });
 
     test("accepts content with exactly 10000 characters", () => {

@@ -57,7 +57,7 @@ export function parsePaymentReferenceDate(content: string): Date {
  */
 export function parsePaymentReferenceTan(content: string) {
     if (content.length > 1000) {
-        throw new Error("Parse Payment Reference Tan is too long");
+        throw new Error("Payment reference tan content exceeds maximum length of 1000 characters");
     }
 
     const groups = /(\d+)\.\s*TAN\s+(.*)/.exec(content);
@@ -89,7 +89,7 @@ export function assemblePaymentReference(references: Section[]): PaymentReferenc
         .sort((a, b) => a.code - b.code)
         .forEach(({ content }) => {
             if (content.length > 10000) {
-                throw new Error("Assemble Payment Reference the content is too long. Exceeds 10000 Chars");
+                throw new Error("Assemble payment reference section content exceeds maximum length of 10000 characters");
             }
 
             if (content.startsWith("IBAN+")) {
