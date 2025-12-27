@@ -12,7 +12,7 @@ describe("Format.date", () => {
     });
 
     it("pads years below 1000 to a four-digit year", () => {
-        const date = new Date(Date.UTC(12, 5, 7, 12, 0, 0));
+        const date = new Date("0012-06-07T12:00:00Z");
 
         const formatted = Format.date(date);
 
