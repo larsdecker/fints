@@ -133,7 +133,7 @@ const badClient = new PinTanClient({
 
 ### Reporting Security Issues
 
-If you discover a security vulnerability, please email the maintainers directly instead of opening a public issue.
+If you discover a security vulnerability, please report it privately via GitHub's "Security" tab instead of opening a public issue.
 
 ## Mentions
 
