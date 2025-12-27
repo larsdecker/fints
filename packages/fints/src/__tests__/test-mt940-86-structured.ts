@@ -1,4 +1,10 @@
-import { is86Structured, parse86Structured } from "../mt940-86-structured";
+import {
+    assemblePaymentReference,
+    is86Structured,
+    parse86Structured,
+    parsePaymentReferenceDate,
+    parsePaymentReferenceTan,
+} from "../mt940-86-structured";
 
 const testData = [
     {
@@ -91,7 +97,6 @@ describe("is86Structured", () => {
 
 describe("parsePaymentReferenceDate security", () => {
     test("throws error when content exceeds 1000 characters", () => {
-        const { parsePaymentReferenceDate } = require("../mt940-86-structured");
         const longContent = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(1000);
         expect(() => {
             parsePaymentReferenceDate(longContent);
@@ -99,7 +104,6 @@ describe("parsePaymentReferenceDate security", () => {
     });
 
     test("accepts content with exactly 1000 characters", () => {
-        const { parsePaymentReferenceDate } = require("../mt940-86-structured");
         const content = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(972);
         expect(() => {
             parsePaymentReferenceDate(content);
@@ -107,7 +111,6 @@ describe("parsePaymentReferenceDate security", () => {
     });
 
     test("parses valid date within limit", () => {
-        const { parsePaymentReferenceDate } = require("../mt940-86-structured");
         const result = parsePaymentReferenceDate("DATUM 15.11.2018, 12.00 UHR");
         expect(result.getFullYear()).toBe(2018);
         expect(result.getMonth()).toBe(10);
@@ -119,7 +122,6 @@ describe("parsePaymentReferenceDate security", () => {
 
 describe("parsePaymentReferenceTan security", () => {
     test("throws error when content exceeds 1000 characters", () => {
-        const { parsePaymentReferenceTan } = require("../mt940-86-structured");
         const longContent = "1. TAN 123456" + "x".repeat(1000);
         expect(() => {
             parsePaymentReferenceTan(longContent);
@@ -127,7 +129,6 @@ describe("parsePaymentReferenceTan security", () => {
     });
 
     test("accepts content with exactly 1000 characters", () => {
-        const { parsePaymentReferenceTan } = require("../mt940-86-structured");
         const content = "1. TAN 123456" + "x".repeat(987);
         expect(() => {
             parsePaymentReferenceTan(content);
@@ -135,7 +136,6 @@ describe("parsePaymentReferenceTan security", () => {
     });
 
     test("parses valid TAN within limit", () => {
-        const { parsePaymentReferenceTan } = require("../mt940-86-structured");
         const result = parsePaymentReferenceTan("1. TAN 389252");
         expect(result).toEqual({
             num: 1,
@@ -146,7 +146,6 @@ describe("parsePaymentReferenceTan security", () => {
 
 describe("assemblePaymentReference security", () => {
     test("throws error when a section content exceeds 10000 characters", () => {
-        const { assemblePaymentReference } = require("../mt940-86-structured");
         const sections = [
             {
                 code: 20,
@@ -159,7 +158,6 @@ describe("assemblePaymentReference security", () => {
     });
 
     test("accepts content with exactly 10000 characters", () => {
-        const { assemblePaymentReference } = require("../mt940-86-structured");
         const sections = [
             {
                 code: 20,
@@ -172,7 +170,6 @@ describe("assemblePaymentReference security", () => {
     });
 
     test("processes multiple sections with content within limits", () => {
-        const { assemblePaymentReference } = require("../mt940-86-structured");
         const sections = [
             { code: 20, content: "EREF+12345" },
             { code: 60, content: "SVWZ+Reference Text" },

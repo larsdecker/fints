@@ -37,8 +37,7 @@ export function is86Structured(input: string) {
  * @return The parsed date.
  */
 export function parsePaymentReferenceDate(content: string): Date {
-
-    if(content.length > 1000) {
+    if (content.length > 1000) {
         throw new Error("Parse Payment Reference Date is too long");
     }
 
@@ -57,8 +56,7 @@ export function parsePaymentReferenceDate(content: string): Date {
  * @return The parsed TAN number and TAN iteself.
  */
 export function parsePaymentReferenceTan(content: string) {
-
-    if(content.length > 1000) {
+    if (content.length > 1000) {
         throw new Error("Parse Payment Reference Tan is too long");
     }
 
@@ -90,9 +88,8 @@ export function assemblePaymentReference(references: Section[]): PaymentReferenc
     references
         .sort((a, b) => a.code - b.code)
         .forEach(({ content }) => {
-
             if (content.length > 10000) {
-                throw new Error("Assemble Payment Reference the content is too long. Exceeds 10000 Chars")
+                throw new Error("Assemble Payment Reference the content is too long. Exceeds 10000 Chars");
             }
 
             if (content.startsWith("IBAN+")) {
