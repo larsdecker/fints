@@ -42,7 +42,8 @@ export class HttpConnection extends ConnectionConfig implements Connection {
 
     public async send(request: Request): Promise<Response> {
         const { url } = this;
-        verbose(`Sending Request: ${request}`);
+        // Don't log full request string to avoid exposing credentials
+        verbose(`Sending Request to ${url}`);
         if (this.debug) {
             verbose(`Parsed Request:\n${request.debugString}`);
         }

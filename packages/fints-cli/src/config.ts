@@ -1,6 +1,6 @@
 import { option, Options } from "clime";
 import { PinTanClientConfig, PRODUCT_NAME } from "fints-lib";
-import * as YAML from "yamljs";
+import { stringify } from "yaml";
 
 export class BaseConfig extends Options implements PinTanClientConfig {
     @option({
@@ -33,6 +33,6 @@ export class BaseConfig extends Options implements PinTanClientConfig {
     public json: boolean;
 
     public get serializer() {
-        return this.json ? JSON.stringify : (obj: any) => YAML.stringify(obj, 4);
+        return this.json ? JSON.stringify : (obj: any) => stringify(obj, { indent: 4 });
     }
 }

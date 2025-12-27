@@ -97,6 +97,44 @@ This library is maintained in a [monorepo using lerna](https://lernajs.io/). The
  * [fints-lib](packages/fints) - Core library (Take a look for library usage instructions.)
  * [fints-lib-cli](packages/fints-cli) - Command line interface (Take a look for CLI usage instructions.)
 
+## 🔒 Security
+
+This library handles sensitive financial data and credentials. Please follow these security best practices:
+
+### Credential Handling
+
+- **Never log credentials**: The library masks PINs and TANs in debug output, but you should never log the raw configuration object
+- **Store credentials securely**: Use environment variables or secure credential stores (e.g., AWS Secrets Manager, Azure Key Vault) instead of hardcoding credentials
+- **Use HTTPS only**: Always use HTTPS URLs for FinTS endpoints to ensure encrypted communication
+- **Debug mode**: Be cautious when enabling debug mode (`debug: true`) in production environments, as it logs detailed request/response information
+
+### Example: Secure Credential Loading
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+// ✅ Good: Load from environment variables
+const client = new PinTanClient({
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
+    debug: false, // Disable in production
+});
+
+// ❌ Bad: Hardcoded credentials
+const badClient = new PinTanClient({
+    url: "https://example.com/fints",
+    name: "username",
+    pin: "12345", // Never hardcode!
+    blz: "12345678",
+});
+```
+
+### Reporting Security Issues
+
+If you discover a security vulnerability, please report it privately via GitHub's "Security" tab instead of opening a public issue.
+
 ## Mentions
 
 FinTS is a complex and old format and this library wouldn't have been possible without the great work of:

@@ -27,4 +27,26 @@ export class HNSHA extends SegmentClass(HNSHAProps) {
     protected deserialize() {
         throw new Error("Not implemented.");
     }
+
+    /**
+     * Override debugString to mask sensitive data (PIN/TAN).
+     * This prevents credentials from being exposed in logs.
+     */
+    public get debugString() {
+        const info =
+            `Type: ${this.type}\n` +
+            `Version: ${this.version}\n` +
+            `Segment Number: ${this.segNo}\n` +
+            `Referencing: ${this.reference === undefined ? "None" : this.reference}\n` +
+            `----\n`;
+        const { secRef, tan } = this;
+        const maskedData = [
+            Format.num(secRef),
+            Format.empty(),
+            tan ? ["***MASKED***", "***MASKED***"] : "***MASKED***",
+        ];
+        return maskedData.reduce((result, group, index) => {
+            return `${result}DG ${index}: ${Array.isArray(group) ? group.join(", ") : group}\n`;
+        }, info);
+    }
 }
