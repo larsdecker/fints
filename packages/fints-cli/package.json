@@ -47,7 +47,7 @@
         "date-fns": "^4.1.0",
         "fints-lib": "*",
         "winston": "^3.19.0",
-        "yamljs": "^0.3.0"
+        "yaml": "^2.8.2"
     },
     "devDependencies": {
         "@types/jest": "^30.0.0",
@@ -56,6 +56,6 @@
         "jest": "^30.2.0",
         "minimatch": "^10.0.1",
         "ts-jest": "^29.4.6",
-        "typescript": "^5.8.0"
+        "typescript": "^5.9.3"
     }
 }

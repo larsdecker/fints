@@ -1,4 +1,10 @@
-import { is86Structured, parse86Structured } from "../mt940-86-structured";
+import {
+    assemblePaymentReference,
+    is86Structured,
+    parse86Structured,
+    parsePaymentReferenceDate,
+    parsePaymentReferenceTan,
+} from "../mt940-86-structured";
 
 const testData = [
     {
@@ -86,5 +92,90 @@ describe("is86Structured", () => {
         test(`detects "${str}" as invalid`, () => {
             expect(is86Structured(str)).toBe(false);
         });
+    });
+});
+
+describe("parsePaymentReferenceDate security", () => {
+    test("throws error when content exceeds 1000 characters", () => {
+        const longContent = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(1000);
+        expect(() => {
+            parsePaymentReferenceDate(longContent);
+        }).toThrow("Payment reference date content exceeds maximum length of 1000 characters");
+    });
+
+    test("accepts content with exactly 1000 characters", () => {
+        const content = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(972);
+        expect(() => {
+            parsePaymentReferenceDate(content);
+        }).not.toThrow();
+    });
+
+    test("parses valid date within limit", () => {
+        const result = parsePaymentReferenceDate("DATUM 15.11.2018, 12.00 UHR");
+        expect(result.getFullYear()).toBe(2018);
+        expect(result.getMonth()).toBe(10);
+        expect(result.getDate()).toBe(15);
+        expect(result.getHours()).toBe(12);
+        expect(result.getMinutes()).toBe(0);
+    });
+});
+
+describe("parsePaymentReferenceTan security", () => {
+    test("throws error when content exceeds 1000 characters", () => {
+        const longContent = "1. TAN 123456" + "x".repeat(1000);
+        expect(() => {
+            parsePaymentReferenceTan(longContent);
+        }).toThrow("Payment reference tan content exceeds maximum length of 1000 characters");
+    });
+
+    test("accepts content with exactly 1000 characters", () => {
+        const content = "1. TAN 123456" + "x".repeat(987);
+        expect(() => {
+            parsePaymentReferenceTan(content);
+        }).not.toThrow();
+    });
+
+    test("parses valid TAN within limit", () => {
+        const result = parsePaymentReferenceTan("1. TAN 389252");
+        expect(result).toEqual({
+            num: 1,
+            value: "389252",
+        });
+    });
+});
+
+describe("assemblePaymentReference security", () => {
+    test("throws error when a section content exceeds 10000 characters", () => {
+        const sections = [
+            {
+                code: 20,
+                content: "EREF+" + "x".repeat(10000),
+            },
+        ];
+        expect(() => {
+            assemblePaymentReference(sections);
+        }).toThrow("Assemble payment reference section content exceeds maximum length of 10000 characters");
+    });
+
+    test("accepts content with exactly 10000 characters", () => {
+        const sections = [
+            {
+                code: 20,
+                content: "EREF+" + "x".repeat(9995),
+            },
+        ];
+        expect(() => {
+            assemblePaymentReference(sections);
+        }).not.toThrow();
+    });
+
+    test("processes multiple sections with content within limits", () => {
+        const sections = [
+            { code: 20, content: "EREF+12345" },
+            { code: 60, content: "SVWZ+Reference Text" },
+        ];
+        const result = assemblePaymentReference(sections);
+        expect(result.endToEndRef).toBe("12345");
+        expect(result.text).toBe("Reference Text");
     });
 });

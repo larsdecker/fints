@@ -37,6 +37,10 @@ export function is86Structured(input: string) {
  * @return The parsed date.
  */
 export function parsePaymentReferenceDate(content: string): Date {
+    if (content.length > 1000) {
+        throw new Error("Payment reference date content exceeds maximum length of 1000 characters");
+    }
+
     const groups = /DATUM\s+(\d+)\.(\d+)\.(\d+),\s+(\d+)\.(\d+)\s+UHR/.exec(content);
     if (!groups) {
         return;
@@ -52,6 +56,10 @@ export function parsePaymentReferenceDate(content: string): Date {
  * @return The parsed TAN number and TAN iteself.
  */
 export function parsePaymentReferenceTan(content: string) {
+    if (content.length > 1000) {
+        throw new Error("Payment reference tan content exceeds maximum length of 1000 characters");
+    }
+
     const groups = /(\d+)\.\s*TAN\s+(.*)/.exec(content);
     if (!groups) {
         return;
@@ -80,6 +88,12 @@ export function assemblePaymentReference(references: Section[]): PaymentReferenc
     references
         .sort((a, b) => a.code - b.code)
         .forEach(({ content }) => {
+            if (content.length > 10000) {
+                throw new Error(
+                    "Assemble payment reference section content exceeds maximum length of 10000 characters",
+                );
+            }
+
             if (content.startsWith("IBAN+")) {
                 add("iban", content.substr(5));
             } else if (content.startsWith("BIC+")) {
