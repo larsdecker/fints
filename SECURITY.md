@@ -100,7 +100,7 @@ Public disclosure of security vulnerabilities before a fix is available puts all
 
 ### 2. Report Privately
 
-Email the maintainers directly at:
+Report vulnerabilities privately using one of these methods:
 - Create a security advisory through GitHub's Security tab
 - Or contact the maintainers through other private channels
 
