@@ -89,7 +89,9 @@ export function assemblePaymentReference(references: Section[]): PaymentReferenc
         .sort((a, b) => a.code - b.code)
         .forEach(({ content }) => {
             if (content.length > 10000) {
-                throw new Error("Assemble payment reference section content exceeds maximum length of 10000 characters");
+                throw new Error(
+                    "Assemble payment reference section content exceeds maximum length of 10000 characters",
+                );
             }
 
             if (content.startsWith("IBAN+")) {
