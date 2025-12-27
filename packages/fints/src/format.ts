@@ -14,7 +14,7 @@ export const Format = {
      */
     date(date?: Date) {
         const dateToFormat = date ? date : new Date();
-        return format(dateToFormat, "yyyMMdd");
+        return format(dateToFormat, "yyyyMMdd");
     },
     /**
      * Format a binary string with a length specification.
