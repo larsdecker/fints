@@ -39,7 +39,7 @@ export class HNSHA extends SegmentClass(HNSHAProps) {
             `Segment Number: ${this.segNo}\n` +
             `Referencing: ${this.reference === undefined ? "None" : this.reference}\n` +
             `----\n`;
-        const { secRef, pin, tan } = this;
+        const { secRef, tan } = this;
         const maskedData = [
             Format.num(secRef),
             Format.empty(),
