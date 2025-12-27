@@ -38,7 +38,7 @@ export function is86Structured(input: string) {
  */
 export function parsePaymentReferenceDate(content: string): Date {
     if (content.length > 1000) {
-        throw new Error("Parse Payment Reference Date is too long");
+        throw new Error("Payment reference date content exceeds maximum length of 1000 characters");
     }
 
     const groups = /DATUM\s+(\d+)\.(\d+)\.(\d+),\s+(\d+)\.(\d+)\s+UHR/.exec(content);
