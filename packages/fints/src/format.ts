@@ -86,7 +86,8 @@ export const Format = {
      */
     time(date?: Date) {
         const dateToFormat = date ? date : new Date();
-        return format(dateToFormat, "HHMMss");
+        // FinTS 3.0 Formals (TIME datatype) requires HHmmss with minutes, see https://www.hbci-zka.de/downloads/FinTS_3_0/FinTS3.0_Formals_2010-12-20_final_version.pdf.
+        return format(dateToFormat, "HHmmss");
     },
     /**
      * Return an empty string.

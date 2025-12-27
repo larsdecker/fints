@@ -15,8 +15,8 @@ const productId = "fints";
 let client: PinTanClient;
 
 beforeEach(() => {
-    jest.spyOn(Format, "date").mockImplementation((date) => (date ? format(date, "HHMMss") : "20180101"));
-    jest.spyOn(Format, "time").mockImplementation((time) => (time ? format(time, "HHMMss") : "120000"));
+    jest.spyOn(Format, "date").mockImplementation((date) => (date ? format(date, "HHmmss") : "20180101"));
+    jest.spyOn(Format, "time").mockImplementation((time) => (time ? format(time, "HHmmss") : "120000"));
     jest.spyOn(Math, "random").mockReturnValue(0.5);
     client = new PinTanClient({ blz, name, pin, url, productId });
 });
