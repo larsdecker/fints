@@ -88,3 +88,97 @@ describe("is86Structured", () => {
         });
     });
 });
+
+describe("parsePaymentReferenceDate security", () => {
+    test("throws error when content exceeds 1000 characters", () => {
+        const { parsePaymentReferenceDate } = require("../mt940-86-structured");
+        const longContent = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(1000);
+        expect(() => {
+            parsePaymentReferenceDate(longContent);
+        }).toThrow("Parse Payment Reference Date is too long");
+    });
+
+    test("accepts content with exactly 1000 characters", () => {
+        const { parsePaymentReferenceDate } = require("../mt940-86-structured");
+        const content = "DATUM 15.11.2018, 12.00 UHR" + "x".repeat(972);
+        expect(() => {
+            parsePaymentReferenceDate(content);
+        }).not.toThrow();
+    });
+
+    test("parses valid date within limit", () => {
+        const { parsePaymentReferenceDate } = require("../mt940-86-structured");
+        const result = parsePaymentReferenceDate("DATUM 15.11.2018, 12.00 UHR");
+        expect(result.getFullYear()).toBe(2018);
+        expect(result.getMonth()).toBe(10);
+        expect(result.getDate()).toBe(15);
+        expect(result.getHours()).toBe(12);
+        expect(result.getMinutes()).toBe(0);
+    });
+});
+
+describe("parsePaymentReferenceTan security", () => {
+    test("throws error when content exceeds 1000 characters", () => {
+        const { parsePaymentReferenceTan } = require("../mt940-86-structured");
+        const longContent = "1. TAN 123456" + "x".repeat(1000);
+        expect(() => {
+            parsePaymentReferenceTan(longContent);
+        }).toThrow("Parse Payment Reference Tan is too long");
+    });
+
+    test("accepts content with exactly 1000 characters", () => {
+        const { parsePaymentReferenceTan } = require("../mt940-86-structured");
+        const content = "1. TAN 123456" + "x".repeat(987);
+        expect(() => {
+            parsePaymentReferenceTan(content);
+        }).not.toThrow();
+    });
+
+    test("parses valid TAN within limit", () => {
+        const { parsePaymentReferenceTan } = require("../mt940-86-structured");
+        const result = parsePaymentReferenceTan("1. TAN 389252");
+        expect(result).toEqual({
+            num: 1,
+            value: "389252",
+        });
+    });
+});
+
+describe("assemblePaymentReference security", () => {
+    test("throws error when a section content exceeds 10000 characters", () => {
+        const { assemblePaymentReference } = require("../mt940-86-structured");
+        const sections = [
+            {
+                code: 20,
+                content: "EREF+" + "x".repeat(10000),
+            },
+        ];
+        expect(() => {
+            assemblePaymentReference(sections);
+        }).toThrow("Assemble Payment Reference the content is too long. Exceeds 10000 Chars");
+    });
+
+    test("accepts content with exactly 10000 characters", () => {
+        const { assemblePaymentReference } = require("../mt940-86-structured");
+        const sections = [
+            {
+                code: 20,
+                content: "EREF+" + "x".repeat(9995),
+            },
+        ];
+        expect(() => {
+            assemblePaymentReference(sections);
+        }).not.toThrow();
+    });
+
+    test("processes multiple sections with content within limits", () => {
+        const { assemblePaymentReference } = require("../mt940-86-structured");
+        const sections = [
+            { code: 20, content: "EREF+12345" },
+            { code: 60, content: "SVWZ+Reference Text" },
+        ];
+        const result = assemblePaymentReference(sections);
+        expect(result.endToEndRef).toBe("12345");
+        expect(result.text).toBe("Reference Text");
+    });
+});
