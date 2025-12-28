@@ -285,7 +285,7 @@ for (const account of accounts) {
 ```typescript
 import { PinTanClient } from "fints-lib";
 
-// Load credentials from environment variables
+// Create client using environment variables for credentials
 const client = new PinTanClient({
     url: process.env.FINTS_URL!,
     name: process.env.FINTS_USERNAME!,

@@ -277,6 +277,9 @@ fints-lib fetch-transactions \
 ```bash
 #!/bin/bash
 # monthly-statement.sh - Fetch last month's transactions
+# Note: This script uses GNU date syntax. On macOS, install GNU coreutils:
+# brew install coreutils
+# and use 'gdate' instead of 'date'
 
 # Calculate date range for last month
 START_DATE=$(date -d "last month" +%Y-%m-01)

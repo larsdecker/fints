@@ -110,7 +110,7 @@ console.log(`Account: ${accounts[0].iban}`);
 console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
 ```
 
-**CLI Example:**
+**CLI Example**
 ```bash
 fints-lib get-balance \
   --url https://banking.example.com/fints \
@@ -150,14 +150,14 @@ statements.forEach(statement => {
 });
 ```
 
-**CLI Example:**
+**CLI Example**
 ```bash
-# Fetch transactions for the last 30 days
+# Fetch transactions for a date range
 fints-lib fetch-transactions \
   --url https://banking.example.com/fints \
   -n username -p 12345 -b 12345678 \
   -i DE89370400440532013000 \
-  -s 2024-11-01 -e 2024-12-01 \
+  -s 2024-01-01 -e 2024-12-31 \
   --json > transactions.json
 ```
 
@@ -210,7 +210,7 @@ try {
 }
 ```
 
-**CLI Example:**
+**CLI Example**
 ```bash
 # Transfer money (will prompt for TAN if required)
 fints-lib submit-credit-transfer \
@@ -274,7 +274,7 @@ try {
 }
 ```
 
-**CLI Example:**
+**CLI Example**
 ```bash
 fints-lib submit-direct-debit \
   --url https://banking.example.com/fints \
