@@ -277,13 +277,16 @@ fints-lib fetch-transactions \
 ```bash
 #!/bin/bash
 # monthly-statement.sh - Fetch last month's transactions
-# Note: This script uses GNU date syntax. On macOS, install GNU coreutils:
-# brew install coreutils
-# and use 'gdate' instead of 'date'
 
 # Calculate date range for last month
+# For Linux (GNU date):
 START_DATE=$(date -d "last month" +%Y-%m-01)
 END_DATE=$(date -d "-1 day $(date +%Y-%m-01)" +%Y-%m-%d)
+
+# For macOS (BSD date), use:
+# START_DATE=$(date -v-1m +%Y-%m-01)
+# END_DATE=$(date -v-1d -v1d +%Y-%m-%d)
+# Or install GNU coreutils (brew install coreutils) and use 'gdate'
 
 # Fetch transactions
 fints-lib fetch-transactions \
@@ -294,9 +297,9 @@ fints-lib fetch-transactions \
   -i "$ACCOUNT_IBAN" \
   -s "$START_DATE" \
   -e "$END_DATE" \
-  --json > "statement-$(date -d 'last month' +%Y-%m).json"
+  --json > "statement-$(date +%Y-%m).json"
 
-echo "Statement saved for $(date -d 'last month' +%B %Y)"
+echo "Statement saved for period: $START_DATE to $END_DATE"
 ```
 
 ### Check Multiple Accounts
