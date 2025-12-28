@@ -285,7 +285,7 @@ END_DATE=$(date -d "-1 day $(date +%Y-%m-01)" +%Y-%m-%d)
 
 # For macOS (BSD date), use:
 # START_DATE=$(date -v-1m +%Y-%m-01)
-# END_DATE=$(date -v-1d -v1d +%Y-%m-%d)
+# END_DATE=$(date -v1d -v-1m -v-1d +%Y-%m-%d)
 # Or install GNU coreutils (brew install coreutils) and use 'gdate'
 
 # Fetch transactions

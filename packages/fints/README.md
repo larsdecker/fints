@@ -286,11 +286,17 @@ for (const account of accounts) {
 import { PinTanClient } from "fints-lib";
 
 // Create client using environment variables for credentials
+// Ensure environment variables are set before running
+if (!process.env.FINTS_URL || !process.env.FINTS_USERNAME || 
+    !process.env.FINTS_PIN || !process.env.FINTS_BLZ) {
+    throw new Error("Required environment variables are not set");
+}
+
 const client = new PinTanClient({
-    url: process.env.FINTS_URL!,
-    name: process.env.FINTS_USERNAME!,
-    pin: process.env.FINTS_PIN!,
-    blz: process.env.FINTS_BLZ!,
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
     debug: process.env.NODE_ENV === "development",
 });
 
