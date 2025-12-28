@@ -283,10 +283,10 @@ fints-lib fetch-transactions \
 START_DATE=$(date -d "last month" +%Y-%m-01)
 END_DATE=$(date -d "-1 day $(date +%Y-%m-01)" +%Y-%m-%d)
 
-# For macOS (BSD date), use:
-# START_DATE=$(date -v-1m +%Y-%m-01)
-# END_DATE=$(date -v1d -v-1m -v-1d +%Y-%m-%d)
-# Or install GNU coreutils (brew install coreutils) and use 'gdate'
+# For macOS (BSD date), install GNU coreutils and use 'gdate':
+# brew install coreutils
+# START_DATE=$(gdate -d "last month" +%Y-%m-01)
+# END_DATE=$(gdate -d "-1 day $(gdate +%Y-%m-01)" +%Y-%m-%d)
 
 # Fetch transactions
 fints-lib fetch-transactions \

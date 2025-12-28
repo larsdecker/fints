@@ -232,8 +232,7 @@ const accounts = await client.accounts();
 
 // Get transactions from the last 30 days
 const endDate = new Date();
-const startDate = new Date();
-startDate.setDate(startDate.getDate() - 30);
+const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 
 const statements = await client.statements(accounts[0], startDate, endDate);
 
