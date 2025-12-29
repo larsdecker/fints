@@ -215,6 +215,122 @@ fints-lib submit-direct-debit --url https://example.com/fints --name username --
   --mandate-date 2022-01-10 --collection-date 2022-01-15 --remittance "Invoice 0815"
 ```
 
+## Practical CLI Examples
+
+### Using Environment Variables
+
+To avoid typing credentials repeatedly, create a shell script or use environment variables:
+
+```bash
+#!/bin/bash
+# save as fints-env.sh
+
+export FINTS_URL="https://banking.example.com/fints"
+export FINTS_USER="myusername"
+export FINTS_PIN="mypin"
+export FINTS_BLZ="12345678"
+
+# Then use in commands:
+# source fints-env.sh
+# fints-lib list-accounts --url $FINTS_URL -n $FINTS_USER -p $FINTS_PIN -b $FINTS_BLZ
+```
+
+### Quick Account Overview
+
+```bash
+# Get account list in JSON format for processing
+fints-lib list-accounts \
+  --url https://banking.example.com/fints \
+  -n username -p 12345 -b 12345678 \
+  --json | jq '.'
+
+# Check balance for a specific account
+fints-lib get-balance \
+  --url https://banking.example.com/fints \
+  -n username -p 12345 -b 12345678 \
+  -i DE89370400440532013000 \
+  --json | jq '.value'
+```
+
+### Export Transactions to File
+
+```bash
+# Fetch and save transactions as JSON
+fints-lib fetch-transactions \
+  --url https://banking.example.com/fints \
+  -n username -p 12345 -b 12345678 \
+  -i DE89370400440532013000 \
+  -s 2024-01-01 -e 2024-12-31 \
+  --json > transactions-2024.json
+
+# Or save verbose output to text file
+fints-lib fetch-transactions \
+  --url https://banking.example.com/fints \
+  -n username -p 12345 -b 12345678 \
+  -i DE89370400440532013000 \
+  -s 2024-01-01 -e 2024-12-31 \
+  --verbose > transactions-2024.txt
+```
+
+### Monthly Statement Automation
+
+```bash
+#!/bin/bash
+# monthly-statement.sh - Fetch last month's transactions
+
+# Calculate date range for last month
+# For Linux (GNU date):
+START_DATE=$(date -d "last month" +%Y-%m-01)
+END_DATE=$(date -d "-1 day $(date +%Y-%m-01)" +%Y-%m-%d)
+
+# For macOS (BSD date), install GNU coreutils and use 'gdate':
+# brew install coreutils
+# START_DATE=$(gdate -d "last month" +%Y-%m-01)
+# END_DATE=$(gdate -d "-1 day $(gdate +%Y-%m-01)" +%Y-%m-%d)
+
+# Fetch transactions
+fints-lib fetch-transactions \
+  --url "$FINTS_URL" \
+  -n "$FINTS_USER" \
+  -p "$FINTS_PIN" \
+  -b "$FINTS_BLZ" \
+  -i "$ACCOUNT_IBAN" \
+  -s "$START_DATE" \
+  -e "$END_DATE" \
+  --json > "statement-$(date +%Y-%m).json"
+
+echo "Statement saved for period: $START_DATE to $END_DATE"
+```
+
+### Check Multiple Accounts
+
+```bash
+#!/bin/bash
+# check-all-accounts.sh
+
+ACCOUNTS=("DE89370400440532013000" "DE89370400440532013001")
+
+for IBAN in "${ACCOUNTS[@]}"; do
+    echo "Checking account: $IBAN"
+    fints-lib get-balance \
+      --url "$FINTS_URL" \
+      -n "$FINTS_USER" \
+      -p "$FINTS_PIN" \
+      -b "$FINTS_BLZ" \
+      -i "$IBAN" \
+      --json | jq -r '"  Balance: \(.value.value) \(.value.currency)"'
+    echo ""
+done
+```
+
+## Tips
+
+- Use `--json` flag for machine-readable output that can be processed with tools like `jq`
+- Use `--verbose` flag to see detailed information during development
+- Use `--debug` flag to troubleshoot connection issues
+- Store credentials in environment variables or a secure credential manager
+- Use the [FinTS Institute Database](https://github.com/jhermsmeier/fints-institute-db) to find your bank's URL
+
 ## Resources
 
 - [Database of banks with their URLs](https://github.com/jhermsmeier/fints-institute-db)

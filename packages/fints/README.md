@@ -15,26 +15,56 @@ npm install fints-lib
 yarn add fints-lib
 ```
 
-## Example
+## Quick Start Examples
+
+### Basic Account Information
 
 ```typescript
 import { PinTanClient } from "fints-lib";
 
-const startDate = new Date("2018-08-10T12:00:00Z");
-const endDate = new Date("2018-10-10T12:00:00Z");
+// Initialize client with minimal configuration
+const client = new PinTanClient({
+    url: "https://banking.example.com/fints",
+    name: "username",
+    pin: "12345",
+    blz: "12345678",
+});
+
+// Fetch all accounts
+const accounts = await client.accounts();
+console.log(accounts); // List of all accounts
+
+// Get balance for first account
+const balance = await client.balance(accounts[0]);
+console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
+```
+
+### Fetching Transactions
+
+```typescript
+import { PinTanClient } from "fints-lib";
 
 const client = new PinTanClient({
-    url: "https://example.com/fints",
+    url: "https://banking.example.com/fints",
     name: "username",
-    pin: 12345,
-    blz: 12345678,
+    pin: "12345",
+    blz: "12345678",
 });
 
 const accounts = await client.accounts();
-console.info(accounts); // List of all accounts.
 
+// Fetch transactions for a date range
+const startDate = new Date("2024-01-01");
+const endDate = new Date("2024-12-31");
 const statements = await client.statements(accounts[0], startDate, endDate);
-console.info(statements); // List of all statements with transactions in specified date range.
+
+// Process transactions
+statements.forEach(statement => {
+    console.log(`Statement from ${statement.date}`);
+    statement.transactions.forEach(tx => {
+        console.log(`  ${tx.descriptionStructured?.bookingText}: ${tx.amount} ${tx.currency}`);
+    });
+});
 ```
 
 
@@ -162,6 +192,119 @@ console.log(info.message); // "PIN falsch"
 // Format error code with message
 const formatted = formatErrorCode("9942", "Custom message");
 // Output: "[9942] PIN falsch - Custom message"
+```
+
+## Common Use Cases
+
+### Check Account Balance
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
+});
+
+const accounts = await client.accounts();
+
+// Get balance for a specific account
+const balance = await client.balance(accounts[0]);
+console.log(`Current Balance: ${balance.value.value} ${balance.value.currency}`);
+console.log(`Available: ${balance.availableBalance?.value || 'N/A'}`);
+```
+
+### Fetch Recent Transactions
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
+});
+
+const accounts = await client.accounts();
+
+// Get transactions from the last 30 days
+const endDate = new Date();
+const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+const statements = await client.statements(accounts[0], startDate, endDate);
+
+statements.forEach(statement => {
+    console.log(`\nStatement: ${statement.date}`);
+    statement.transactions.forEach(tx => {
+        const booking = tx.descriptionStructured?.bookingText || 'Transaction';
+        const purpose = tx.purpose || '';
+        console.log(`  ${booking}: ${tx.amount} ${tx.currency}`);
+        if (purpose) console.log(`    Purpose: ${purpose}`);
+    });
+});
+```
+
+### List All Accounts with Details
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
+});
+
+const accounts = await client.accounts();
+
+console.log(`Found ${accounts.length} account(s):\n`);
+
+for (const account of accounts) {
+    console.log(`Account: ${account.accountName || 'Unnamed'}`);
+    console.log(`  IBAN: ${account.iban}`);
+    console.log(`  Type: ${account.accountType || 'N/A'}`);
+    console.log(`  Number: ${account.accountNumber || 'N/A'}`);
+    
+    try {
+        const balance = await client.balance(account);
+        console.log(`  Balance: ${balance.value.value} ${balance.value.currency}`);
+    } catch (error) {
+        console.log(`  Balance: Unable to retrieve`);
+    }
+    console.log();
+}
+```
+
+### Working with Environment Variables (Recommended)
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+// Create client using environment variables for credentials
+// Ensure environment variables are set before running
+if (!process.env.FINTS_URL || !process.env.FINTS_USERNAME || 
+    !process.env.FINTS_PIN || !process.env.FINTS_BLZ) {
+    throw new Error("Required environment variables are not set");
+}
+
+const client = new PinTanClient({
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
+    debug: process.env.NODE_ENV === "development",
+});
+
+// Example .env file:
+// FINTS_URL=https://banking.example.com/fints
+// FINTS_USERNAME=myusername
+// FINTS_PIN=mypin
+// FINTS_BLZ=12345678
+// NODE_ENV=development
 ```
 
 ## Missing
