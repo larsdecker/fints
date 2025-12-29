@@ -23,6 +23,7 @@ import { ResponseError } from "./errors/response-error";
 import { TanRequiredError, TanProcessStep } from "./errors/tan-required-error";
 import { HITAN } from "./segments/hitan";
 import { PRODUCT_NAME } from "./constants";
+import { DecoupledTanManager, DecoupledTanStatusCallback, DecoupledTanConfig, DecoupledTanState } from "./decoupled-tan";
 
 /**
  * Properties passed to configure a `Dialog`.
@@ -106,10 +107,21 @@ export class Dialog extends DialogConfig {
 
     public connection: Connection;
 
-    constructor(config: DialogConfig, connection: Connection) {
+    /**
+     * Active decoupled TAN manager if a decoupled TAN process is in progress
+     */
+    private decoupledTanManager?: DecoupledTanManager;
+
+    /**
+     * Configuration for decoupled TAN behavior
+     */
+    public decoupledTanConfig?: DecoupledTanConfig;
+
+    constructor(config: DialogConfig, connection: Connection, decoupledTanConfig?: DecoupledTanConfig) {
         super();
         Object.assign(this, config);
         this.connection = connection;
+        this.decoupledTanConfig = decoupledTanConfig;
     }
 
     /**
@@ -203,7 +215,11 @@ export class Dialog extends DialogConfig {
             // Determine which segment triggered the TAN requirement
             const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
 
-            throw new TanRequiredError(
+            // Check for decoupled TAN indicators (3956, 3076)
+            const returnValues = response.returnValues();
+            const isDecoupled = returnValues.has("3956") || returnValues.has("3076");
+
+            const error = new TanRequiredError(
                 returnValue.message,
                 hitan.transactionReference,
                 hitan.challengeText,
@@ -216,8 +232,61 @@ export class Dialog extends DialogConfig {
                     requestSegments: request.segments.map((s) => s.type),
                 },
             );
+
+            // Mark as decoupled if detected
+            if (isDecoupled) {
+                error.decoupledTanState = DecoupledTanState.INITIATED;
+            }
+
+            throw error;
         }
         this.msgNo++;
         return response;
+    }
+
+    /**
+     * Handle a decoupled TAN challenge by starting the polling process
+     *
+     * @param transactionReference The transaction reference from the TAN challenge
+     * @param challengeText The challenge text to display to the user
+     * @param statusCallback Optional callback for status updates
+     * @return The final response after confirmation
+     */
+    public async handleDecoupledTan(
+        transactionReference: string,
+        challengeText: string,
+        statusCallback?: DecoupledTanStatusCallback,
+    ): Promise<Response> {
+        // Find the appropriate TAN method (prefer one with decoupled support)
+        const tanMethod = this.tanMethods.find((m) => m.decoupledMaxStatusRequests !== undefined) || this.tanMethods[0];
+
+        this.decoupledTanManager = new DecoupledTanManager(
+            transactionReference,
+            challengeText,
+            this,
+            this.decoupledTanConfig,
+            tanMethod,
+        );
+
+        return this.decoupledTanManager.pollForConfirmation(statusCallback);
+    }
+
+    /**
+     * Check the status of an active decoupled TAN process
+     *
+     * @return Current status if a process is active, undefined otherwise
+     */
+    public checkDecoupledTanStatus() {
+        return this.decoupledTanManager?.getStatus();
+    }
+
+    /**
+     * Cancel an active decoupled TAN process
+     */
+    public cancelDecoupledTan(): void {
+        if (this.decoupledTanManager) {
+            this.decoupledTanManager.cancel();
+            this.decoupledTanManager = undefined;
+        }
     }
 }

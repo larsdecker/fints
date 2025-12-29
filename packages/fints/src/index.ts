@@ -21,3 +21,5 @@ export * from "./utils";
 export * from "./errors/response-error";
 export * from "./errors/tan-required-error";
 export * from "./errors/fints-error";
+export * from "./errors/decoupled-tan-error";
+export * from "./decoupled-tan";
