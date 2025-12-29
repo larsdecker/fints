@@ -159,11 +159,7 @@ describe("DecoupledTanManager", () => {
 
             // Mock successful response
             const mockResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["0030", { code: "0030", message: "Success" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["0030", { code: "0030", message: "Success" }]])),
             } as unknown as Response;
 
             mockDialog.connection.send = jest.fn().mockResolvedValue(mockResponse);
@@ -191,11 +187,7 @@ describe("DecoupledTanManager", () => {
 
             // Mock successful response
             const mockResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["0030", { code: "0030", message: "Success" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["0030", { code: "0030", message: "Success" }]])),
             } as unknown as Response;
 
             mockDialog.connection.send = jest.fn().mockResolvedValue(mockResponse);
@@ -219,11 +211,7 @@ describe("DecoupledTanManager", () => {
 
             // Mock pending response
             const mockResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["3956", { code: "3956", message: "Pending" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
                 success: true,
             } as unknown as Response;
 
@@ -249,11 +237,7 @@ describe("DecoupledTanManager", () => {
 
             // Mock pending response (never confirms)
             const mockResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["3956", { code: "3956", message: "Pending" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
                 success: true,
             } as unknown as Response;
 
@@ -277,11 +261,7 @@ describe("DecoupledTanManager", () => {
             const manager = new DecoupledTanManager("ref123", "Please confirm", mockDialog, config);
 
             const mockResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["0030", { code: "0030", message: "Success" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["0030", { code: "0030", message: "Success" }]])),
             } as unknown as Response;
 
             mockDialog.connection.send = jest.fn().mockResolvedValue(mockResponse);
@@ -302,20 +282,12 @@ describe("DecoupledTanManager", () => {
 
             let callCount = 0;
             const mockPendingResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["3956", { code: "3956", message: "Pending" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
                 success: true,
             } as unknown as Response;
 
             const mockSuccessResponse = {
-                returnValues: jest.fn().mockReturnValue(
-                    new Map([
-                        ["0030", { code: "0030", message: "Success" }],
-                    ]),
-                ),
+                returnValues: jest.fn().mockReturnValue(new Map([["0030", { code: "0030", message: "Success" }]])),
             } as unknown as Response;
 
             mockDialog.connection.send = jest.fn().mockImplementation(() => {

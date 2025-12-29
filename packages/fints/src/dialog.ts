@@ -23,7 +23,12 @@ import { ResponseError } from "./errors/response-error";
 import { TanRequiredError, TanProcessStep } from "./errors/tan-required-error";
 import { HITAN } from "./segments/hitan";
 import { PRODUCT_NAME } from "./constants";
-import { DecoupledTanManager, DecoupledTanStatusCallback, DecoupledTanConfig, DecoupledTanState } from "./decoupled-tan";
+import {
+    DecoupledTanManager,
+    DecoupledTanStatusCallback,
+    DecoupledTanConfig,
+    DecoupledTanState,
+} from "./decoupled-tan";
 
 /**
  * Properties passed to configure a `Dialog`.

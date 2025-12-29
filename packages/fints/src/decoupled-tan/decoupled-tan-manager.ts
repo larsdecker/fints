@@ -32,7 +32,7 @@ export class DecoupledTanManager {
     private tanMethod?: TanMethod;
     private cancelled = false;
     private startTime: Date;
-    private timeoutHandle?: NodeJS.Timeout;
+    private timeoutHandle?: ReturnType<typeof setTimeout>;
 
     constructor(
         transactionReference: string,
