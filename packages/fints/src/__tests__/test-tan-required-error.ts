@@ -188,4 +188,31 @@ describe("tan-required-error", () => {
             expect(error.getStepDescription()).toBe("TAN process completed");
         });
     });
+
+    describe("isDecoupledTan", () => {
+        test("should return false when decoupledTanState is not set", () => {
+            const error = new TanRequiredError(
+                "TAN required",
+                "ref123",
+                "Please enter TAN",
+                Buffer.from(""),
+                mockDialog,
+            );
+
+            expect(error.isDecoupledTan()).toBe(false);
+        });
+
+        test("should return true when decoupledTanState is set", () => {
+            const error = new TanRequiredError(
+                "TAN required",
+                "ref123",
+                "Please enter TAN",
+                Buffer.from(""),
+                mockDialog,
+            );
+            error.decoupledTanState = "initiated" as any;
+
+            expect(error.isDecoupledTan()).toBe(true);
+        });
+    });
 });

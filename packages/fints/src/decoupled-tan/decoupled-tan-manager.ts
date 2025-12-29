@@ -165,8 +165,8 @@ export class DecoupledTanManager {
      * Main polling loop
      */
     private async pollLoop(statusCallback?: DecoupledTanStatusCallback): Promise<Response> {
-        while (this.isActive() && !this.cancelled) {
-            // Check if cancelled
+        while (this.isActive()) {
+            // Check if cancelled first
             if (this.cancelled) {
                 throw new DecoupledTanError("Decoupled TAN cancelled by user", this.getStatus());
             }
@@ -221,6 +221,10 @@ export class DecoupledTanManager {
             }
         }
 
+        // If we exit the loop and weren't cancelled, something unexpected happened
+        if (this.cancelled) {
+            throw new DecoupledTanError("Decoupled TAN cancelled by user", this.getStatus());
+        }
         throw new DecoupledTanError("Polling loop exited unexpectedly", this.getStatus());
     }
 
