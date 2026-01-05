@@ -7,10 +7,20 @@ import { TanMethod } from "../tan-method";
 import { Request } from "../request";
 
 /**
+ * FinTS return code constants for decoupled TAN authentication
+ */
+const RETURN_CODE_TAN_REQUIRED = "0030"; // Order received - TAN/Security clearance required
+const RETURN_CODE_PENDING_CONFIRMATION = "3956"; // Strong customer authentication pending
+
+/**
+ * HKTAN process type for decoupled TAN status polling
+ */
+const HKTAN_PROCESS_DECOUPLED_STATUS = "2"; // Decoupled/asynchronous authentication status check
+
+/**
  * Default configuration for decoupled TAN
  */
 const DEFAULT_CONFIG: Required<DecoupledTanConfig> = {
-    autoStartPolling: true,
     maxStatusRequests: 60,
     waitBeforeFirstStatusRequest: 2000,
     waitBetweenStatusRequests: 2000,
@@ -35,7 +45,7 @@ export type DecoupledTanStatusCallback = (status: DecoupledTanStatus) => void | 
  * - Process: tanProcess="2" (Decoupled/Asynchronous)
  *
  * **Key Features:**
- * - Automatic polling with exponential backoff
+ * - Automatic polling with configurable fixed intervals
  * - State machine for TAN lifecycle (INITIATED → CHALLENGE_SENT → PENDING_CONFIRMATION → CONFIRMED)
  * - Configurable timeout handling
  * - Server-provided timing parameters from HITANS segment
@@ -56,6 +66,7 @@ export class DecoupledTanManager {
     private cancelled = false;
     private startTime: Date;
     private timeoutHandle?: ReturnType<typeof setTimeout>;
+    private isPolling = false;
 
     constructor(
         transactionReference: string,
@@ -131,6 +142,13 @@ export class DecoupledTanManager {
      * Start the polling process and wait for confirmation
      */
     public async pollForConfirmation(statusCallback?: DecoupledTanStatusCallback): Promise<Response> {
+        // Prevent multiple simultaneous polling attempts
+        if (this.isPolling) {
+            throw new Error("Polling is already in progress. Cannot start a new polling session.");
+        }
+
+        this.isPolling = true;
+
         // Set state to CHALLENGE_SENT
         this.updateState(DecoupledTanState.CHALLENGE_SENT);
         if (statusCallback) {
@@ -140,13 +158,16 @@ export class DecoupledTanManager {
         // Set up total timeout
         const timeoutPromise = new Promise<never>((_, reject) => {
             this.timeoutHandle = setTimeout(() => {
-                this.updateState(DecoupledTanState.TIMED_OUT, "Total timeout exceeded");
-                reject(
-                    new DecoupledTanError(
-                        `Decoupled TAN timed out after ${this.config.totalTimeout}ms`,
-                        this.getStatus(),
-                    ),
-                );
+                // Check if already cancelled to avoid race condition
+                if (!this.cancelled) {
+                    this.updateState(DecoupledTanState.TIMED_OUT, "Total timeout exceeded");
+                    reject(
+                        new DecoupledTanError(
+                            `Decoupled TAN timed out after ${this.config.totalTimeout}ms`,
+                            this.getStatus(),
+                        ),
+                    );
+                }
             }, this.config.totalTimeout);
         });
 
@@ -181,6 +202,8 @@ export class DecoupledTanManager {
                 this.timeoutHandle = undefined;
             }
             throw error;
+        } finally {
+            this.isPolling = false;
         }
     }
 
@@ -204,9 +227,6 @@ export class DecoupledTanManager {
             try {
                 const response = await this.checkStatus();
 
-                // Increment counter
-                this.status.statusRequestCount++;
-
                 // Check response for confirmation or error codes
                 const returnValues = response.returnValues();
 
@@ -226,14 +246,17 @@ export class DecoupledTanManager {
 
                 // Check for confirmation: 0030 present WITHOUT 3956 means TAN was approved
                 // If 3956 is still present, authentication is pending and we must continue polling
-                if (returnValues.has("0030") && !returnValues.has("3956")) {
+                if (returnValues.has(RETURN_CODE_TAN_REQUIRED) && !returnValues.has(RETURN_CODE_PENDING_CONFIRMATION)) {
+                    // TAN confirmed - increment counter and return
+                    this.status.statusRequestCount++;
                     return response;
                 }
 
                 // Check for still pending: 3956 means user hasn't approved yet
                 // Continue polling until user confirms in their banking app
-                if (returnValues.has("3956")) {
-                    // Still pending, continue polling
+                if (returnValues.has(RETURN_CODE_PENDING_CONFIRMATION)) {
+                    // Still pending - increment counter and continue polling
+                    this.status.statusRequestCount++;
                     if (statusCallback) {
                         await statusCallback(this.getStatus());
                     }
@@ -244,11 +267,13 @@ export class DecoupledTanManager {
                 // Check for errors
                 if (!response.success) {
                     const errorMessages = response.errors.join(", ");
+                    this.status.statusRequestCount++;
                     this.updateState(DecoupledTanState.FAILED, errorMessages);
                     throw new DecoupledTanError(`Server error: ${errorMessages}`, this.getStatus());
                 }
 
                 // Unexpected response, treat as confirmation
+                this.status.statusRequestCount++;
                 return response;
             } catch (error) {
                 if (error instanceof DecoupledTanError) {
@@ -269,14 +294,19 @@ export class DecoupledTanManager {
 
     /**
      * Make a single status check request
+     *
+     * Note: This uses segNo=3 as the HKTAN status request is typically the first business
+     * segment after the dialog headers (HNHBK, HNVSK). While the exact segment number may
+     * vary in different contexts, segNo=3 is the standard position for standalone HKTAN
+     * status requests in the decoupled TAN flow.
      */
     private async checkStatus(): Promise<Response> {
         const version = this.dialog.hktanVersion >= 7 ? 7 : this.dialog.hktanVersion;
         const segments = [
             new HKTAN({
-                segNo: 3,
+                segNo: 3, // Standard position for HKTAN in status-only requests
                 version,
-                process: "2",
+                process: HKTAN_PROCESS_DECOUPLED_STATUS,
                 aref: this.status.transactionReference,
             }),
         ];

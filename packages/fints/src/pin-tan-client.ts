@@ -125,8 +125,8 @@ export class PinTanClient extends Client {
         if (!error.isDecoupledTan()) {
             throw new Error(
                 "The provided TanRequiredError does not represent a decoupled TAN challenge. " +
-                "Only call handleDecoupledTanChallenge when error.isDecoupledTan() returns true. " +
-                "For regular TAN challenges, use your normal TAN handling flow instead."
+                    "Only call handleDecoupledTanChallenge when error.isDecoupledTan() returns true. " +
+                    "For regular TAN challenges, use your normal TAN handling flow instead.",
             );
         }
 

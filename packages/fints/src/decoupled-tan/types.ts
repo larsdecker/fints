@@ -42,12 +42,6 @@ export enum DecoupledTanState {
  */
 export interface DecoupledTanConfig {
     /**
-     * Automatically start polling when a decoupled TAN challenge is detected
-     * @default true
-     */
-    autoStartPolling?: boolean;
-
-    /**
      * Maximum number of status requests to make
      * Can be overridden by server-provided value from TAN method
      * @default 60

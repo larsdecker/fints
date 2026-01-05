@@ -47,7 +47,6 @@ describe("DecoupledTanManager", () => {
 
         test("should use custom config when provided", () => {
             const config: DecoupledTanConfig = {
-                autoStartPolling: false,
                 maxStatusRequests: 30,
                 waitBeforeFirstStatusRequest: 1000,
                 waitBetweenStatusRequests: 1500,

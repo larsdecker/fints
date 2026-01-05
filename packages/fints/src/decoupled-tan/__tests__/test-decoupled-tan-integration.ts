@@ -17,7 +17,6 @@ describe("Decoupled TAN Integration", () => {
         });
 
         const config: DecoupledTanConfig = {
-            autoStartPolling: true,
             maxStatusRequests: 10,
             waitBeforeFirstStatusRequest: 10,
             waitBetweenStatusRequests: 10,
