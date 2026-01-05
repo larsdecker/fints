@@ -282,17 +282,8 @@ export class Dialog extends DialogConfig {
      * @see https://www.hbci-zka.de/ for FinTS specification
      */
     public async handleDecoupledTan(
-        // Ensure TAN methods are available before attempting decoupled TAN handling
-        if (!this.tanMethods || this.tanMethods.length === 0) {
-            throw new Error(
-                "No TAN methods are available for decoupled TAN handling. " +
-                    "Ensure the dialog is properly initialized and TAN methods have been retrieved.",
-            );
-        }
-
-        // Find the appropriate TAN method (prefer one with decoupled support)
-        const tanMethod =
-            this.tanMethods.find((m) => m.decoupledMaxStatusRequests !== undefined) || this.tanMethods[0];
+        transactionReference: string,
+        challengeText: string,
         statusCallback?: DecoupledTanStatusCallback,
     ): Promise<Response> {
         // Ensure TAN methods are available before attempting decoupled TAN handling
