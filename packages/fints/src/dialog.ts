@@ -220,7 +220,11 @@ export class Dialog extends DialogConfig {
             // Determine which segment triggered the TAN requirement
             const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
 
-            // Check for decoupled TAN indicators (3956, 3076)
+            // Check for decoupled TAN indicators per FinTS 3.0 PINTAN specification:
+            // - "3956": Indicates strong customer authentication (SCA) is pending on trusted device
+            // - "3076": PSD2-mandated strong customer authentication required
+            // When either code is present alongside "0030", it signals decoupled TAN flow
+            // where the user must approve the transaction in a separate app (e.g., mobile banking)
             const returnValues = response.returnValues();
             const isDecoupled = returnValues.has("3956") || returnValues.has("3076");
 

@@ -187,12 +187,28 @@ export class DecoupledTanManager {
                 // Check response for confirmation or error codes
                 const returnValues = response.returnValues();
 
-                // Check for confirmation (0030 without 3956)
+                // FinTS Return Codes (per FinTS 3.0 PINTAN specification):
+                // - "0030": "Order received - TAN/Security clearance required"
+                //   This code indicates the server accepted the order but needs TAN confirmation.
+                //   It's a success code (0xxx range) that triggers TAN requirement.
+                //
+                // - "3956": "Strong customer authentication necessary"
+                //   This warning code (3xxx range) indicates the decoupled TAN process is still
+                //   pending user confirmation on their trusted device (e.g., mobile app).
+                //   The client must continue polling until this code disappears.
+                //
+                // - "3076": "Strong customer authentication necessary (PSD2)"
+                //   Similar to 3956, indicates SCA is required per PSD2 regulations.
+                //   Used to detect initial decoupled TAN requirement.
+
+                // Check for confirmation: 0030 present WITHOUT 3956 means TAN was approved
+                // If 3956 is still present, authentication is pending and we must continue polling
                 if (returnValues.has("0030") && !returnValues.has("3956")) {
                     return response;
                 }
 
-                // Check for still pending (3956)
+                // Check for still pending: 3956 means user hasn't approved yet
+                // Continue polling until user confirms in their banking app
                 if (returnValues.has("3956")) {
                     // Still pending, continue polling
                     if (statusCallback) {
