@@ -256,10 +256,30 @@ export class Dialog extends DialogConfig {
     /**
      * Handle a decoupled TAN challenge by starting the polling process
      *
-     * @param transactionReference The transaction reference from the TAN challenge
+     * Implements the FinTS 3.0 PINTAN decoupled TAN authentication flow (tanProcess="2").
+     * This method automatically polls the server for transaction approval until the user
+     * confirms the transaction in their trusted device (e.g., mobile banking app).
+     *
+     * **FinTS Specification:**
+     * - Uses HKTAN segment with process="2" for status polling
+     * - Monitors return codes: 3956 (pending), 0030 (confirmed)
+     * - Respects server timing from HITANS segment parameters
+     *
+     * **Polling Behavior:**
+     * - Waits before first request (default: 2000ms, configurable)
+     * - Polls at regular intervals (default: 2000ms, configurable)
+     * - Maximum requests (default: 60, configurable)
+     * - Total timeout (default: 5 minutes, configurable)
+     *
+     * @param transactionReference The transaction reference from the TAN challenge (HITAN segment)
      * @param challengeText The challenge text to display to the user
-     * @param statusCallback Optional callback for status updates
+     * @param statusCallback Optional callback for status updates during polling
      * @return The final response after confirmation
+     *
+     * @throws {DecoupledTanError} If timeout occurs, max requests exceeded, or user cancels
+     *
+     * @see DecoupledTanManager for detailed polling implementation
+     * @see https://www.hbci-zka.de/ for FinTS specification
      */
     public async handleDecoupledTan(
         transactionReference: string,

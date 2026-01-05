@@ -24,7 +24,29 @@ export type DecoupledTanStatusCallback = (status: DecoupledTanStatus) => void | 
 
 /**
  * Manages the lifecycle of a decoupled TAN (asynchronous authentication) process.
- * Handles automatic polling with exponential backoff, state management, and timeout handling.
+ *
+ * Implements the FinTS 3.0 Security Sicherheitsverfahren PINTAN specification for
+ * decoupled TAN authentication (tanProcess="2"), where transaction approval happens
+ * asynchronously on a separate device (e.g., mobile banking app).
+ *
+ * **FinTS Specification Reference:**
+ * - Document: "Sicherheitsverfahren PINTAN" Version 3.0
+ * - Section: "Zwei-Schritt-TAN-Verfahren" (Two-Step TAN Procedure)
+ * - Process: tanProcess="2" (Decoupled/Asynchronous)
+ *
+ * **Key Features:**
+ * - Automatic polling with exponential backoff
+ * - State machine for TAN lifecycle (INITIATED → CHALLENGE_SENT → PENDING_CONFIRMATION → CONFIRMED)
+ * - Configurable timeout handling
+ * - Server-provided timing parameters from HITANS segment
+ * - User cancellation support
+ *
+ * **Return Code Handling:**
+ * - "0030": Order received - TAN/Security clearance required
+ * - "3956": Strong customer authentication pending
+ * - "3076": PSD2 Strong Customer Authentication required
+ *
+ * @see https://www.hbci-zka.de/ for FinTS specification documentation
  */
 export class DecoupledTanManager {
     private status: DecoupledTanStatus;

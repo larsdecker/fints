@@ -86,9 +86,37 @@ export class PinTanClient extends Client {
     /**
      * Handle a decoupled TAN challenge with automatic polling
      *
+     * High-level method for handling decoupled TAN authentication flow.
+     * Automatically manages the polling lifecycle and provides status updates
+     * through an optional callback.
+     *
+     * **Usage Pattern:**
+     * ```typescript
+     * try {
+     *   await client.creditTransfer(account, transfer);
+     * } catch (error) {
+     *   if (error instanceof TanRequiredError && error.isDecoupledTan()) {
+     *     await client.handleDecoupledTanChallenge(error, (status) => {
+     *       console.log(`State: ${status.state}, Requests: ${status.statusRequestCount}`);
+     *     });
+     *   }
+     * }
+     * ```
+     *
+     * **FinTS Specification:**
+     * - Implements tanProcess="2" polling per FinTS 3.0 PINTAN
+     * - Uses HKTAN segment for status checks
+     * - Respects server timing from HITANS segment
+     *
      * @param error The TanRequiredError that contains the challenge information
      * @param statusCallback Optional callback for status updates during polling
      * @return The final response after confirmation
+     *
+     * @throws {Error} If the error is not a decoupled TAN challenge
+     * @throws {DecoupledTanError} If polling fails (timeout, cancellation, etc.)
+     *
+     * @see Dialog.handleDecoupledTan for lower-level control
+     * @see https://www.hbci-zka.de/ for FinTS specification
      */
     public async handleDecoupledTanChallenge(
         error: TanRequiredError,

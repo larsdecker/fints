@@ -1,10 +1,24 @@
 /**
  * Decoupled TAN (Asynchronous Authentication) Types
- * Based on FinTS 3.0 Security Specification (PINTAN)
+ *
+ * Implements types for FinTS 3.0 Security Sicherheitsverfahren PINTAN specification
+ * for decoupled TAN authentication, where transaction approval occurs asynchronously
+ * on a separate trusted device (e.g., mobile banking app).
+ *
+ * **FinTS Specification Reference:**
+ * - Document: "Sicherheitsverfahren PINTAN" Version 3.0
+ * - Section: "Zwei-Schritt-TAN-Verfahren" (Two-Step TAN Procedure)
+ * - HKTAN Segment: Section B.5.1 (TAN-Verfahren festlegen)
+ * - Process: tanProcess="2" for decoupled/asynchronous authentication
+ *
+ * @see https://www.hbci-zka.de/ for FinTS specification documentation
  */
 
 /**
  * States of the decoupled TAN lifecycle
+ *
+ * These states track the progression of a decoupled TAN authentication
+ * from initiation through completion or failure.
  */
 export enum DecoupledTanState {
     /** Challenge has been received from the server */
