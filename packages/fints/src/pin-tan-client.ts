@@ -123,7 +123,11 @@ export class PinTanClient extends Client {
         statusCallback?: DecoupledTanStatusCallback,
     ): Promise<Response> {
         if (!error.isDecoupledTan()) {
-            throw new Error("This is not a decoupled TAN challenge");
+            throw new Error(
+                "The provided TanRequiredError does not represent a decoupled TAN challenge. " +
+                "Only call handleDecoupledTanChallenge when error.isDecoupledTan() returns true. " +
+                "For regular TAN challenges, use your normal TAN handling flow instead."
+            );
         }
 
         return error.dialog.handleDecoupledTan(error.transactionReference, error.challengeText, statusCallback);
