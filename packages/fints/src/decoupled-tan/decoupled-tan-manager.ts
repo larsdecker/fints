@@ -4,6 +4,7 @@ import { Dialog } from "../dialog";
 import { HKTAN } from "../segments";
 import { Response } from "../response";
 import { TanMethod } from "../tan-method";
+import { Request } from "../request";
 
 /**
  * Default configuration for decoupled TAN
@@ -259,7 +260,9 @@ export class DecoupledTanManager {
         ];
 
         const { blz, name, pin, systemId, dialogId, msgNo, tanMethods } = this.dialog;
-        const request = {
+
+        // Create a proper Request instance instead of using a plain object
+        const request = new Request({
             blz,
             name,
             pin,
@@ -268,13 +271,10 @@ export class DecoupledTanManager {
             msgNo,
             segments,
             tanMethods,
-        };
+        });
 
-        // Use the dialog's connection to send the request
-        // Note: We bypass dialog.send() to avoid incrementing msgNo unnecessarily
-        request.msgNo = this.dialog.msgNo;
-        request.dialogId = this.dialog.dialogId;
-        const response = await this.dialog.connection.send(request as any);
+        // Send the request using the dialog's connection
+        const response = await this.dialog.connection.send(request);
 
         return response;
     }
