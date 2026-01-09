@@ -23,6 +23,12 @@ import { ResponseError } from "./errors/response-error";
 import { TanRequiredError, TanProcessStep } from "./errors/tan-required-error";
 import { HITAN } from "./segments/hitan";
 import { PRODUCT_NAME } from "./constants";
+import {
+    DecoupledTanManager,
+    DecoupledTanStatusCallback,
+    DecoupledTanConfig,
+    DecoupledTanState,
+} from "./decoupled-tan";
 
 /**
  * Properties passed to configure a `Dialog`.
@@ -106,10 +112,21 @@ export class Dialog extends DialogConfig {
 
     public connection: Connection;
 
-    constructor(config: DialogConfig, connection: Connection) {
+    /**
+     * Active decoupled TAN manager if a decoupled TAN process is in progress
+     */
+    private decoupledTanManager?: DecoupledTanManager;
+
+    /**
+     * Configuration for decoupled TAN behavior
+     */
+    public decoupledTanConfig?: DecoupledTanConfig;
+
+    constructor(config: DialogConfig, connection: Connection, decoupledTanConfig?: DecoupledTanConfig) {
         super();
         Object.assign(this, config);
         this.connection = connection;
+        this.decoupledTanConfig = decoupledTanConfig;
     }
 
     /**
@@ -203,7 +220,15 @@ export class Dialog extends DialogConfig {
             // Determine which segment triggered the TAN requirement
             const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
 
-            throw new TanRequiredError(
+            // Check for decoupled TAN indicators per FinTS 3.0 PINTAN specification:
+            // - "3956": Indicates strong customer authentication (SCA) is pending on trusted device
+            // - "3076": PSD2-mandated strong customer authentication required
+            // When either code is present alongside "0030", it signals decoupled TAN flow
+            // where the user must approve the transaction in a separate app (e.g., mobile banking)
+            const returnValues = response.returnValues();
+            const isDecoupled = returnValues.has("3956") || returnValues.has("3076");
+
+            const error = new TanRequiredError(
                 returnValue.message,
                 hitan.transactionReference,
                 hitan.challengeText,
@@ -216,8 +241,89 @@ export class Dialog extends DialogConfig {
                     requestSegments: request.segments.map((s) => s.type),
                 },
             );
+
+            // Mark as decoupled if detected
+            if (isDecoupled) {
+                error.decoupledTanState = DecoupledTanState.INITIATED;
+            }
+
+            throw error;
         }
         this.msgNo++;
         return response;
+    }
+
+    /**
+     * Handle a decoupled TAN challenge by starting the polling process
+     *
+     * Implements the FinTS 3.0 PINTAN decoupled TAN authentication flow (tanProcess="2").
+     * This method automatically polls the server for transaction approval until the user
+     * confirms the transaction in their trusted device (e.g., mobile banking app).
+     *
+     * **FinTS Specification:**
+     * - Uses HKTAN segment with process="2" for status polling
+     * - Monitors return codes: 3956 (pending), 0030 (confirmed)
+     * - Respects server timing from HITANS segment parameters
+     *
+     * **Polling Behavior:**
+     * - Waits before first request (default: 2000ms, configurable)
+     * - Polls at regular intervals (default: 2000ms, configurable)
+     * - Maximum requests (default: 60, configurable)
+     * - Total timeout (default: 5 minutes, configurable)
+     *
+     * @param transactionReference The transaction reference from the TAN challenge (HITAN segment)
+     * @param challengeText The challenge text to display to the user
+     * @param statusCallback Optional callback for status updates during polling
+     * @return The final response after confirmation
+     *
+     * @throws {DecoupledTanError} If timeout occurs, max requests exceeded, or user cancels
+     *
+     * @see DecoupledTanManager for detailed polling implementation
+     * @see https://www.hbci-zka.de/ for FinTS specification
+     */
+    public async handleDecoupledTan(
+        transactionReference: string,
+        challengeText: string,
+        statusCallback?: DecoupledTanStatusCallback,
+    ): Promise<Response> {
+        // Ensure TAN methods are available before attempting decoupled TAN handling
+        if (!this.tanMethods || this.tanMethods.length === 0) {
+            throw new Error(
+                "No TAN methods are available for decoupled TAN handling. " +
+                    "Ensure the dialog is properly initialized and TAN methods have been retrieved.",
+            );
+        }
+
+        // Find the appropriate TAN method (prefer one with decoupled support)
+        const tanMethod = this.tanMethods.find((m) => m.decoupledMaxStatusRequests !== undefined) || this.tanMethods[0];
+
+        this.decoupledTanManager = new DecoupledTanManager(
+            transactionReference,
+            challengeText,
+            this,
+            this.decoupledTanConfig,
+            tanMethod,
+        );
+
+        return this.decoupledTanManager.pollForConfirmation(statusCallback);
+    }
+
+    /**
+     * Check the status of an active decoupled TAN process
+     *
+     * @return Current status if a process is active, undefined otherwise
+     */
+    public checkDecoupledTanStatus() {
+        return this.decoupledTanManager?.getStatus();
+    }
+
+    /**
+     * Cancel an active decoupled TAN process
+     */
+    public cancelDecoupledTan(): void {
+        if (this.decoupledTanManager) {
+            this.decoupledTanManager.cancel();
+            this.decoupledTanManager = undefined;
+        }
     }
 }
