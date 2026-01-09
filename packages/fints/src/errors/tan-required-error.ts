@@ -1,5 +1,6 @@
 import { Dialog } from "../dialog";
 import { DirectDebitSubmission, CreditTransferSubmission } from "../types";
+import { DecoupledTanState } from "../decoupled-tan/types";
 
 /**
  * TAN process steps for multi-step flows
@@ -30,6 +31,10 @@ export class TanRequiredError extends Error {
      * Additional context information for debugging
      */
     public context?: Record<string, any>;
+    /**
+     * Decoupled TAN state if this is a decoupled TAN challenge
+     */
+    public decoupledTanState?: DecoupledTanState;
 
     constructor(
         message: string,
@@ -61,6 +66,13 @@ export class TanRequiredError extends Error {
      */
     public isMultiStep(): boolean {
         return this.processStep !== TanProcessStep.COMPLETED;
+    }
+
+    /**
+     * Check if this is a decoupled TAN challenge
+     */
+    public isDecoupledTan(): boolean {
+        return this.decoupledTanState !== undefined;
     }
 
     /**
