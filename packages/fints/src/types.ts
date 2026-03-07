@@ -395,6 +395,60 @@ export interface Holding {
 }
 
 /**
+ * Describes the capabilities of a bank as determined during the initial synchronisation dialog.
+ *
+ * Each flag reflects whether the bank advertises support for the corresponding FinTS business
+ * transaction via its parameter segments (e.g. HIKAZS, HISALS, HIWPDS, …).
+ */
+export interface BankCapabilities {
+    /**
+     * Whether the bank supports retrieving the list of SEPA accounts (HKSPA).
+     * This is always `true` for any conforming FinTS server.
+     */
+    supportsAccounts: boolean;
+    /**
+     * Whether the bank supports querying account balances (HKSAL).
+     * Derived from the presence of a HISALS parameter segment in the sync response.
+     */
+    supportsBalance: boolean;
+    /**
+     * Whether the bank supports fetching bank statements / transaction history (HKKAZ).
+     * Derived from the presence of a HIKAZS parameter segment in the sync response.
+     */
+    supportsTransactions: boolean;
+    /**
+     * Whether the bank supports fetching securities and holdings for a depot account (HKWPD).
+     * Derived from the presence of a HIWPDS parameter segment in the sync response.
+     */
+    supportsHoldings: boolean;
+    /**
+     * Whether the bank supports fetching standing orders (HKCDB).
+     * Derived from the presence of a HICDBS parameter segment in the sync response.
+     */
+    supportsStandingOrders: boolean;
+    /**
+     * Whether the bank supports initiating SEPA credit transfers (HKCCS).
+     * Derived from the presence of a HICCSS parameter segment in the sync response.
+     */
+    supportsCreditTransfer: boolean;
+    /**
+     * Whether the bank supports submitting SEPA direct debits (HKDSE).
+     * Derived from the presence of a HIDSES parameter segment in the sync response.
+     */
+    supportsDirectDebit: boolean;
+    /**
+     * Whether a TAN is required to fetch bank statements.
+     * Derived from the `minSignatures` field of the HIKAZS parameter segment (`minSignatures > 0`).
+     */
+    requiresTanForTransactions: boolean;
+    /**
+     * Whether a TAN is required to query account balances.
+     * Derived from the `minSignatures` field of the HISALS parameter segment (`minSignatures > 0`).
+     */
+    requiresTanForBalance: boolean;
+}
+
+/**
  * A connection used in the client to contact the server.
  */
 export interface Connection {

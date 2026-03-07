@@ -31,6 +31,7 @@ import {
     DirectDebitSubmission,
     CreditTransferRequest,
     CreditTransferSubmission,
+    BankCapabilities,
 } from "./types";
 import { read } from "mt940-js";
 import { parse86Structured } from "./mt940-86-structured";
@@ -56,6 +57,21 @@ export abstract class Client {
      * Create a request.
      */
     protected abstract createRequest(dialog: Dialog, segments: Segment<any>[], tan?: string): Request;
+
+    /**
+     * Retrieve the capabilities of the bank by performing a synchronisation request.
+     *
+     * The capabilities are derived from the parameter segments the bank advertises during
+     * the initial sync dialog (e.g. HIKAZS, HISALS, HIWPDS, HICCSS, HIDSES, …).
+     * No additional authentication beyond the configured credentials is required.
+     *
+     * @return An object describing what operations this bank supports.
+     */
+    public async capabilities(): Promise<BankCapabilities> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        return dialog.capabilities;
+    }
 
     /**
      * Fetch a list of all SEPA accounts accessible by the user.

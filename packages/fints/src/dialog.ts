@@ -15,6 +15,7 @@ import {
     HICCSS,
     Segment,
 } from "./segments";
+import { BankCapabilities } from "./types";
 import { Request } from "./request";
 import { Response } from "./response";
 import { TanMethod } from "./tan-method";
@@ -104,6 +105,26 @@ export class Dialog extends DialogConfig {
      */
     public hiwpdsVersion = 0;
     /**
+     * Whether the bank supports SEPA credit transfers (HKCCS).
+     * Set to `true` during synchronization if the bank returns a HICCSS parameter segment.
+     */
+    public supportsCreditTransfer = false;
+    /**
+     * Whether the bank supports SEPA direct debits (HKDSE).
+     * Set to `true` during synchronization if the bank returns a HIDSES parameter segment.
+     */
+    public supportsDirectDebit = false;
+    /**
+     * Minimum number of signatures required to fetch bank statements (from HIKAZS).
+     * A value greater than `0` means a TAN is required.
+     */
+    public hikazsMinSignatures = 0;
+    /**
+     * Minimum number of signatures required to query account balances (from HISALS).
+     * A value greater than `0` means a TAN is required.
+     */
+    public hisalsMinSignatures = 0;
+    /**
      * A list of supported SEPA pain-formats as configured by the server.
      */
     public painFormats: string[] = [];
@@ -153,12 +174,18 @@ export class Dialog extends DialogConfig {
         this.hicdbVersion = response.segmentMaxVersion(HICDBS);
         const hkdseVersion = response.segmentMaxVersion(HIDSES);
         this.hkdseVersion = hkdseVersion > 0 ? hkdseVersion : 1;
+        this.supportsDirectDebit = hkdseVersion > 0;
         const hkccsVersion = response.segmentMaxVersion(HICCSS);
         this.hkccsVersion = hkccsVersion > 0 ? hkccsVersion : 1;
+        this.supportsCreditTransfer = hkccsVersion > 0;
         this.hiwpdsVersion = response.segmentMaxVersion(HIWPDS);
         this.hktanVersion = response.segmentMaxVersion(HITANS);
         this.tanMethods = response.supportedTanMethods;
         this.painFormats = response.painFormats;
+        const hikazs = response.findSegment(HIKAZS);
+        this.hikazsMinSignatures = hikazs?.minSignatures ?? 0;
+        const hisals = response.findSegment(HISALS);
+        this.hisalsMinSignatures = hisals?.minSignatures ?? 0;
         const hiupd = response.findSegments(HIUPD);
         this.hiupd = hiupd;
         await this.end();
@@ -325,5 +352,26 @@ export class Dialog extends DialogConfig {
             this.decoupledTanManager.cancel();
             this.decoupledTanManager = undefined;
         }
+    }
+
+    /**
+     * Returns the capabilities of the bank based on the parameter segments
+     * received during the last synchronisation.
+     *
+     * Call this only after `sync()` has been invoked so that all version
+     * fields have been populated from the server response.
+     */
+    public get capabilities(): BankCapabilities {
+        return {
+            supportsAccounts: true,
+            supportsBalance: this.hisalsVersion > 0,
+            supportsTransactions: this.hikazsVersion > 0,
+            supportsHoldings: this.hiwpdsVersion > 0,
+            supportsStandingOrders: this.hicdbVersion > 0,
+            supportsCreditTransfer: this.supportsCreditTransfer,
+            supportsDirectDebit: this.supportsDirectDebit,
+            requiresTanForTransactions: this.hikazsMinSignatures > 0,
+            requiresTanForBalance: this.hisalsMinSignatures > 0,
+        };
     }
 }
