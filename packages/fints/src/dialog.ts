@@ -1,4 +1,4 @@
-import { Connection } from "./types";
+import { Connection, BankCapabilities } from "./types";
 import {
     HKIDN,
     HKVVB,
@@ -15,7 +15,6 @@ import {
     HICCSS,
     Segment,
 } from "./segments";
-import { BankCapabilities } from "./types";
 import { Request } from "./request";
 import { Response } from "./response";
 import { TanMethod } from "./tan-method";
@@ -105,6 +104,21 @@ export class Dialog extends DialogConfig {
      */
     public hiwpdsVersion = 0;
     /**
+     * Whether the bank supports querying account balances (HKSAL).
+     * Set to `true` during synchronization if the bank returns a HISALS parameter segment.
+     */
+    public supportsBalance = false;
+    /**
+     * Whether the bank supports fetching bank statements / transaction history (HKKAZ).
+     * Set to `true` during synchronization if the bank returns a HIKAZS parameter segment.
+     */
+    public supportsTransactions = false;
+    /**
+     * Whether the bank supports fetching standing orders (HKCDB).
+     * Set to `true` during synchronization if the bank returns a HICDBS parameter segment.
+     */
+    public supportsStandingOrders = false;
+    /**
      * Whether the bank supports SEPA credit transfers (HKCCS).
      * Set to `true` during synchronization if the bank returns a HICCSS parameter segment.
      */
@@ -169,9 +183,15 @@ export class Dialog extends DialogConfig {
         const response = await this.send(new Request({ blz, name, pin, systemId, dialogId, msgNo, segments }));
         this.systemId = escapeFinTS(response.systemId);
         this.dialogId = response.dialogId;
-        this.hisalsVersion = response.segmentMaxVersion(HISALS);
-        this.hikazsVersion = response.segmentMaxVersion(HIKAZS);
-        this.hicdbVersion = response.segmentMaxVersion(HICDBS);
+        const hisalsVer = response.segmentMaxVersion(HISALS);
+        this.supportsBalance = hisalsVer > 0;
+        if (hisalsVer > 0) this.hisalsVersion = hisalsVer;
+        const hikazsVer = response.segmentMaxVersion(HIKAZS);
+        this.supportsTransactions = hikazsVer > 0;
+        if (hikazsVer > 0) this.hikazsVersion = hikazsVer;
+        const hicdbVer = response.segmentMaxVersion(HICDBS);
+        this.supportsStandingOrders = hicdbVer > 0;
+        if (hicdbVer > 0) this.hicdbVersion = hicdbVer;
         const hkdseVersion = response.segmentMaxVersion(HIDSES);
         this.hkdseVersion = hkdseVersion > 0 ? hkdseVersion : 1;
         this.supportsDirectDebit = hkdseVersion > 0;
@@ -364,10 +384,10 @@ export class Dialog extends DialogConfig {
     public get capabilities(): BankCapabilities {
         return {
             supportsAccounts: true,
-            supportsBalance: this.hisalsVersion > 0,
-            supportsTransactions: this.hikazsVersion > 0,
+            supportsBalance: this.supportsBalance,
+            supportsTransactions: this.supportsTransactions,
             supportsHoldings: this.hiwpdsVersion > 0,
-            supportsStandingOrders: this.hicdbVersion > 0,
+            supportsStandingOrders: this.supportsStandingOrders,
             supportsCreditTransfer: this.supportsCreditTransfer,
             supportsDirectDebit: this.supportsDirectDebit,
             requiresTanForTransactions: this.hikazsMinSignatures > 0,

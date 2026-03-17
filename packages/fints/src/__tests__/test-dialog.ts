@@ -57,10 +57,10 @@ describe("Dialog", () => {
         const dialog = new Dialog(baseConfig, {} as any);
 
         // Simulate the state after a sync response has been processed.
-        dialog.hisalsVersion = 5;
-        dialog.hikazsVersion = 6;
+        dialog.supportsBalance = true;
+        dialog.supportsTransactions = true;
         dialog.hiwpdsVersion = 6;
-        dialog.hicdbVersion = 1;
+        dialog.supportsStandingOrders = true;
         dialog.supportsCreditTransfer = true;
         dialog.supportsDirectDebit = false;
         dialog.hikazsMinSignatures = 1;
@@ -83,10 +83,10 @@ describe("Dialog", () => {
         const dialog = new Dialog(baseConfig, {} as any);
 
         // Simulate a bank that advertises no optional features.
-        dialog.hisalsVersion = 0;
-        dialog.hikazsVersion = 0;
+        dialog.supportsBalance = false;
+        dialog.supportsTransactions = false;
         dialog.hiwpdsVersion = 0;
-        dialog.hicdbVersion = 0;
+        dialog.supportsStandingOrders = false;
         dialog.supportsCreditTransfer = false;
         dialog.supportsDirectDebit = false;
         dialog.hikazsMinSignatures = 0;
@@ -103,5 +103,17 @@ describe("Dialog", () => {
         expect(caps.supportsDirectDebit).toBe(false);
         expect(caps.requiresTanForTransactions).toBe(false);
         expect(caps.requiresTanForBalance).toBe(false);
+    });
+
+    test("capabilities getter returns false before sync() is called", () => {
+        const dialog = new Dialog(baseConfig, {} as any);
+        // No sync() has run - all support flags should be false
+        const caps = dialog.capabilities;
+        expect(caps.supportsBalance).toBe(false);
+        expect(caps.supportsTransactions).toBe(false);
+        expect(caps.supportsHoldings).toBe(false);
+        expect(caps.supportsStandingOrders).toBe(false);
+        expect(caps.supportsCreditTransfer).toBe(false);
+        expect(caps.supportsDirectDebit).toBe(false);
     });
 });
