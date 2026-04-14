@@ -1,4 +1,5 @@
 ### JavaScript Example
+
 ```javascript
 function getAccountStatements(client, accounts, statements, callback) {
     for (let i in accounts) {
@@ -55,16 +56,19 @@ client
     });
 ```
 
-##Test Javascript Example with runKit 
+##Test Javascript Example with runKit
 [Javascript Example](https://runkit.com/guidomueller/javascript-fints-example)
 
 ## nodjs Service Example
+
 Example Application with nodejs middleware and web application for view banking transactions.
 
-###Nodejs application for the fints data processing 
+###Nodejs application for the fints data processing
+
 - [cf-banking-fints-example](https://github.com/guidoMueller/cf-banking-fints-example)
 
 - [DEMO](https://cf-banking-fints-example.cfapps.eu10.hana.ondemand.com/)
 
 ###IOS Application work with the nodejs application
+
 - [IOS Application](https://apps.apple.com/us/app/unibanking/id1469203913)

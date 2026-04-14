@@ -13,18 +13,18 @@ Before you can publish packages to npm, you need:
 ## Setting up NPM_TOKEN Secret
 
 1. Generate an npm access token:
-   - Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
-   - Click "Generate New Token"
-   - Select "Automation" type
-   - Copy the generated token
+    - Go to https://www.npmjs.com/settings/YOUR_USERNAME/tokens
+    - Click "Generate New Token"
+    - Select "Automation" type
+    - Copy the generated token
 
 2. Add the token to GitHub secrets:
-   - Go to your repository Settings
-   - Navigate to "Secrets and variables" > "Actions"
-   - Click "New repository secret"
-   - Name: `NPM_TOKEN`
-   - Value: Paste your npm token
-   - Click "Add secret"
+    - Go to your repository Settings
+    - Navigate to "Secrets and variables" > "Actions"
+    - Click "New repository secret"
+    - Name: `NPM_TOKEN`
+    - Value: Paste your npm token
+    - Click "Add secret"
 
 ## Publishing Methods
 
@@ -33,22 +33,22 @@ Before you can publish packages to npm, you need:
 The recommended way to publish is through GitHub Releases:
 
 1. Update the version in both package.json files:
-   - `packages/fints/package.json`
-   - `packages/fints-cli/package.json`
+    - `packages/fints/package.json`
+    - `packages/fints-cli/package.json`
 
 2. Commit and push the version changes
 
 3. Create a new GitHub Release:
-   - Go to the repository's Releases page
-   - Click "Draft a new release"
-   - Create a new tag (e.g., `v0.5.1`)
-   - Add release notes describing the changes
-   - Click "Publish release"
+    - Go to the repository's Releases page
+    - Click "Draft a new release"
+    - Create a new tag (e.g., `v0.5.1`)
+    - Add release notes describing the changes
+    - Click "Publish release"
 
 4. The GitHub Action will automatically:
-   - Build both packages
-   - Publish `fints-lib` to npm
-   - Publish `fints-lib-cli` to npm
+    - Build both packages
+    - Publish `fints-lib` to npm
+    - Publish `fints-lib-cli` to npm
 
 ### Method 2: Manual Publishing via Workflow Dispatch
 
@@ -58,9 +58,9 @@ You can also trigger publishing manually:
 2. Select the "Publish to NPM" workflow
 3. Click "Run workflow"
 4. Choose which package to publish:
-   - `all` - Publish both packages
-   - `fints-lib` - Publish only the library
-   - `fints-lib-cli` - Publish only the CLI
+    - `all` - Publish both packages
+    - `fints-lib` - Publish only the library
+    - `fints-lib-cli` - Publish only the CLI
 5. Click "Run workflow"
 
 ## Version Numbering
@@ -92,22 +92,23 @@ Before publishing, ensure:
 After publishing:
 
 1. Verify packages on npm:
-   - https://www.npmjs.com/package/fints-lib
-   - https://www.npmjs.com/package/fints-lib-cli
+    - https://www.npmjs.com/package/fints-lib
+    - https://www.npmjs.com/package/fints-lib-cli
 
 2. Test installation:
-   ```bash
-   npm install fints-lib
-   npm install -g fints-lib-cli
-   # or
-   yarn add fints-lib
-   yarn global add fints-lib-cli
-   ```
+
+    ```bash
+    npm install fints-lib
+    npm install -g fints-lib-cli
+    # or
+    yarn add fints-lib
+    yarn global add fints-lib-cli
+    ```
 
 3. Verify the CLI works:
-   ```bash
-   fints-lib --help
-   ```
+    ```bash
+    fints-lib --help
+    ```
 
 ## Troubleshooting
 
@@ -118,6 +119,7 @@ This means you need to log in to npm. For GitHub Actions, ensure the `NPM_TOKEN`
 ### Publishing Fails with "403 Forbidden"
 
 This can happen if:
+
 - The package name is already taken (but not by you)
 - You don't have permission to publish to the package
 - Your npm token doesn't have publish permissions

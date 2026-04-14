@@ -62,10 +62,10 @@ import { PinTanClient } from "fints-lib";
 
 // Create a client with minimal required configuration
 const client = new PinTanClient({
-    url: "https://banking.example.com/fints",  // Your bank's FinTS URL
-    name: "username",                           // Your banking username
-    pin: "12345",                               // Your banking PIN
-    blz: "12345678",                            // Bank code (BLZ/Bankleitzahl)
+    url: "https://banking.example.com/fints", // Your bank's FinTS URL
+    name: "username", // Your banking username
+    pin: "12345", // Your banking PIN
+    blz: "12345678", // Bank code (BLZ/Bankleitzahl)
 });
 
 // List all accounts
@@ -111,6 +111,7 @@ console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
 ```
 
 **CLI Example**
+
 ```bash
 fints-lib get-balance \
   --url https://banking.example.com/fints \
@@ -139,17 +140,18 @@ const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 const statements = await client.statements(accounts[0], startDate, endDate);
 
 // Process transactions
-statements.forEach(statement => {
+statements.forEach((statement) => {
     console.log(`Date: ${statement.date}`);
-    statement.transactions.forEach(transaction => {
-        console.log(`  ${transaction.descriptionStructured?.bookingText || 'Transaction'}`);
+    statement.transactions.forEach((transaction) => {
+        console.log(`  ${transaction.descriptionStructured?.bookingText || "Transaction"}`);
         console.log(`  Amount: ${transaction.amount} ${transaction.currency}`);
-        console.log(`  Purpose: ${transaction.purpose || 'N/A'}`);
+        console.log(`  Purpose: ${transaction.purpose || "N/A"}`);
     });
 });
 ```
 
 **CLI Example**
+
 ```bash
 # Fetch transactions for a date range
 fints-lib fetch-transactions \
@@ -181,9 +183,9 @@ const transfer = {
     creditor: {
         name: "Recipient Name",
         iban: "DE44500105175407324931",
-        bic: "INGDDEFFXXX",  // Optional for transfers within SEPA
+        bic: "INGDDEFFXXX", // Optional for transfers within SEPA
     },
-    amount: 50.00,
+    amount: 50.0,
     remittanceInformation: "Payment for invoice #12345",
 };
 
@@ -194,13 +196,13 @@ try {
 } catch (error) {
     if (error instanceof TanRequiredError) {
         // TAN is required - get TAN from user
-        const tan = "123456";  // Get from user input or TAN app
-        
+        const tan = "123456"; // Get from user input or TAN app
+
         const result = await client.completeCreditTransfer(
             error.dialog,
             error.transactionReference,
             tan,
-            error.creditTransferSubmission
+            error.creditTransferSubmission,
         );
         console.log("Transfer completed:", result.taskId);
     } else {
@@ -210,6 +212,7 @@ try {
 ```
 
 **CLI Example**
+
 ```bash
 # Transfer money (will prompt for TAN if required)
 fints-lib submit-credit-transfer \
@@ -241,7 +244,7 @@ const myAccount = accounts[0];
 // Prepare direct debit
 const debit = {
     creditorName: "My Company GmbH",
-    creditorId: "DE98ZZZ09999999999",  // Your SEPA creditor ID
+    creditorId: "DE98ZZZ09999999999", // Your SEPA creditor ID
     debtor: {
         name: "Customer Name",
         iban: "DE02120300000000202051",
@@ -258,13 +261,13 @@ try {
     console.log("Direct debit submitted:", result.taskId);
 } catch (error) {
     if (error instanceof TanRequiredError) {
-        const tan = "123456";  // Get from user
-        
+        const tan = "123456"; // Get from user
+
         const result = await client.completeDirectDebit(
             error.dialog,
             error.transactionReference,
             tan,
-            error.directDebitSubmission
+            error.directDebitSubmission,
         );
         console.log("Direct debit completed:", result.taskId);
     } else {
@@ -274,6 +277,7 @@ try {
 ```
 
 **CLI Example**
+
 ```bash
 fints-lib submit-direct-debit \
   --url https://banking.example.com/fints \
@@ -306,13 +310,13 @@ const client = new PinTanClient({
 const accounts = await client.accounts();
 
 for (const account of accounts) {
-    console.log(`\n${account.accountName || 'Account'} (${account.iban})`);
-    console.log(`  Type: ${account.accountType || 'N/A'}`);
-    
+    console.log(`\n${account.accountName || "Account"} (${account.iban})`);
+    console.log(`  Type: ${account.accountType || "N/A"}`);
+
     try {
         const balance = await client.balance(account);
         console.log(`  Balance: ${balance.value.value} ${balance.value.currency}`);
-        console.log(`  Available: ${balance.availableBalance?.value || 'N/A'}`);
+        console.log(`  Available: ${balance.availableBalance?.value || "N/A"}`);
     } catch (error) {
         console.log(`  Balance: Unable to fetch`);
     }
@@ -327,8 +331,8 @@ for (const account of accounts) {
 
 This library is maintained in a [monorepo using lerna](https://lernajs.io/). These packages are included:
 
- * [fints-lib](packages/fints) - Core library (Take a look for library usage instructions.)
- * [fints-lib-cli](packages/fints-cli) - Command line interface (Take a look for CLI usage instructions.)
+- [fints-lib](packages/fints) - Core library (Take a look for library usage instructions.)
+- [fints-lib-cli](packages/fints-cli) - Command line interface (Take a look for CLI usage instructions.)
 
 ## 🔒 Security
 
@@ -373,80 +377,88 @@ If you discover a security vulnerability, please report it privately via GitHub'
 ### Finding Your Bank's FinTS URL
 
 You can find your bank's FinTS endpoint URL in this community database:
+
 - [FinTS Institute Database](https://github.com/jhermsmeier/fints-institute-db)
 
 ### Common Issues
 
 **Authentication Errors:**
+
 - Verify your username, PIN, and BLZ are correct
 - Some banks require you to enable FinTS/HBCI access in your online banking settings
 - Check if your bank requires registration (see registration note below)
 
 **TAN Requirements:**
+
 - Many operations (transfers, direct debits) require TAN authentication
 - Use try-catch with `TanRequiredError` to handle TAN challenges properly
 - Some banks require TAN even for login - handle with `completeLogin()`
 
 **Timeout Issues:**
+
 - Increase the timeout value in client configuration:
-  ```typescript
-  const client = new PinTanClient({
-      // ... other config
-      timeout: 60000,  // 60 seconds
-      maxRetries: 5,
-  });
-  ```
+    ```typescript
+    const client = new PinTanClient({
+        // ... other config
+        timeout: 60000, // 60 seconds
+        maxRetries: 5,
+    });
+    ```
 
 **Date Range Queries:**
+
 - Not all banks support all date ranges - some limit how far back you can query
 - Use shorter date ranges if you experience timeouts or errors
 
 ### Best Practices
 
 1. **Always use environment variables for credentials:**
-   ```typescript
-   const client = new PinTanClient({
-       url: process.env.FINTS_URL,
-       name: process.env.FINTS_USERNAME,
-       pin: process.env.FINTS_PIN,
-       blz: process.env.FINTS_BLZ,
-   });
-   ```
+
+    ```typescript
+    const client = new PinTanClient({
+        url: process.env.FINTS_URL,
+        name: process.env.FINTS_USERNAME,
+        pin: process.env.FINTS_PIN,
+        blz: process.env.FINTS_BLZ,
+    });
+    ```
 
 2. **Enable debug mode during development:**
-   ```typescript
-   const client = new PinTanClient({
-       // ... credentials
-       debug: process.env.NODE_ENV === 'development',
-   });
-   ```
+
+    ```typescript
+    const client = new PinTanClient({
+        // ... credentials
+        debug: process.env.NODE_ENV === "development",
+    });
+    ```
 
 3. **Handle errors gracefully:**
-   ```typescript
-   import { FinTSError, TanRequiredError, PinError } from "fints-lib";
-   
-   try {
-       const accounts = await client.accounts();
-   } catch (error) {
-       if (error instanceof TanRequiredError) {
-           // Handle TAN requirement
-       } else if (error instanceof PinError) {
-           // Handle PIN error
-       } else if (error instanceof FinTSError) {
-           console.error(`FinTS Error [${error.code}]: ${error.message}`);
-       }
-   }
-   ```
+
+    ```typescript
+    import { FinTSError, TanRequiredError, PinError } from "fints-lib";
+
+    try {
+        const accounts = await client.accounts();
+    } catch (error) {
+        if (error instanceof TanRequiredError) {
+            // Handle TAN requirement
+        } else if (error instanceof PinError) {
+            // Handle PIN error
+        } else if (error instanceof FinTSError) {
+            console.error(`FinTS Error [${error.code}]: ${error.message}`);
+        }
+    }
+    ```
 
 4. **Close dialogs when done:**
-   ```typescript
-   const dialog = await client.startDialog();
-   try {
-       // ... perform operations
-   } finally {
-       await dialog.end();
-   }
-   ```
+    ```typescript
+    const dialog = await client.startDialog();
+    try {
+        // ... perform operations
+    } finally {
+        await dialog.end();
+    }
+    ```
 
 ## Mentions
 
@@ -469,5 +481,5 @@ Contributions in the form of well-documented issues or pull-requests are welcome
 
 ## Contributors
 
- - Frederick Gnodtke (Original author)
- - Lars Decker (Fork maintainer)
+- Frederick Gnodtke (Original author)
+- Lars Decker (Fork maintainer)

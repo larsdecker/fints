@@ -3,7 +3,6 @@
 [![npm](https://img.shields.io/npm/v/fints-lib-cli.svg)](https://www.npmjs.com/package/fints-lib-cli)
 [![CI](https://github.com/larsdecker/fints/actions/workflows/ci.yml/badge.svg)](https://github.com/larsdecker/fints/actions/workflows/ci.yml)
 
-
 A command line interface for communicating with [FinTS servers](https://www.hbci-zka.de/).
 
 > **Note:** This is a fork and continuation of [Prior99/fints](https://github.com/Prior99/fints). Published as `fints-lib-cli` on npm.
@@ -15,7 +14,6 @@ npm install -g fints-lib-cli
 # or
 yarn global add fints-lib-cli
 ```
-
 
 ## Features
 
@@ -37,13 +35,13 @@ yarn global add fints-lib-cli
 
   OPTIONS
 
-    -u, --url <url>   - Endpoint URL.                
-    -n, --name <name> - Username used for connecting. 
-    -p, --pin <pin>   - Pin used for connecting.      
+    -u, --url <url>   - Endpoint URL.
+    -n, --name <name> - Username used for connecting.
+    -p, --pin <pin>   - Pin used for connecting.
     -b, --blz <blz>   - BLZ of the bank to connect to.
-    -d, --debug      
-    -v, --verbose    
-    -j, --json       
+    -d, --debug
+    -v, --verbose
+    -j, --json
 ```
 
 ```
@@ -61,16 +59,16 @@ fints-lib list-accounts --url https://example.com/fints -n username -p 12345 -b 
 
   OPTIONS
 
-    -u, --url <url>     - Endpoint URL.                        
-    -n, --name <name>   - Username used for connecting.         
-    -p, --pin <pin>     - Pin used for connecting.              
-    -b, --blz <blz>     - BLZ of the bank to connect to.        
-    -d, --debug        
-    -v, --verbose      
-    -j, --json         
-    -i, --iban <iban>   - IBAN of the account to fetch.         
+    -u, --url <url>     - Endpoint URL.
+    -n, --name <name>   - Username used for connecting.
+    -p, --pin <pin>     - Pin used for connecting.
+    -b, --blz <blz>     - BLZ of the bank to connect to.
+    -d, --debug
+    -v, --verbose
+    -j, --json
+    -i, --iban <iban>   - IBAN of the account to fetch.
     -s, --start <start> - Date of earliest transaction to fetch.
-    -e, --end <end>     - Date of latest transaction to fetch.  
+    -e, --end <end>     - Date of latest transaction to fetch.
 ```
 
 ```

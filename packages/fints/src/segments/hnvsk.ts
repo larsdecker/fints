@@ -34,7 +34,7 @@ export class HNVSK extends SegmentClass(HNVSKProps) {
                 Format.num(5),
                 Format.num(1),
             ],
-            [Format.num(COUNTRY_CODE), blz, name, "S", Format.num(0), Format.num(0)],
+            [Format.num(COUNTRY_CODE), blz, Format.stringEscaped(name), "S", Format.num(0), Format.num(0)],
             Format.num(COMPRESSION_NONE),
         ];
     }

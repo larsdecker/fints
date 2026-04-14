@@ -23,7 +23,7 @@
                     "--runInBand",
                     "--config",
                     "${workspaceRoot}/packages/fints/jest.config.json"
-                ],
+                ]
             },
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
