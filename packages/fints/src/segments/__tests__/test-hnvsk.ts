@@ -5,6 +5,8 @@ import { Format } from "../../format";
 jest.spyOn(Format, "date").mockReturnValue("20180907");
 jest.spyOn(Format, "time").mockReturnValue("080000");
 
+afterAll(() => jest.restoreAllMocks());
+
 testSegment(
     HNVSK,
     [
