@@ -27,6 +27,29 @@ testSegment(
                 tan: "123456",
             },
         },
+        {
+            serialized: "HNSHA:173:2+12345678++secret?@pass'",
+            structured: {
+                type: "HNSHA",
+                segNo: 173,
+                version: 2,
+                msgNo: 1,
+                secRef: 12345678,
+                pin: "secret@pass",
+            },
+        },
+        {
+            serialized: "HNSHA:173:2+12345678++secret?@pass:tan?+code'",
+            structured: {
+                type: "HNSHA",
+                segNo: 173,
+                version: 2,
+                msgNo: 1,
+                secRef: 12345678,
+                pin: "secret@pass",
+                tan: "tan+code",
+            },
+        },
     ],
     "out",
 );
