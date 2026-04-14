@@ -10,43 +10,36 @@
             "name": "Debug Jest Tests",
             "cwd": "${workspaceFolder}",
             "args": [
-              "--inspect-brk",
-              "${workspaceRoot}/node_modules/.bin/jest",
-              "--runInBand",
-              "--config",
-              "${workspaceRoot}/jest.config.json"
-            ],
-            "windows": {
-              "args": [
                 "--inspect-brk",
-                "${workspaceRoot}/node_modules/jest/bin/jest.js",
+                "${workspaceRoot}/node_modules/.bin/jest",
                 "--runInBand",
                 "--config",
-                "${workspaceRoot}/jest.config.json"          
-              ],
+                "${workspaceRoot}/jest.config.json"
+            ],
+            "windows": {
+                "args": [
+                    "--inspect-brk",
+                    "${workspaceRoot}/node_modules/jest/bin/jest.js",
+                    "--runInBand",
+                    "--config",
+                    "${workspaceRoot}/jest.config.json"
+                ]
             },
-            "env": {"TZ": "UTC"},
+            "env": { "TZ": "UTC" },
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen"
-          },
-          {
+        },
+        {
             "type": "node",
             "request": "launch",
             "name": "Single Jest Tests",
             "program": "${workspaceRoot}/node_modules/jest/bin/jest.js",
-            "args": [
-                "--config",
-                "${workspaceRoot}/jest.config.json",
-                "-i",
-                "${relativeFile}",
-            ],
+            "args": ["--config", "${workspaceRoot}/jest.config.json", "-i", "${relativeFile}"],
             "preLaunchTask": "tsc: build - tsconfig.json",
             "internalConsoleOptions": "openOnSessionStart",
             "console": "integratedTerminal",
-            "outFiles": [
-                "${workspaceRoot}/dist"
-            ],
-            "env": {"TZ": "UTC"}
+            "outFiles": ["${workspaceRoot}/dist"],
+            "env": { "TZ": "UTC" }
         }
     ]
 }

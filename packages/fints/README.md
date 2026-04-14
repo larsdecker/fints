@@ -59,14 +59,13 @@ const endDate = new Date("2024-12-31");
 const statements = await client.statements(accounts[0], startDate, endDate);
 
 // Process transactions
-statements.forEach(statement => {
+statements.forEach((statement) => {
     console.log(`Statement from ${statement.date}`);
-    statement.transactions.forEach(tx => {
+    statement.transactions.forEach((tx) => {
         console.log(`  ${tx.descriptionStructured?.bookingText}: ${tx.amount} ${tx.currency}`);
     });
 });
 ```
-
 
 ### Handling login TAN challenges
 
@@ -84,7 +83,7 @@ try {
         console.log("Process Step:", error.getStepDescription());
         console.log("Triggering Segment:", error.triggeringSegment);
         console.log("Is Multi-Step:", error.isMultiStep());
-        
+
         // Complete the login with TAN
         const dialog = await client.completeLogin(error.dialog, error.transactionReference, "123456");
         const accounts = await client.accounts(dialog);
@@ -213,7 +212,7 @@ const accounts = await client.accounts();
 // Get balance for a specific account
 const balance = await client.balance(accounts[0]);
 console.log(`Current Balance: ${balance.value.value} ${balance.value.currency}`);
-console.log(`Available: ${balance.availableBalance?.value || 'N/A'}`);
+console.log(`Available: ${balance.availableBalance?.value || "N/A"}`);
 ```
 
 ### Fetch Recent Transactions
@@ -236,11 +235,11 @@ const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 
 const statements = await client.statements(accounts[0], startDate, endDate);
 
-statements.forEach(statement => {
+statements.forEach((statement) => {
     console.log(`\nStatement: ${statement.date}`);
-    statement.transactions.forEach(tx => {
-        const booking = tx.descriptionStructured?.bookingText || 'Transaction';
-        const purpose = tx.purpose || '';
+    statement.transactions.forEach((tx) => {
+        const booking = tx.descriptionStructured?.bookingText || "Transaction";
+        const purpose = tx.purpose || "";
         console.log(`  ${booking}: ${tx.amount} ${tx.currency}`);
         if (purpose) console.log(`    Purpose: ${purpose}`);
     });
@@ -264,11 +263,11 @@ const accounts = await client.accounts();
 console.log(`Found ${accounts.length} account(s):\n`);
 
 for (const account of accounts) {
-    console.log(`Account: ${account.accountName || 'Unnamed'}`);
+    console.log(`Account: ${account.accountName || "Unnamed"}`);
     console.log(`  IBAN: ${account.iban}`);
-    console.log(`  Type: ${account.accountType || 'N/A'}`);
-    console.log(`  Number: ${account.accountNumber || 'N/A'}`);
-    
+    console.log(`  Type: ${account.accountType || "N/A"}`);
+    console.log(`  Number: ${account.accountNumber || "N/A"}`);
+
     try {
         const balance = await client.balance(account);
         console.log(`  Balance: ${balance.value.value} ${balance.value.currency}`);
@@ -286,8 +285,7 @@ import { PinTanClient } from "fints-lib";
 
 // Create client using environment variables for credentials
 // Ensure environment variables are set before running
-if (!process.env.FINTS_URL || !process.env.FINTS_USERNAME || 
-    !process.env.FINTS_PIN || !process.env.FINTS_BLZ) {
+if (!process.env.FINTS_URL || !process.env.FINTS_USERNAME || !process.env.FINTS_PIN || !process.env.FINTS_BLZ) {
     throw new Error("Required environment variables are not set");
 }
 
@@ -308,7 +306,6 @@ const client = new PinTanClient({
 ```
 
 ## Missing
-
 
 ## Submitting a credit transfer
 

@@ -1158,10 +1158,10 @@
     tslib "^2.3.0"
     yargs-parser "21.1.1"
 
-"@nx/nx-linux-x64-gnu@22.3.3":
+"@nx/nx-darwin-arm64@22.3.3":
   version "22.3.3"
-  resolved "https://registry.npmjs.org/@nx/nx-linux-x64-gnu/-/nx-linux-x64-gnu-22.3.3.tgz"
-  integrity sha512-04TEbvgwRaB9ifr39YwJmWh3RuXb4Ry4m84SOJyjNXAfPrepcWgfIQn1VL2ul1Ybq+P023dLO9ME8uqFh6j1YQ==
+  resolved "https://registry.npmjs.org/@nx/nx-darwin-arm64/-/nx-darwin-arm64-22.3.3.tgz"
+  integrity sha512-zBAGFGLal09CxhQkdMpOVwcwa9Y01aFm88jTTn35s/DdIWsfngmPzz0t4mG7u2D05q7TJfGQ31pIf5GkNUjo6g==
 
 "@octokit/auth-token@^4.0.0":
   version "4.0.0"
@@ -1665,10 +1665,10 @@
   resolved "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.3.0.tgz"
   integrity sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==
 
-"@unrs/resolver-binding-linux-x64-gnu@1.11.1":
+"@unrs/resolver-binding-darwin-arm64@1.11.1":
   version "1.11.1"
-  resolved "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-gnu/-/resolver-binding-linux-x64-gnu-1.11.1.tgz"
-  integrity sha512-C3ZAHugKgovV5YvAMsxhq0gtXuwESUKc5MhEtjBpLoHPLYM+iuwSj3lflFwK3DPm68660rZ7G8BMcwSro7hD5w==
+  resolved "https://registry.npmjs.org/@unrs/resolver-binding-darwin-arm64/-/resolver-binding-darwin-arm64-1.11.1.tgz"
+  integrity sha512-gPVA1UjRu1Y/IsB/dQEsp2V1pm44Of6+LWvbLc9SDk1c2KhhDRDBUkQCYVWe6f26uJb3fOK8saWMgtX8IrMk3g==
 
 "@yarnpkg/lockfile@^1.1.0":
   version "1.1.0"
@@ -3216,7 +3216,7 @@ fints-institute-db@^0.16.0:
   resolved "https://registry.npmjs.org/fints-institute-db/-/fints-institute-db-0.16.0.tgz"
   integrity sha512-X+FqphxcU/hhQdVJfw/ngr/M1kCjur9t2TttE8zRsGnr6aP16br+8nPDI/uuIqQGV4dvzNVpJVfwZaFxQTdZnA==
 
-"fints-lib-cli@file:/home/runner/work/fints/fints/packages/fints-cli":
+"fints-lib-cli@file:/Users/larsdecker/Development/Private/fints/packages/fints-cli":
   version "0.4.0"
   resolved "file:packages/fints-cli"
   dependencies:
@@ -3226,7 +3226,7 @@ fints-institute-db@^0.16.0:
     winston "^3.19.0"
     yaml "^2.8.2"
 
-fints-lib@*, "fints-lib@file:/home/runner/work/fints/fints/packages/fints":
+fints-lib@*, "fints-lib@file:/Users/larsdecker/Development/Private/fints/packages/fints":
   version "0.9.0"
   resolved "file:packages/fints"
   dependencies:
