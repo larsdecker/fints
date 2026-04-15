@@ -23,7 +23,7 @@ export function decodeBase64(input: string): string {
  * Control characters (? + : ' @) must be prefixed with '?'.
  */
 export function escapeFinTS(content: string): string {
-    if (typeof content === "undefined" || content === null) {
+    if (content == null) {
         return "";
     }
     return content

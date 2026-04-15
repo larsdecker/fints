@@ -52,11 +52,6 @@ interface DialogSession {
 }
 
 /**
- * Counter for generating unique dialog IDs.
- */
-let dialogCounter = 10000000;
-
-/**
  * Generate a unique system ID.
  */
 function generateSystemId(): string {
@@ -70,6 +65,7 @@ function generateSystemId(): string {
 export class FinTSRequestHandler {
     private sessions: Map<string, DialogSession> = new Map();
     private config: FinTSTestConfig;
+    private dialogCounter = 10000000;
 
     constructor(config: FinTSTestConfig) {
         this.config = config;
@@ -202,7 +198,7 @@ export class FinTSRequestHandler {
         msgNo: number,
         isValidUser: boolean,
     ): string {
-        const newDialogId = `DIA_${++dialogCounter}`;
+        const newDialogId = `DIA_${++this.dialogCounter}`;
         const systemId = generateSystemId();
         const { blz, bankName, bpdVersion, painFormats, accounts } = this.config;
 
@@ -377,7 +373,7 @@ export class FinTSRequestHandler {
                 "9931", "PIN ungueltig.");
         }
 
-        const newDialogId = `DIA_${++dialogCounter}`;
+        const newDialogId = `DIA_${++this.dialogCounter}`;
         const { blz, bankName, bpdVersion, painFormats, accounts } = this.config;
 
         // Find the systemId from a previous sync or use default
@@ -863,6 +859,6 @@ export class FinTSRequestHandler {
      */
     public reset(): void {
         this.sessions.clear();
-        dialogCounter = 10000000;
+        this.dialogCounter = 10000000;
     }
 }
