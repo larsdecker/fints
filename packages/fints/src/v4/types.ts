@@ -17,7 +17,7 @@ export interface FinTS4DialogConfig {
     /** System ID for the client. */
     systemId: string;
     /** Product registration ID. */
-    productId: string;
+    productId?: string;
 }
 
 /**
