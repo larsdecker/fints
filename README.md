@@ -7,7 +7,322 @@ A client library for communicating with [FinTS servers](https://www.hbci-zka.de/
 
 > **Note:** This is a fork and continuation of the excellent work by [Frederick Gnodtke (Prior99)](https://github.com/Prior99/fints). We are grateful for the solid foundation and comprehensive implementation provided by the original project.
 
+---
+
+## ⚠️ FinTS 4.1 / FinTS 4.0 – Experimental Support
+
+> **Experimental — use with caution in production**
+
+This library includes an implementation of the **FinTS 4.1 XML-based protocol** (`FinTS4Client`). This support is **experimental** and subject to the following limitations:
+
+- **FinTS 4.0 is not a widely deployed version.** Most German retail banks still use FinTS 3.0. FinTS 4.1 support is intended for banks and aggregators that have explicitly adopted the XML-based successor format.
+- **Protocol negotiation is best-effort.** The implementation will automatically try fallback versions (`4.1 → 4.0 → 3.0`) when a bank rejects the preferred version, but real-world servers may behave unpredictably.
+- **TAN flows are partially supported.** The interactive two-step TAN flow (PIN+TAN, chipTAN, pushTAN) is implemented via a `tanCallback`, but edge cases — such as HHD/Flickercode visualisation, multi-challenge flows, or bank-specific challenge formats — may require additional handling.
+- **BPD/UPD parsing is partially generic.** The FinTS 4.1 XML structure leaves room for bank-specific element naming. The parser applies fallback strategies, but untested banks may require further mapping.
+- **No write operations.** `FinTS4Client` is currently read-only (accounts, balances, statements). Credit transfers and direct debits are only available via the stable `PinTanClient` (FinTS 3.0).
+- **TLS certificate requirements.** Banks with private CA certificates or strict TLS policies require a custom Node.js `https.Agent`, which must be passed via `fetchOptions`. See [Custom TLS / HTTPS configuration](#-custom-tls--https-configuration-nodejs-only) below.
+
+For production use with the widest bank compatibility, use the **`PinTanClient` (FinTS 3.0)** described in the Quick Start section.
+
+---
+
 ## 🎯 Improvements in this Fork
+
+- ✅ **Updated Dependencies**: All dependencies updated to their latest stable versions
+- ✅ **Modern TypeScript**: TypeScript 5.x with improved type safety
+- ✅ **GitHub Actions**: Automated CI/CD pipeline
+- ✅ **FinTS 4.1 (Experimental)**: XML-based protocol with interactive TAN, version negotiation, and improved BPD parsing
+- ✅ **Active Maintenance**: Regular updates and dependency maintenance
+- ✅ **Published as `fints-lib` and `fints-lib-cli`** on npm
+
+## 📦 Installation
+
+```bash
+npm install fints-lib
+# or
+yarn add fints-lib
+```
+
+For the CLI tool:
+
+```bash
+npm install -g fints-lib-cli
+# or
+yarn global add fints-lib-cli
+```
+
+### Development Setup
+
+```bash
+# Install dependencies
+yarn install
+
+# Build all packages
+yarn build
+
+# Run tests
+yarn test
+
+# Run linting
+yarn lint
+```
+
+## 🚀 Quick Start
+
+### FinTS 3.0 (Stable — recommended for production)
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({
+    url: "https://banking.example.com/fints", // Your bank's FinTS URL
+    name: "username",
+    pin: "12345",
+    blz: "12345678",
+});
+
+const accounts = await client.accounts();
+console.log(accounts);
+```
+
+### FinTS 4.1 (Experimental — XML-based)
+
+```typescript
+import { FinTS4Client } from "fints-lib";
+
+// ⚠️ Experimental: most banks still use FinTS 3.0
+const client = new FinTS4Client({
+    url: "https://banking.example.com/fints41",
+    name: "username",
+    pin: "12345",
+    blz: "12345678",
+});
+
+const accounts = await client.accounts();
+const balance  = await client.balance(accounts[0]);
+const stmts    = await client.camtStatements(accounts[0]);
+```
+
+### CLI Quick Start
+
+```bash
+npm install -g fints-lib-cli
+
+fints-lib list-accounts \
+  --url https://banking.example.com/fints \
+  -n username -p 12345 -b 12345678
+```
+
+## 📖 Common Use Cases
+
+### 1. Check Account Balance
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
+});
+
+const accounts = await client.accounts();
+const balance  = await client.balance(accounts[0]);
+console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
+```
+
+### 2. Fetch Recent Transactions
+
+```typescript
+import { PinTanClient } from "fints-lib";
+
+const client = new PinTanClient({ /* ... */ });
+const accounts = await client.accounts();
+
+const endDate   = new Date();
+const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+const statements = await client.statements(accounts[0], startDate, endDate);
+
+statements.forEach((statement) => {
+    statement.transactions.forEach((tx) => {
+        console.log(`  ${tx.amount} ${tx.currency} — ${tx.purpose || "N/A"}`);
+    });
+});
+```
+
+### 3. SEPA Credit Transfer (Send Money)
+
+```typescript
+import { PinTanClient, TanRequiredError } from "fints-lib";
+
+const client = new PinTanClient({ /* ... */ });
+const accounts = await client.accounts();
+
+try {
+    await client.creditTransfer(accounts[0], {
+        debtorName: "John Doe",
+        creditor: { name: "Recipient", iban: "DE44500105175407324931", bic: "INGDDEFFXXX" },
+        amount: 50.0,
+        remittanceInformation: "Invoice #12345",
+    });
+} catch (error) {
+    if (error instanceof TanRequiredError) {
+        const tan = await promptUser(error.challengeText); // your UI
+        await client.completeCreditTransfer(error.dialog, error.transactionReference, tan, error.creditTransferSubmission);
+    }
+}
+```
+
+### 4. FinTS 4.1 — Interactive TAN (Experimental)
+
+> ⚠️ Experimental. Requires a bank that supports FinTS 4.1 XML.
+
+```typescript
+import { FinTS4Client } from "fints-lib";
+import * as readline from "readline";
+
+async function promptTan(challenge: { challengeText?: string; transactionReference: string }): Promise<string> {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    return new Promise((resolve) => {
+        rl.question(`TAN challenge: ${challenge.challengeText ?? "(no text)"}\nEnter TAN: `, (tan) => {
+            rl.close();
+            resolve(tan.trim());
+        });
+    });
+}
+
+const client = new FinTS4Client({
+    url: "https://banking.example.com/fints41",
+    name: "username",
+    pin: "12345",
+    blz: "12345678",
+    tanCallback: promptTan, // called automatically when the bank issues a challenge
+});
+
+const accounts = await client.accounts();
+// If the bank requires a TAN during the request, `promptTan` is invoked automatically.
+const statements = await client.camtStatements(accounts[0]);
+```
+
+## 🔐 Custom TLS / HTTPS Configuration (Node.js only)
+
+Some banks use certificates signed by a private CA, or require specific TLS settings. Use
+`createTlsAgent()` to create a custom `https.Agent` and pass it via `fetchOptions`:
+
+```typescript
+import { FinTS4Client, createTlsAgent } from "fints-lib";
+import fs from "fs";
+
+// Use a custom CA certificate (e.g. a bank-specific private CA)
+const agent = createTlsAgent({
+    ca: fs.readFileSync("/path/to/bank-ca.pem", "utf8"),
+});
+
+const client = new FinTS4Client({
+    url: "https://banking.example.com/fints41",
+    name: "username",
+    pin: "12345",
+    blz: "12345678",
+    fetchOptions: { agent },
+});
+```
+
+> **Security note:** Never set `rejectUnauthorized: false` in production. This disables
+> certificate verification entirely and exposes you to man-in-the-middle attacks.
+
+```typescript
+// ✅ Development / testing only:
+const devAgent = createTlsAgent({ rejectUnauthorized: false });
+
+// ❌ Never in production:
+// const prodAgent = createTlsAgent({ rejectUnauthorized: false });
+```
+
+> **Note:** `createTlsAgent()` and `fetchOptions.agent` are currently only supported by
+> `FinTS4Client` (FinTS 4.1). The FinTS 3.0 `PinTanClient` / `HttpConnection` does not
+> expose a custom-agent option; if you need custom TLS for a FinTS 3.0 endpoint, use the
+> `NegotiatingClient` with `preferredVersion: "4.1"` or configure TLS at the Node.js
+> process level (e.g. `NODE_EXTRA_CA_CERTS`).
+
+## 🔄 HBCI Version Negotiation (FinTS 4.1)
+
+`FinTS4Client` automatically negotiates the HBCI version with the server:
+
+1. It starts with your `preferredHbciVersion` (default: `"4.1"`).
+2. If the server returns error `9010` (version not supported), it retries with `"4.0"`, then `"3.0"`.
+3. After the sync phase, the client adopts the highest version both sides support.
+
+```typescript
+const client = new FinTS4Client({
+    // ...
+    preferredHbciVersion: "4.1", // start with 4.1, fall back automatically
+});
+```
+
+## Packages
+
+- [fints-lib](packages/fints) — Core library
+- [fints-lib-cli](packages/fints-cli) — Command line interface
+
+## 🔒 Security
+
+- **Never log credentials.** The library masks PINs and TANs in debug output, but never log the raw config object.
+- **Store credentials securely.** Use environment variables or a secrets manager.
+- **Use HTTPS only.** Always use HTTPS URLs for FinTS endpoints.
+- **Debug mode.** Be cautious with `debug: true` in production — it logs full request/response XML.
+
+### Reporting Security Issues
+
+Report security vulnerabilities privately via GitHub's **Security** tab instead of opening a public issue.
+
+## 💡 Tips and Troubleshooting
+
+### Finding Your Bank's FinTS URL
+
+- [FinTS Institute Database](https://github.com/jhermsmeier/fints-institute-db)
+
+### Common Issues
+
+**Authentication Errors:**
+- Verify username, PIN, and BLZ.
+- Some banks require enabling FinTS/HBCI access in online banking settings.
+- Check if your bank requires product registration.
+
+**TAN Requirements:**
+- Use `tanCallback` (FinTS 4.1) or `TanRequiredError` catch (FinTS 3.0) to handle TAN challenges.
+
+**Timeout Issues:**
+```typescript
+const client = new PinTanClient({ timeout: 60000, maxRetries: 5 });
+```
+
+**FinTS 4.1 not working with my bank:**
+- Most German retail banks use FinTS 3.0 — switch to `PinTanClient`.
+- Check the bank's FinTS URL: some banks have separate endpoints for v3 and v4.
+
+## Mentions
+
+- [Prior99/fints](https://github.com/Prior99/fints) — Original repository by Frederick Gnodtke 🙏
+- [python-fints](https://github.com/raphaelm/python-fints) — Reference implementation
+- [Open-Fin-TS-JS-Client](https://github.com/jschyma/open_fints_js_client) — Demo server
+- [mt940-js](https://github.com/webschik/mt940-js) — MT940 format parser
+
+## Resources
+
+- [API Reference](https://prior99.gitlab.io/fints)
+- [Official specification](https://www.hbci-zka.de/spec/3_0.htm)
+- [Database of banks with their URLs](https://github.com/jhermsmeier/fints-institute-db)
+
+## Contributing
+
+Contributions in the form of well-documented issues or pull requests are welcome.
+
+## Contributors
+
+- Frederick Gnodtke (Original author)
+- Lars Decker (Fork maintainer)
+
 
 This fork includes several enhancements over the original project:
 

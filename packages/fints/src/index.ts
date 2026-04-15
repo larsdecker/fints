@@ -23,3 +23,5 @@ export * from "./errors/tan-required-error";
 export * from "./errors/fints-error";
 export * from "./errors/decoupled-tan-error";
 export * from "./decoupled-tan";
+export * from "./v4";
+export * from "./negotiating-client";
