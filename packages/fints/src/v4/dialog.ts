@@ -19,9 +19,6 @@ import {
 } from "./segments";
 import { verbose } from "../logger";
 
-/** FinTS return code: order received, TAN/security clearance required. */
-const RETURN_CODE_TAN_REQUIRED = "0030";
-
 /** FinTS return code: version not supported. */
 const RETURN_CODE_VERSION_NOT_SUPPORTED = "9010";
 
@@ -30,8 +27,11 @@ const FALLBACK_HBCI_VERSIONS = ["4.1", "4.0", "3.0"];
 
 /**
  * Error thrown when the server requires a TAN but no `tanCallback` was configured.
+ *
+ * Unlike the FinTS 3.0 `TanRequiredError`, this version is simpler: it surfaces
+ * only the data needed for the v4 two-step TAN flow.
  */
-export class TanRequiredError extends Error {
+export class FinTS4TanRequiredError extends Error {
     /** The TAN challenge details from the server. */
     public readonly transactionReference: string;
     /** The challenge text to display to the user. */
@@ -45,7 +45,7 @@ export class TanRequiredError extends Error {
         this.transactionReference = transactionReference;
         this.challengeText = challengeText;
         if (Error.captureStackTrace) {
-            Error.captureStackTrace(this, TanRequiredError);
+            Error.captureStackTrace(this, FinTS4TanRequiredError);
         }
     }
 }
@@ -177,7 +177,7 @@ export class FinTS4Dialog {
         const challenge = challengeResponse.tanChallenge!;
 
         if (!this.tanCallback) {
-            throw new TanRequiredError(challenge.transactionReference, challenge.challengeText);
+            throw new FinTS4TanRequiredError(challenge.transactionReference, challenge.challengeText);
         }
 
         verbose(

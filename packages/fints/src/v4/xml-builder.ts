@@ -44,6 +44,11 @@ export interface XmlMessageOptions {
     tan?: string;
     /** Security function to use. */
     securityFunction?: string;
+    /**
+     * HBCI protocol version string used in MsgHead (e.g. "4.1", "4.0").
+     * Defaults to the module constant FINTS_VERSION when omitted.
+     */
+    hbciVersion?: string;
 }
 
 /**
@@ -91,13 +96,15 @@ export function buildMsgHead(options: {
     blz: string;
     systemId: string;
     productId?: string;
+    hbciVersion?: string;
 }): string {
     const productId = options.productId || PRODUCT_NAME;
+    const version = options.hbciVersion || FINTS_VERSION;
     return xmlElement(
         "MsgHead",
         xmlElement("MsgNo", String(options.msgNo)) +
             xmlElement("DialogID", escapeXml(options.dialogId)) +
-            xmlElement("HBCIVersion", FINTS_VERSION) +
+            xmlElement("HBCIVersion", version) +
             xmlElement(
                 "Initiator",
                 xmlElement("BLZ", options.blz) +
@@ -170,6 +177,7 @@ export function buildMessage(options: XmlMessageOptions): string {
         blz: options.blz,
         systemId: options.systemId,
         productId: options.productId,
+        hbciVersion: options.hbciVersion,
     });
 
     const security = buildSecurityEnvelope({

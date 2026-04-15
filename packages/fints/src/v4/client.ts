@@ -44,6 +44,7 @@ export class FinTS4Client {
             timeout: config.timeout,
             maxRetries: config.maxRetries,
             retryDelay: config.retryDelay,
+            fetchOptions: config.fetchOptions,
         });
     }
 
@@ -51,16 +52,21 @@ export class FinTS4Client {
      * Create a new FinTS 4.1 dialog.
      */
     public createDialog(): FinTS4Dialog {
-        return new FinTS4Dialog(
+        const dialog = new FinTS4Dialog(
             {
                 blz: this.config.blz,
                 name: this.config.name,
                 pin: this.config.pin,
                 systemId: "0",
                 productId: this.config.productId || PRODUCT_NAME,
+                tanCallback: this.config.tanCallback,
             },
             this.connection,
         );
+        if (this.config.preferredHbciVersion) {
+            dialog.hbciVersion = this.config.preferredHbciVersion;
+        }
+        return dialog;
     }
 
     /**

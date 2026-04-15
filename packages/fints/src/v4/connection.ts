@@ -99,7 +99,7 @@ export class FinTS4HttpConnection implements FinTS4Connection {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/xml; charset=UTF-8",
-                            Accept: "application/xml",
+                            "Accept": "application/xml",
                         },
                         body: xmlRequest,
                         signal: controller.signal,

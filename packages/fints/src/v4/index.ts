@@ -2,8 +2,8 @@
  * FinTS 4.1 module exports.
  */
 export { FinTS4Client } from "./client";
-export { FinTS4Dialog } from "./dialog";
-export { FinTS4HttpConnection } from "./connection";
+export { FinTS4Dialog, FinTS4TanRequiredError } from "./dialog";
+export { FinTS4HttpConnection, createTlsAgent } from "./connection";
 export type { FinTS4ConnectionConfig } from "./connection";
 export type {
     FinTS4ClientConfig,
@@ -18,6 +18,9 @@ export type {
     CamtEntry,
     MsgHead,
     MsgTail,
+    TanChallenge,
+    TanCallback,
+    FinTS4TlsOptions,
 } from "./types";
 export {
     FINTS_VERSION,
@@ -57,4 +60,5 @@ export {
     buildBalanceSegment,
     buildAccountStatementSegment,
     buildTanSegment,
+    buildTanSubmitSegment,
 } from "./segments";
