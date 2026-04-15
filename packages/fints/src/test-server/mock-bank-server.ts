@@ -343,10 +343,10 @@ export class MockBankServerV3 implements Connection {
 
     /**
      * Build a single FinTS 3.0 segment string.
-     * Format: TYPE:SEGNO:VERSION+field1+field2+'
+     * Format: TYPE:SEGNO:VERSION+field1+field2'
      */
     private buildSegment(type: string, segNo: number, version: number, fields: string[]): string {
-        return `${type}:${segNo}:${version}+${fields.join("+")}+'`;
+        return `${type}:${segNo}:${version}+${fields.join("+")}` + "'";
     }
 
     /**
@@ -403,14 +403,61 @@ export class MockBankServerV3 implements Connection {
     }
 
     private buildTanMethodsSegment(segNo: number): string {
-        // HITANS format: HITANS:segNo:7:segRef+1+1+1+process:secfunc:techId:name:...
-        const methods = TEST_TAN_METHODS_V3.map(
-            (m) =>
-                `${m.tanProcess}:${m.securityFunction}:${m.techId}:${m.name}:${m.maxLengthInput}:${m.allowedFormat}:${m.returnValueLength}:${m.numStatusRequests}:${m.firstDelaySeconds}:${m.delayBetweenSeconds}`,
-        ).join("+");
+        // HITANS v7 format (FinTS 3.0 spec §C.4):
+        // maxRequests+minSignatures+securityClass+oneStepAllowed:multiple:securityProfile:method1_fields...:method2_fields...'
+        //
+        // All TAN method data goes into a SINGLE '+'-field (DEG), separated by ':'.
+        // Per-method field order for v7 (tanMethodArgumentMap v7, 30 fields):
+        //   securityFunction, tanProcess, techId, zkaId, zkaVersion, name,
+        //   maxLengthInput, allowedFormat, textReturnvalue, maxLengthReturnvalue,
+        //   numberOfSupportedLists, multiple, tanTimeDialogAssociation,
+        //   tanDialogOptions, tanListNumberRequired, cancellable,
+        //   smsChargeAccountRequired, principalAccountRequired,
+        //   challengeClassRequired, challengeValueRequired, challengeStructured,
+        //   initializationMode, supportedMediaNumber, hhdUcRequired,
+        //   activeTanMedia, decoupledMaxStatusRequests,
+        //   decoupledWaitBeforeFirstStatusRequest, decoupledWaitBetweenStatusRequests,
+        //   decoupledManualConfirmationAllowed, decoupledAutoConfirmationAllowed
+        const methodFields = TEST_TAN_METHODS_V3.map((m) =>
+            [
+                m.securityFunction,   // 1 securityFunction
+                m.tanProcess,         // 2 tanProcess
+                m.techId,             // 3 techId
+                "",                   // 4 zkaId
+                "",                   // 5 zkaVersion
+                m.name,               // 6 name
+                m.maxLengthInput,     // 7 maxLengthInput
+                m.allowedFormat,      // 8 allowedFormat
+                "",                   // 9 textReturnvalue
+                m.maxLengthInput,     // 10 maxLengthReturnvalue
+                "1",                  // 11 numberOfSupportedLists
+                "J",                  // 12 multiple
+                "1",                  // 13 tanTimeDialogAssociation
+                "0",                  // 14 tanDialogOptions
+                "N",                  // 15 tanListNumberRequired
+                "J",                  // 16 cancellable
+                "N",                  // 17 smsChargeAccountRequired
+                "N",                  // 18 principalAccountRequired
+                "N",                  // 19 challengeClassRequired
+                "N",                  // 20 challengeValueRequired
+                "N",                  // 21 challengeStructured
+                "00",                 // 22 initializationMode
+                "1",                  // 23 supportedMediaNumber
+                "N",                  // 24 hhdUcRequired
+                "0",                  // 25 activeTanMedia
+                m.numStatusRequests,  // 26 decoupledMaxStatusRequests
+                m.firstDelaySeconds,  // 27 decoupledWaitBeforeFirstStatusRequest
+                m.delayBetweenSeconds, // 28 decoupledWaitBetweenStatusRequests
+                "N",                  // 29 decoupledManualConfirmationAllowed
+                "N",                  // 30 decoupledAutoConfirmationAllowed
+            ].join(":")
+        ).join(":");
+
+        // The 4th DEG: oneStepAllowed:multiple:securityProfile:<all method fields>
+        const tanDeg = `J:N:900:${methodFields}`;
 
         return this.buildSegment("HITANS", segNo, 7, [
-            `1`, `1`, `1`, methods,
+            `1`, `1`, `1`, tanDeg,
         ]);
     }
 
