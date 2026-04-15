@@ -49,6 +49,22 @@ describe("FinTS4HttpConnection", () => {
             );
         });
 
+        it("sends request in debug mode", async () => {
+            globalThis.fetch = jest.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                text: async () => "<FinTSMessage/>",
+            });
+
+            const conn = new FinTS4HttpConnection({
+                url: "https://example.com/fints",
+                debug: true,
+            });
+
+            const result = await conn.send("<test/>");
+            expect(result).toBe("<FinTSMessage/>");
+        });
+
         it("throws on non-OK HTTP response after retries", async () => {
             globalThis.fetch = jest.fn().mockResolvedValue({
                 ok: false,
