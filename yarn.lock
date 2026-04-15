@@ -3239,6 +3239,12 @@ fints-lib@*, "fints-lib@file:/home/runner/work/fints/fints/packages/fints":
     mt940-js "^1.0.0"
     winston "^3.19.0"
 
+"fints-test-server@file:/home/runner/work/fints/fints/packages/fints-test-server":
+  version "0.1.0"
+  resolved "file:packages/fints-test-server"
+  dependencies:
+    iconv-lite "^0.7.1"
+
 flat-cache@^4.0.0:
   version "4.0.1"
   resolved "https://registry.npmjs.org/flat-cache/-/flat-cache-4.0.1.tgz"
