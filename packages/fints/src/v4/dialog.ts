@@ -145,8 +145,9 @@ export class FinTS4Dialog {
         if (response.tanMethods && response.tanMethods.length > 0) {
             this.tanMethods = response.tanMethods;
             // Update security function
-            const hasNo999 = !this.tanMethods.some((m) => m.securityFunction === "999");
-            if (hasNo999 && this.tanMethods.length > 0) {
+            // Use the first TAN method's security function if 999 is not available
+            const hasDefaultMethod = this.tanMethods.some((m) => m.securityFunction === "999");
+            if (!hasDefaultMethod && this.tanMethods.length > 0) {
                 this.securityFunction = this.tanMethods[0].securityFunction;
             }
         }

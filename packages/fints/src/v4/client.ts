@@ -189,31 +189,39 @@ export class FinTS4Client {
     }
 
     /**
+     * Convert a balance value to the MT940 BalanceInfo format.
+     */
+    private toBalanceInfo(
+        amount: number,
+        date: Date | undefined,
+        currency: string,
+    ): { isCredit: boolean; date: string; currency: string; value: number } {
+        return {
+            isCredit: amount >= 0,
+            date: date ? date.toISOString().slice(0, 10) : "",
+            currency,
+            value: Math.abs(amount),
+        };
+    }
+
+    /**
      * Convert camt statements to the common Statement format for compatibility
      * with the FinTS 3.0 MT940-based statements.
      */
     private convertCamtToStatements(camtStatements: CamtStatement[]): Statement[] {
-        return camtStatements.map((stmt) => ({
-            referenceNumber: stmt.id,
-            accountId: stmt.iban || "",
-            number: stmt.id,
-            openingBalance: stmt.openingBalance != null
-                ? {
-                      isCredit: stmt.openingBalance >= 0,
-                      date: stmt.creationDate ? stmt.creationDate.toISOString().slice(0, 10) : "",
-                      currency: stmt.currency || "EUR",
-                      value: Math.abs(stmt.openingBalance),
-                  }
-                : undefined,
-            closingBalance: stmt.closingBalance != null
-                ? {
-                      isCredit: stmt.closingBalance >= 0,
-                      date: stmt.creationDate ? stmt.creationDate.toISOString().slice(0, 10) : "",
-                      currency: stmt.currency || "EUR",
-                      value: Math.abs(stmt.closingBalance),
-                  }
-                : undefined,
-            transactions: stmt.entries.map((entry) => ({
+        return camtStatements.map((stmt) => {
+            const currency = stmt.currency || "EUR";
+            return {
+                referenceNumber: stmt.id,
+                accountId: stmt.iban || "",
+                number: stmt.id,
+                openingBalance: stmt.openingBalance != null
+                    ? this.toBalanceInfo(stmt.openingBalance, stmt.creationDate, currency)
+                    : undefined,
+                closingBalance: stmt.closingBalance != null
+                    ? this.toBalanceInfo(stmt.closingBalance, stmt.creationDate, currency)
+                    : undefined,
+                transactions: stmt.entries.map((entry) => ({
                 id: entry.entryReference || "",
                 code: entry.bankTransactionCode || "",
                 fundsCode: "",
@@ -244,6 +252,7 @@ export class FinTS4Client {
                       }
                     : undefined,
             })),
-        }));
+            };
+        });
     }
 }

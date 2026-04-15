@@ -42,7 +42,9 @@ function parseAmount(amtNode: unknown): { amount: number; currency: string } {
 
     if (typeof amtNode === "object") {
         const obj = amtNode as Record<string, unknown>;
-        // fast-xml-parser with attributes: { "#text": "123.45", "@_Ccy": "EUR" }
+        // fast-xml-parser represents element text as "#text" when attributes exist.
+        // "Amt" and "InstdAmt" are alternative amount field names in different
+        // ISO 20022 camt format versions (camt.053.001.02 vs camt.053.001.08).
         const text = obj["#text"] ?? obj["Amt"] ?? obj["InstdAmt"] ?? "";
         const ccy = (obj["@_Ccy"] as string) || "EUR";
         return {
