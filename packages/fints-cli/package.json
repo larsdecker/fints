@@ -1,6 +1,6 @@
 {
     "name": "fints-lib-cli",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "FinTS command line interface.",
     "keywords": [
         "fints",
