@@ -3217,7 +3217,7 @@ fints-institute-db@^0.16.0:
   integrity sha512-X+FqphxcU/hhQdVJfw/ngr/M1kCjur9t2TttE8zRsGnr6aP16br+8nPDI/uuIqQGV4dvzNVpJVfwZaFxQTdZnA==
 
 "fints-lib-cli@file:/home/runner/work/fints/fints/packages/fints-cli":
-  version "0.5.0"
+  version "0.6.0"
   resolved "file:packages/fints-cli"
   dependencies:
     clime "^0.5.16"
@@ -3227,7 +3227,7 @@ fints-institute-db@^0.16.0:
     yaml "^2.8.2"
 
 fints-lib@*, "fints-lib@file:/home/runner/work/fints/fints/packages/fints":
-  version "0.10.0"
+  version "0.11.0"
   resolved "file:packages/fints"
   dependencies:
     bind-decorator "^1.0.11"
