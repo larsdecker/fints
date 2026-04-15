@@ -15,9 +15,10 @@ const camtParserOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     parseAttributeValue: false,
+    parseTagValue: false,
     trimValues: true,
     isArray: (name: string) => {
-        return ["Stmt", "Ntry", "TxDtls", "RltdPties", "RmtInf", "Ustrd"].includes(name);
+        return ["Stmt", "Ntry", "TxDtls", "Ustrd", "Bal"].includes(name);
     },
 };
 

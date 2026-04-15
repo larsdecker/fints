@@ -38,6 +38,10 @@ export interface FinTS4ClientConfig {
     debug?: boolean;
     /** Timeout in milliseconds for HTTP requests. */
     timeout?: number;
+    /** Maximum number of retry attempts. */
+    maxRetries?: number;
+    /** Base delay for retry backoff in milliseconds. */
+    retryDelay?: number;
 }
 
 /**

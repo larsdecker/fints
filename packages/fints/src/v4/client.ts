@@ -42,6 +42,8 @@ export class FinTS4Client {
             url: config.url,
             debug: config.debug,
             timeout: config.timeout,
+            maxRetries: config.maxRetries,
+            retryDelay: config.retryDelay,
         });
     }
 

@@ -73,17 +73,25 @@ export class NegotiatingClient {
         this.v3Client = new PinTanClient(config);
 
         if (config.preferredVersion === "4.1") {
-            const v4Config: FinTS4ClientConfig = {
-                blz: config.blz,
-                name: config.name,
-                pin: config.pin,
-                url: config.v4Url || config.url,
-                productId: config.productId,
-                debug: config.debug,
-                timeout: config.timeout,
-            };
-            this.v4Client = new FinTS4Client(v4Config);
+            this.v4Client = this.createV4Client(config);
         }
+    }
+
+    /**
+     * Create a FinTS4Client from the negotiating config.
+     */
+    private createV4Client(config: NegotiatingClientConfig): FinTS4Client {
+        return new FinTS4Client({
+            blz: config.blz,
+            name: config.name,
+            pin: config.pin,
+            url: config.v4Url || config.url,
+            productId: config.productId,
+            debug: config.debug,
+            timeout: config.timeout,
+            maxRetries: config.maxRetries,
+            retryDelay: config.retryDelay,
+        });
     }
 
     /**
@@ -181,16 +189,7 @@ export class NegotiatingClient {
     public forceVersion(version: FinTSProtocolVersion): void {
         this.detectedVersion = version;
         if (version === "4.1" && !this.v4Client) {
-            const v4Config: FinTS4ClientConfig = {
-                blz: this.config.blz,
-                name: this.config.name,
-                pin: this.config.pin,
-                url: this.config.v4Url || this.config.url,
-                productId: this.config.productId,
-                debug: this.config.debug,
-                timeout: this.config.timeout,
-            };
-            this.v4Client = new FinTS4Client(v4Config);
+            this.v4Client = this.createV4Client(this.config);
         }
     }
 

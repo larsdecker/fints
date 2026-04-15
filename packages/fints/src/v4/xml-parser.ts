@@ -15,6 +15,7 @@ const parserOptions = {
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     parseAttributeValue: false,
+    parseTagValue: false,
     trimValues: true,
     isArray: (name: string) => {
         // These elements can occur multiple times
