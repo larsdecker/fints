@@ -239,14 +239,11 @@ const devAgent = createTlsAgent({ rejectUnauthorized: false });
 // const prodAgent = createTlsAgent({ rejectUnauthorized: false });
 ```
 
-For FinTS 3.0 (`PinTanClient`), pass the agent the same way:
-
-```typescript
-import { PinTanClient, HttpConnection } from "fints-lib";
-
-const connection = new HttpConnection({ url: "https://...", agent });
-const client = new PinTanClient({ /* ... */ }, connection);
-```
+> **Note:** `createTlsAgent()` and `fetchOptions.agent` are currently only supported by
+> `FinTS4Client` (FinTS 4.1). The FinTS 3.0 `PinTanClient` / `HttpConnection` does not
+> expose a custom-agent option; if you need custom TLS for a FinTS 3.0 endpoint, use the
+> `NegotiatingClient` with `preferredVersion: "4.1"` or configure TLS at the Node.js
+> process level (e.g. `NODE_EXTRA_CA_CERTS`).
 
 ## 🔄 HBCI Version Negotiation (FinTS 4.1)
 

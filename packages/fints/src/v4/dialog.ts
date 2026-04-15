@@ -7,7 +7,7 @@ import { FinTS4DialogConfig, FinTS4Connection, FinTS4Response, BankParameterData
 import { buildMessage, XmlSegment } from "./xml-builder";
 import { parseResponse } from "./xml-parser";
 import { TanMethod } from "../tan-method";
-import { BankCapabilities } from "../types";
+import { BankCapabilities, SEPAAccount } from "../types";
 import { PRODUCT_NAME } from "../constants";
 import { FINTS_VERSION } from "./constants";
 import {
@@ -123,9 +123,12 @@ export class FinTS4Dialog {
      * When the server responds with a TAN challenge (return code `0030`) and a
      * `tanCallback` is configured, the challenge is automatically resolved:
      * the callback is invoked, and the TAN is submitted in a follow-up message.
-     * If no `tanCallback` is configured, a `TanRequiredError` is thrown.
+     * If no `tanCallback` is configured, a `FinTS4TanRequiredError` is thrown.
      */
-    public async send(segments: XmlSegment[], options?: { pin?: string; tan?: string }): Promise<FinTS4Response> {
+    public async send(
+        segments: XmlSegment[],
+        options?: { pin?: string; tan?: string; account?: SEPAAccount },
+    ): Promise<FinTS4Response> {
         const xmlRequest = buildMessage({
             msgNo: this.msgNo,
             dialogId: this.dialogId,
@@ -142,7 +145,7 @@ export class FinTS4Dialog {
 
         verbose(`FinTS 4.1 sending message #${this.msgNo} to dialog ${this.dialogId}`);
         const responseXml = await this.connection.send(xmlRequest);
-        const response = parseResponse(responseXml);
+        const response = parseResponse(responseXml, options?.account);
 
         if (response.dialogId && response.dialogId !== "0") {
             this.dialogId = response.dialogId;
@@ -170,7 +173,7 @@ export class FinTS4Dialog {
      * Handle a TAN challenge from the server.
      *
      * Invokes `tanCallback` if configured and submits the TAN, then returns
-     * the server's final response. Throws `TanRequiredError` if no callback
+     * the server's final response. Throws `FinTS4TanRequiredError` if no callback
      * is configured.
      */
     private async handleTanChallenge(challengeResponse: FinTS4Response): Promise<FinTS4Response> {
@@ -285,6 +288,7 @@ export class FinTS4Dialog {
                 name: this.name,
                 systemId: "0",
                 productId: this.productId,
+                hbciVersion: this.hbciVersion,
             }),
             buildSyncSegment({ segNo: 2, mode: 0 }),
         ];
@@ -370,6 +374,7 @@ export class FinTS4Dialog {
                 name: this.name,
                 systemId: this.systemId,
                 productId: this.productId,
+                hbciVersion: this.hbciVersion,
             }),
         ];
 

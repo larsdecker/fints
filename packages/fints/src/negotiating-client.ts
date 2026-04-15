@@ -63,6 +63,31 @@ export interface NegotiatingClientConfig extends PinTanClientConfig {
      * Base delay for retry backoff in milliseconds.
      */
     retryDelay?: number;
+
+    /**
+     * Callback invoked when a FinTS 4.1 server issues a TAN challenge.
+     * If not provided and a TAN is required during a v4.1 request, a
+     * `FinTS4TanRequiredError` is thrown.
+     */
+    tanCallback?: import("./v4/types").TanCallback;
+
+    /**
+     * Additional options passed directly to the underlying `fetch()` call
+     * for FinTS 4.1 requests (e.g. a custom TLS `https.Agent`).
+     */
+    fetchOptions?: Record<string, unknown>;
+
+    /**
+     * TLS options for FinTS 4.1 connections (Node.js only).
+     * Converted automatically to a `fetchOptions.agent` via `createTlsAgent()`.
+     */
+    tlsOptions?: import("./v4/types").FinTS4TlsOptions;
+
+    /**
+     * Preferred HBCI version for FinTS 4.1 negotiation (e.g. "4.1", "4.0").
+     * Defaults to "4.1". Falls back automatically when the bank rejects the version.
+     */
+    preferredHbciVersion?: string;
 }
 
 /**
@@ -100,6 +125,10 @@ export class NegotiatingClient {
             timeout: config.timeout,
             maxRetries: config.maxRetries,
             retryDelay: config.retryDelay,
+            tanCallback: config.tanCallback,
+            fetchOptions: config.fetchOptions,
+            tlsOptions: config.tlsOptions,
+            preferredHbciVersion: config.preferredHbciVersion,
         });
     }
 

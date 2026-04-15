@@ -46,15 +46,29 @@ export interface FinTS4ConnectionConfig {
  * const client = new FinTS4Client({ ..., fetchOptions: { agent } });
  * ```
  *
- * This function throws if called outside a Node.js environment.
+ * @throws {Error} When called outside a Node.js environment (e.g. in a browser).
  */
 export function createTlsAgent(options: FinTS4TlsOptions): unknown {
+    if (typeof require === "undefined") {
+        throw new Error(
+            "createTlsAgent() requires a Node.js environment. " +
+                "Browser environments do not support custom HTTPS agents.",
+        );
+    }
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const https = require("https") as typeof import("https");
     return new https.Agent({
         rejectUnauthorized: options.rejectUnauthorized ?? true,
         ...(options.ca ? { ca: options.ca } : {}),
     });
+}
+
+/**
+ * Redact sensitive credential fields (`<PIN>`, `<TAN>`) in an XML string
+ * before writing it to a debug log.
+ */
+function redactXmlCredentials(xml: string): string {
+    return xml.replace(/(<PIN>)[^<]*/gi, "$1***").replace(/(<TAN>)[^<]*/gi, "$1***");
 }
 
 /**
@@ -83,7 +97,7 @@ export class FinTS4HttpConnection implements FinTS4Connection {
     public async send(xmlRequest: string): Promise<string> {
         verbose(`FinTS 4.1: Sending request to ${this.url}`);
         if (this.debug) {
-            verbose(`FinTS 4.1 Request XML:\n${xmlRequest}`);
+            verbose(`FinTS 4.1 Request XML:\n${redactXmlCredentials(xmlRequest)}`);
         }
 
         let lastError: Error | null = null;
@@ -113,7 +127,7 @@ export class FinTS4HttpConnection implements FinTS4Connection {
                     const responseText = await httpResponse.text();
                     verbose(`FinTS 4.1: Received response`);
                     if (this.debug) {
-                        verbose(`FinTS 4.1 Response XML:\n${responseText}`);
+                        verbose(`FinTS 4.1 Response XML:\n${redactXmlCredentials(responseText)}`);
                     }
                     return responseText;
                 } finally {

@@ -17,15 +17,17 @@ export function buildDialogInitSegment(options: {
     name: string;
     systemId: string;
     productId?: string;
+    hbciVersion?: string;
 }): XmlSegment {
     const productId = options.productId || PRODUCT_NAME;
+    const hbciVersion = options.hbciVersion || FINTS_VERSION;
     const body =
         xmlElement("BLZ", options.blz) +
         xmlElement("CountryCode", COUNTRY_CODE) +
         xmlElement("CustomerID", escapeXml(options.name)) +
         xmlElement("SystemID", escapeXml(options.systemId)) +
         xmlElement("Product", xmlElement("Name", escapeXml(productId)) + xmlElement("Version", PRODUCT_VERSION)) +
-        xmlElement("HBCIVersion", FINTS_VERSION);
+        xmlElement("HBCIVersion", hbciVersion);
 
     return {
         type: "DialogInit",

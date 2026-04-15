@@ -82,7 +82,7 @@ export class MockBankServer {
     }
 
     /**
-     * Reset the server state (clear all dialogs and logs).
+     * Reset the server state (clear all dialogs, logs, and user system IDs).
      */
     public reset(): void {
         this.dialogs.clear();
@@ -90,6 +90,10 @@ export class MockBankServer {
         this.responseLog = [];
         this.nextDialogId = 1000;
         this.nextSystemId = 1;
+        // Reset per-user system IDs so tests are fully independent
+        for (const userId of Object.keys(TEST_USERS)) {
+            TEST_USERS[userId].systemId = "";
+        }
     }
 
     /**

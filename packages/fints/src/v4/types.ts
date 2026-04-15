@@ -51,7 +51,7 @@ export interface FinTS4DialogConfig {
     productId?: string;
     /**
      * Callback invoked when the server issues a TAN challenge.
-     * If not provided and a TAN is required, a `TanRequiredError` is thrown.
+     * If not provided and a TAN is required, a `FinTS4TanRequiredError` is thrown.
      */
     tanCallback?: TanCallback;
 }
@@ -80,7 +80,7 @@ export interface FinTS4ClientConfig {
     retryDelay?: number;
     /**
      * Callback invoked when the server issues a TAN challenge.
-     * If not provided and a TAN is required, a `TanRequiredError` is thrown.
+     * If not provided and a TAN is required, a `FinTS4TanRequiredError` is thrown.
      */
     tanCallback?: TanCallback;
     /**

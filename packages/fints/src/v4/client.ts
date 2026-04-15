@@ -11,7 +11,7 @@
  */
 import { FinTS4ClientConfig, FinTS4Connection, CamtStatement } from "./types";
 import { FinTS4Dialog } from "./dialog";
-import { FinTS4HttpConnection } from "./connection";
+import { FinTS4HttpConnection, createTlsAgent } from "./connection";
 import { SEPAAccount, Balance, Statement, BankCapabilities } from "../types";
 import { PRODUCT_NAME } from "../constants";
 import { parseCamt053 } from "./camt-parser";
@@ -38,13 +38,23 @@ export class FinTS4Client {
 
     constructor(config: FinTS4ClientConfig) {
         this.config = config;
+        // If tlsOptions is provided directly, convert it to an agent and merge into fetchOptions.
+        // This spares callers from having to manually call createTlsAgent().
+        let fetchOptions = config.fetchOptions ?? {};
+        if (config.tlsOptions && !fetchOptions["agent"]) {
+            try {
+                fetchOptions = { ...fetchOptions, agent: createTlsAgent(config.tlsOptions) };
+            } catch {
+                // Not in a Node.js environment — tlsOptions silently ignored.
+            }
+        }
         this.connection = new FinTS4HttpConnection({
             url: config.url,
             debug: config.debug,
             timeout: config.timeout,
             maxRetries: config.maxRetries,
             retryDelay: config.retryDelay,
-            fetchOptions: config.fetchOptions,
+            fetchOptions,
         });
     }
 
@@ -100,20 +110,23 @@ export class FinTS4Client {
         await dialog.sync();
         await dialog.init();
 
-        const response = await dialog.send([
-            buildBalanceSegment({
-                segNo: 3,
-                version: dialog.balanceVersion,
-                account,
-            }),
-        ]);
+        const response = await dialog.send(
+            [
+                buildBalanceSegment({
+                    segNo: 3,
+                    version: dialog.balanceVersion,
+                    account,
+                }),
+            ],
+            { account },
+        );
         await dialog.end();
 
         if (response.balance) {
             return response.balance;
         }
 
-        // Build balance from raw response
+        // Fallback: return a zeroed balance so callers always receive a Balance object
         return {
             account,
             availableBalance: 0,

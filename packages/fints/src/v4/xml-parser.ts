@@ -13,7 +13,7 @@ import {
     TanChallenge,
 } from "./types";
 import { TanMethod } from "../tan-method";
-import { SEPAAccount } from "../types";
+import { SEPAAccount, Balance } from "../types";
 
 /**
  * Parser options for fast-xml-parser.
@@ -29,6 +29,7 @@ const parserOptions = {
         return [
             "Segment",
             "ReturnValue",
+            "Parameter",
             "Account",
             "TANMethod",
             "Version",
@@ -146,6 +147,67 @@ function parseAccounts(xml: unknown): SEPAAccount[] {
         accountOwnerName: getXmlString(acct, "OwnerName"),
         accountName: getXmlString(acct, "AccountName"),
     }));
+}
+
+/**
+ * Parse a single balance sub-element (e.g. `<BookedBalance>` or `<AvailableBalance>`).
+ *
+ * Returns the numeric amount (positive for CRDT, negative for DBIT) and currency,
+ * or undefined if the element is missing.
+ */
+function parseBalanceElement(
+    body: Record<string, unknown>,
+    elementName: string,
+): { amount: number; currency: string } | undefined {
+    const elem = getXmlValue(body, elementName) as Record<string, unknown> | undefined;
+    if (!elem) return undefined;
+
+    // Amount may be a plain number or wrapped in an element with a Ccy attribute
+    const amountRaw = getXmlValue(elem, "Amount");
+    let amount: number;
+    let currency = "EUR";
+
+    if (typeof amountRaw === "object" && amountRaw !== null) {
+        const amtObj = amountRaw as Record<string, unknown>;
+        amount = Number(amtObj["#text"] ?? amtObj["Amount"] ?? 0);
+        currency = String(amtObj["@_Ccy"] ?? amtObj["Ccy"] ?? "EUR");
+    } else {
+        amount = Number(amountRaw ?? 0);
+        // Currency may live as a sibling attribute
+        currency = getXmlString(elem, "@_Ccy") ?? getXmlString(elem, "Ccy") ?? "EUR";
+    }
+
+    const isDebit = String(getXmlValue(elem, "CdtDbtInd") ?? "CRDT").toUpperCase() === "DBIT";
+    return { amount: isDebit ? -Math.abs(amount) : Math.abs(amount), currency };
+}
+
+/**
+ * Parse balance data from a FinTS 4.1 Balance segment body.
+ *
+ * The server may return `<BookedBalance>`, `<AvailableBalance>`, and
+ * `<CreditLimit>` sub-elements.  Returns undefined when the body is absent.
+ */
+export function parseBalance(xml: unknown, account: SEPAAccount): Balance | undefined {
+    const body = xml as Record<string, unknown> | undefined;
+    if (!body) return undefined;
+
+    const booked = parseBalanceElement(body, "BookedBalance");
+    const available = parseBalanceElement(body, "AvailableBalance");
+
+    if (!booked) return undefined;
+
+    const creditLimit = Number(getXmlValue(body, "CreditLimit") ?? 0);
+    const productName = getXmlString(body, "AccountName") ?? "";
+
+    return {
+        account,
+        bookedBalance: booked.amount,
+        availableBalance: available?.amount ?? booked.amount,
+        currency: booked.currency,
+        creditLimit,
+        pendingBalance: 0,
+        productName,
+    };
 }
 
 /**
@@ -306,8 +368,12 @@ function parseTanChallenge(segBody: unknown, tanMethods?: Array<{ name?: string 
 
 /**
  * Parse a complete FinTS 4.1 XML response string.
+ *
+ * @param xmlString  The raw XML response from the server.
+ * @param account    Optional account context used to populate the `balance` field
+ *                   when the response contains a `<Balance>` segment.
  */
-export function parseResponse(xmlString: string): FinTS4Response {
+export function parseResponse(xmlString: string, account?: SEPAAccount): FinTS4Response {
     const parser = createParser();
     const parsed = parser.parse(xmlString);
 
@@ -353,6 +419,10 @@ export function parseResponse(xmlString: string): FinTS4Response {
     const camtData = statementSegment
         ? getXmlString(getXmlValue(statementSegment, "SegBody") as Record<string, unknown>, "CamtData")
         : undefined;
+
+    // Parse balance data (requires the account from the caller)
+    const balanceSegment = findSegment(msgBody, "Balance");
+    const balanceSegBody = balanceSegment ? getXmlValue(balanceSegment, "SegBody") : undefined;
 
     // Parse segment versions from the response
     const segmentVersions = parseSegmentVersions(msgBody);
@@ -407,6 +477,7 @@ export function parseResponse(xmlString: string): FinTS4Response {
         upd,
         tanMethods: tanMethodsList,
         accounts,
+        balance: account && balanceSegBody ? parseBalance(balanceSegBody, account) : undefined,
         camtData,
         supportedHbciVersions,
         segmentVersions,
