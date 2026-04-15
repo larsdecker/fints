@@ -114,9 +114,7 @@ describe("FinTS4HttpConnection", () => {
                 retryDelay: 1,
             });
 
-            await expect(conn.send("<test/>")).rejects.toThrow(
-                "FinTS 4.1: Request failed after 2 attempts",
-            );
+            await expect(conn.send("<test/>")).rejects.toThrow("FinTS 4.1: Request failed after 2 attempts");
         });
     });
 });

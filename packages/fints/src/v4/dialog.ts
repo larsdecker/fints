@@ -7,15 +7,9 @@ import { FinTS4DialogConfig, FinTS4Connection, FinTS4Response, BankParameterData
 import { buildMessage, XmlSegment } from "./xml-builder";
 import { parseResponse } from "./xml-parser";
 import { TanMethod } from "../tan-method";
-import { SEPAAccount, BankCapabilities } from "../types";
+import { BankCapabilities } from "../types";
 import { PRODUCT_NAME } from "../constants";
-import {
-    buildDialogInitSegment,
-    buildDialogEndSegment,
-    buildSyncSegment,
-    buildAccountListSegment,
-    buildTanSegment,
-} from "./segments";
+import { buildDialogInitSegment, buildDialogEndSegment, buildSyncSegment, buildTanSegment } from "./segments";
 import { verbose } from "../logger";
 
 /**
@@ -208,10 +202,7 @@ export class FinTS4Dialog {
      */
     public async end(): Promise<void> {
         try {
-            await this.send(
-                [buildDialogEndSegment({ segNo: 1, dialogId: this.dialogId })],
-                { pin: this.pin },
-            );
+            await this.send([buildDialogEndSegment({ segNo: 1, dialogId: this.dialogId })], { pin: this.pin });
         } finally {
             this.dialogId = "0";
             this.msgNo = 1;
@@ -226,7 +217,11 @@ export class FinTS4Dialog {
         this.supportsBalance = balVer > 0;
         if (balVer > 0) this.balanceVersion = balVer;
 
-        const stmtVer = this.segmentVersions.get("AccountStatement") || this.segmentVersions.get("HIKAZS") || this.segmentVersions.get("HICAZS") || 0;
+        const stmtVer =
+            this.segmentVersions.get("AccountStatement") ||
+            this.segmentVersions.get("HIKAZS") ||
+            this.segmentVersions.get("HICAZS") ||
+            0;
         this.supportsStatements = stmtVer > 0;
         if (stmtVer > 0) this.statementVersion = stmtVer;
 

@@ -39,7 +39,7 @@ describe("xml-builder", () => {
         });
 
         it("escapes multiple special characters", () => {
-            expect(escapeXml('a & b < c > "d" & \'e\'')).toBe(
+            expect(escapeXml("a & b < c > \"d\" & 'e'")).toBe(
                 "a &amp; b &lt; c &gt; &quot;d&quot; &amp; &apos;e&apos;",
             );
         });

@@ -256,10 +256,7 @@ export function parseResponse(xmlString: string): FinTS4Response {
     const msgNo = getXmlNumber(msgHead, "MsgNo") || 0;
 
     // Parse return values from all sources
-    const returnValues = [
-        ...parseReturnValues(msgBody),
-        ...parseReturnValues(fintsMsg),
-    ];
+    const returnValues = [...parseReturnValues(msgBody), ...parseReturnValues(fintsMsg)];
 
     const success = !returnValues.some((rv) => rv.isError);
 
@@ -271,27 +268,19 @@ export function parseResponse(xmlString: string): FinTS4Response {
 
     // Parse BPD
     const bpdSegment = findSegment(msgBody, "BPD");
-    const bpd = bpdSegment
-        ? parseBPD(getXmlValue(bpdSegment, "SegBody"))
-        : undefined;
+    const bpd = bpdSegment ? parseBPD(getXmlValue(bpdSegment, "SegBody")) : undefined;
 
     // Parse UPD
     const updSegment = findSegment(msgBody, "UPD");
-    const upd = updSegment
-        ? parseUPD(getXmlValue(updSegment, "SegBody"))
-        : undefined;
+    const upd = updSegment ? parseUPD(getXmlValue(updSegment, "SegBody")) : undefined;
 
     // Parse TAN methods
     const tanMethodsSegment = findSegment(msgBody, "TANMethods");
-    const tanMethods = tanMethodsSegment
-        ? parseTanMethods(getXmlValue(tanMethodsSegment, "SegBody"))
-        : undefined;
+    const tanMethods = tanMethodsSegment ? parseTanMethods(getXmlValue(tanMethodsSegment, "SegBody")) : undefined;
 
     // Parse accounts
     const accountsSegment = findSegment(msgBody, "AccountList");
-    const accounts = accountsSegment
-        ? parseAccounts(getXmlValue(accountsSegment, "SegBody"))
-        : undefined;
+    const accounts = accountsSegment ? parseAccounts(getXmlValue(accountsSegment, "SegBody")) : undefined;
 
     // Parse camt data
     const statementSegment = findSegment(msgBody, "AccountStatement");

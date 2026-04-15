@@ -22,14 +22,10 @@ import { buildMessage } from "../xml-builder";
 import { parseResponse, isFinTS4Response, isErrorCode } from "../xml-parser";
 import { parseCamt053 } from "../camt-parser";
 import { FinTS4Dialog } from "../dialog";
-import { FinTS4Client } from "../client";
 import {
     buildDialogInitSegment,
-    buildDialogEndSegment,
-    buildSyncSegment,
     buildAccountListSegment,
     buildAccountStatementSegment,
-    buildBalanceSegment,
     buildTanSegment,
 } from "../segments";
 
@@ -444,11 +440,11 @@ describe("FinTS 4.1 Specification: Dialog Lifecycle (§C.1)", () => {
 
     it("§C.1.2 – Full dialog lifecycle: sync → init → business → end", async () => {
         const conn = createMockConnection([
-            specSyncResponse(),       // 1. sync
-            specDialogEndResponse(),  // 2. end sync dialog
+            specSyncResponse(), // 1. sync
+            specDialogEndResponse(), // 2. end sync dialog
             specSuccessResponse("init-d1"), // 3. init new dialog
             specSuccessResponse("init-d1"), // 4. business transaction
-            specDialogEndResponse(),  // 5. end business dialog
+            specDialogEndResponse(), // 5. end business dialog
         ]);
 
         const dialog = new FinTS4Dialog(dialogConfig, conn);
@@ -554,9 +550,7 @@ describe("FinTS 4.1 Specification: Dialog Lifecycle (§C.1)", () => {
         const conn = createMockConnection([multiErrorResponse]);
         const dialog = new FinTS4Dialog(dialogConfig, conn);
 
-        await expect(dialog.send([{ type: "Test", version: 1, segNo: 1, body: "" }])).rejects.toThrow(
-            /9010.*9340/,
-        );
+        await expect(dialog.send([{ type: "Test", version: 1, segNo: 1, body: "" }])).rejects.toThrow(/9010.*9340/);
     });
 });
 
@@ -693,9 +687,9 @@ describe("FinTS 4.1 Specification: Account Statements / camt.053 (§D.3)", () =>
         expect(stmt.iban).toBe("DE89370400440532013000");
 
         // Opening balance (PRCD = Previous Closing Date balance)
-        expect(stmt.openingBalance).toBe(5432.10);
+        expect(stmt.openingBalance).toBe(5432.1);
         // Closing balance
-        expect(stmt.closingBalance).toBe(5782.10);
+        expect(stmt.closingBalance).toBe(5782.1);
         expect(stmt.currency).toBe("EUR");
     });
 
@@ -704,7 +698,7 @@ describe("FinTS 4.1 Specification: Account Statements / camt.053 (§D.3)", () =>
         const entry = stmts[0].entries[0];
 
         expect(entry.entryReference).toBe("2024011500001");
-        expect(entry.amount).toBe(500.00); // Positive for credit
+        expect(entry.amount).toBe(500.0); // Positive for credit
         expect(entry.currency).toBe("EUR");
         expect(entry.creditDebitIndicator).toBe("CRDT");
         expect(entry.bookingDate).toEqual(new Date("2024-01-15"));
@@ -723,7 +717,7 @@ describe("FinTS 4.1 Specification: Account Statements / camt.053 (§D.3)", () =>
         const entry = stmts[0].entries[1];
 
         expect(entry.entryReference).toBe("2024011500002");
-        expect(entry.amount).toBe(-150.00); // Negative for debit
+        expect(entry.amount).toBe(-150.0); // Negative for debit
         expect(entry.creditDebitIndicator).toBe("DBIT");
         expect(entry.counterpartyName).toBe("Vermieter Immobilien AG");
         expect(entry.counterpartyIban).toBe("DE27100777770209299700");

@@ -69,8 +69,7 @@ export class MockBankServer {
         parseAttributeValue: false,
         parseTagValue: false,
         trimValues: true,
-        isArray: (name: string) =>
-            ["Segment", "ReturnValue"].includes(name),
+        isArray: (name: string) => ["Segment", "ReturnValue"].includes(name),
     });
 
     /**
@@ -132,12 +131,7 @@ export class MockBankServer {
                 const stmtSeg = segments.find((s) => s.type === "AccountStatement");
                 response = this.handleAccountStatement(msgNo, dialogId, stmtSeg?.body);
             } else {
-                response = this.buildErrorResponse(
-                    msgNo,
-                    dialogId,
-                    "9010",
-                    "Unbekannter Geschäftsvorfall",
-                );
+                response = this.buildErrorResponse(msgNo, dialogId, "9010", "Unbekannter Geschäftsvorfall");
             }
 
             this.responseLog.push(response);
@@ -158,10 +152,7 @@ export class MockBankServer {
     // Request handlers
     // -----------------------------------------------------------------------
 
-    private handleSync(
-        msgNo: number,
-        credentials: { userId: string; pin: string },
-    ): string {
+    private handleSync(msgNo: number, credentials: { userId: string; pin: string }): string {
         // Validate credentials
         const authError = this.authenticate(credentials);
         if (authError) return authError;
@@ -230,11 +221,7 @@ export class MockBankServer {
     private handleDialogEnd(msgNo: number, dialogId: string): string {
         this.dialogs.delete(dialogId);
 
-        return this.buildResponse(
-            msgNo,
-            "0",
-            this.buildReturnValue("0100", "Dialog beendet"),
-        );
+        return this.buildResponse(msgNo, "0", this.buildReturnValue("0100", "Dialog beendet"));
     }
 
     private handleAccountList(msgNo: number, dialogId: string): string {
@@ -268,11 +255,7 @@ export class MockBankServer {
         );
     }
 
-    private handleBalance(
-        msgNo: number,
-        dialogId: string,
-        body?: Record<string, unknown>,
-    ): string {
+    private handleBalance(msgNo: number, dialogId: string, body?: Record<string, unknown>): string {
         const dialog = this.dialogs.get(dialogId);
         if (!dialog) {
             return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
@@ -282,12 +265,7 @@ export class MockBankServer {
         const iban = this.extractIban(body);
         const account = TEST_ACCOUNTS.find((a) => a.iban === iban);
         if (!account) {
-            return this.buildErrorResponse(
-                msgNo,
-                dialogId,
-                "9010",
-                `Konto ${iban || "unbekannt"} nicht gefunden`,
-            );
+            return this.buildErrorResponse(msgNo, dialogId, "9010", `Konto ${iban || "unbekannt"} nicht gefunden`);
         }
 
         const balanceXml = `
@@ -315,11 +293,7 @@ export class MockBankServer {
         );
     }
 
-    private handleAccountStatement(
-        msgNo: number,
-        dialogId: string,
-        body?: Record<string, unknown>,
-    ): string {
+    private handleAccountStatement(msgNo: number, dialogId: string, body?: Record<string, unknown>): string {
         const dialog = this.dialogs.get(dialogId);
         if (!dialog) {
             return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
@@ -328,12 +302,7 @@ export class MockBankServer {
         const iban = this.extractIban(body);
         const account = TEST_ACCOUNTS.find((a) => a.iban === iban);
         if (!account) {
-            return this.buildErrorResponse(
-                msgNo,
-                dialogId,
-                "9010",
-                `Konto ${iban || "unbekannt"} nicht gefunden`,
-            );
+            return this.buildErrorResponse(msgNo, dialogId, "9010", `Konto ${iban || "unbekannt"} nicht gefunden`);
         }
 
         // Build camt.053 data
@@ -345,12 +314,7 @@ export class MockBankServer {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;");
 
-        const stmtSeg = this.buildSegment(
-            "AccountStatement",
-            2,
-            3,
-            `<CamtData>${escapedCamt}</CamtData>`,
-        );
+        const stmtSeg = this.buildSegment("AccountStatement", 2, 3, `<CamtData>${escapedCamt}</CamtData>`);
 
         return this.buildResponse(
             msgNo,
@@ -365,10 +329,7 @@ export class MockBankServer {
     // Helper methods
     // -----------------------------------------------------------------------
 
-    private authenticate(credentials: {
-        userId: string;
-        pin: string;
-    }): string | null {
+    private authenticate(credentials: { userId: string; pin: string }): string | null {
         const user = TEST_USERS[credentials.userId];
         if (!user) {
             return this.buildErrorResponse(1, "0", "9931", "Zugang gesperrt – Benutzer unbekannt");
@@ -401,9 +362,7 @@ export class MockBankServer {
         return segments;
     }
 
-    private extractCredentials(
-        msgBody: Record<string, unknown>,
-    ): { userId: string; pin: string } {
+    private extractCredentials(msgBody: Record<string, unknown>): { userId: string; pin: string } {
         const header = msgBody.SignatureHeader as Record<string, unknown> | undefined;
         const trailer = msgBody.SignatureTrailer as Record<string, unknown> | undefined;
 
@@ -438,12 +397,7 @@ export class MockBankServer {
 </FinTSMessage>`;
     }
 
-    private buildErrorResponse(
-        msgNo: number,
-        dialogId: string,
-        code: string,
-        message: string,
-    ): string {
+    private buildErrorResponse(msgNo: number, dialogId: string, code: string, message: string): string {
         return this.buildResponse(msgNo, dialogId, this.buildReturnValue(code, message));
     }
 
@@ -469,12 +423,8 @@ export class MockBankServer {
     }
 
     private buildBpdSegment(segNo: number): string {
-        const painFormats = TEST_BANK.painFormats
-            .map((f) => `<PainFormat>${f}</PainFormat>`)
-            .join("");
-        const camtFormats = TEST_BANK.camtFormats
-            .map((f) => `<CamtFormat>${f}</CamtFormat>`)
-            .join("");
+        const painFormats = TEST_BANK.painFormats.map((f) => `<PainFormat>${f}</PainFormat>`).join("");
+        const camtFormats = TEST_BANK.camtFormats.map((f) => `<CamtFormat>${f}</CamtFormat>`).join("");
 
         return this.buildSegment(
             "BPD",

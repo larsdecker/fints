@@ -24,10 +24,7 @@ export function buildDialogInitSegment(options: {
         xmlElement("CountryCode", COUNTRY_CODE) +
         xmlElement("CustomerID", escapeXml(options.name)) +
         xmlElement("SystemID", escapeXml(options.systemId)) +
-        xmlElement(
-            "Product",
-            xmlElement("Name", escapeXml(productId)) + xmlElement("Version", PRODUCT_VERSION),
-        ) +
+        xmlElement("Product", xmlElement("Name", escapeXml(productId)) + xmlElement("Version", PRODUCT_VERSION)) +
         xmlElement("HBCIVersion", FINTS_VERSION);
 
     return {
@@ -53,10 +50,7 @@ export function buildDialogEndSegment(options: { segNo: number; dialogId: string
 /**
  * Build a Sync segment for synchronization (obtaining system ID, BPD, UPD).
  */
-export function buildSyncSegment(options: {
-    segNo: number;
-    mode?: number;
-}): XmlSegment {
+export function buildSyncSegment(options: { segNo: number; mode?: number }): XmlSegment {
     const mode = options.mode ?? 0;
     return {
         type: "Sync",
@@ -81,11 +75,7 @@ export function buildAccountListSegment(options: { segNo: number }): XmlSegment 
 /**
  * Build a balance request segment (equivalent to HKSAL in v3).
  */
-export function buildBalanceSegment(options: {
-    segNo: number;
-    version: number;
-    account: SEPAAccount;
-}): XmlSegment {
+export function buildBalanceSegment(options: { segNo: number; version: number; account: SEPAAccount }): XmlSegment {
     const accountXml =
         xmlElement("IBAN", escapeXml(options.account.iban)) +
         xmlElement("BIC", escapeXml(options.account.bic)) +

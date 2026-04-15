@@ -27,7 +27,6 @@
  */
 import { PinTanClient, PinTanClientConfig } from "./pin-tan-client";
 import { FinTS4Client } from "./v4/client";
-import { FinTS4ClientConfig } from "./v4/types";
 import { SEPAAccount, Balance, Statement, BankCapabilities } from "./types";
 import { verbose } from "./logger";
 
@@ -130,9 +129,7 @@ export class NegotiatingClient {
                 verbose("NegotiatingClient: FinTS 4.1 connection successful.");
                 return "4.1";
             } catch (error) {
-                verbose(
-                    `NegotiatingClient: FinTS 4.1 failed, falling back to 3.0: ${(error as Error).message}`,
-                );
+                verbose(`NegotiatingClient: FinTS 4.1 failed, falling back to 3.0: ${(error as Error).message}`);
             }
         }
 
@@ -180,11 +177,7 @@ export class NegotiatingClient {
      * When using FinTS 4.1, statements are fetched in camt.053 format and
      * converted to the common Statement format for backward compatibility.
      */
-    public async statements(
-        account: SEPAAccount,
-        startDate?: Date,
-        endDate?: Date,
-    ): Promise<Statement[]> {
+    public async statements(account: SEPAAccount, startDate?: Date, endDate?: Date): Promise<Statement[]> {
         const version = await this.detectVersion();
         if (version === "4.1" && this.v4Client) {
             return this.v4Client.statements(account, startDate, endDate);

@@ -8,13 +8,9 @@
  */
 import { FinTS4Dialog } from "../dialog";
 import { MockBankServer } from "../test-server/mock-bank-server";
-import { TEST_BANK, TEST_USERS, TEST_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
+import { TEST_BANK, TEST_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
 import { parseCamt053 } from "../camt-parser";
-import {
-    buildAccountListSegment,
-    buildBalanceSegment,
-    buildAccountStatementSegment,
-} from "../segments";
+import { buildAccountListSegment, buildBalanceSegment, buildAccountStatementSegment } from "../segments";
 
 describe("FinTS 4.1 Integration: Mock Bank Server", () => {
     let server: MockBankServer;
@@ -194,16 +190,12 @@ describe("FinTS 4.1 Integration: Mock Bank Server", () => {
             expect(response.accounts).toBeDefined();
             expect(response.accounts!.length).toBe(TEST_ACCOUNTS.length);
 
-            const girokonto = response.accounts!.find(
-                (a) => a.iban === "DE89370400440532013000",
-            );
+            const girokonto = response.accounts!.find((a) => a.iban === "DE89370400440532013000");
             expect(girokonto).toBeDefined();
             expect(girokonto!.bic).toBe("SSKNDE77XXX");
             expect(girokonto!.accountOwnerName).toBe("Max Mustermann");
 
-            const sparkonto = response.accounts!.find(
-                (a) => a.iban === "DE27100777770209299700",
-            );
+            const sparkonto = response.accounts!.find((a) => a.iban === "DE27100777770209299700");
             expect(sparkonto).toBeDefined();
 
             await dialog.end();

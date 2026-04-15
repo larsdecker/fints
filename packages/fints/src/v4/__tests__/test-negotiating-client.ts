@@ -1,4 +1,4 @@
-import { NegotiatingClient, FinTSProtocolVersion } from "../../negotiating-client";
+import { NegotiatingClient } from "../../negotiating-client";
 import { FinTS4Client } from "../client";
 import { PinTanClient } from "../../pin-tan-client";
 
@@ -7,20 +7,6 @@ const originalFetch = globalThis.fetch;
 
 function mockFetchError() {
     globalThis.fetch = jest.fn().mockRejectedValue(new Error("Connection failed"));
-}
-
-function mockFetchOk(responses: string[]) {
-    let callIndex = 0;
-    globalThis.fetch = jest.fn().mockImplementation(async () => {
-        if (callIndex >= responses.length) {
-            throw new Error("No more mock responses");
-        }
-        return {
-            ok: true,
-            status: 200,
-            text: async () => responses[callIndex++],
-        };
-    });
 }
 
 afterEach(() => {

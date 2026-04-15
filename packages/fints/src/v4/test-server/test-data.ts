@@ -17,23 +17,14 @@ export const TEST_BANK = {
     supportedHbciVersions: ["3.0", "4.1"],
     supportedLanguages: ["de", "en"],
     supportedSecurityMethods: ["PIN_TAN"],
-    painFormats: [
-        "urn:iso:std:iso:20022:tech:xsd:pain.001.003.03",
-        "urn:iso:std:iso:20022:tech:xsd:pain.002.003.03",
-    ],
-    camtFormats: [
-        "urn:iso:std:iso:20022:tech:xsd:camt.053.001.02",
-        "urn:iso:std:iso:20022:tech:xsd:camt.052.001.02",
-    ],
+    painFormats: ["urn:iso:std:iso:20022:tech:xsd:pain.001.003.03", "urn:iso:std:iso:20022:tech:xsd:pain.002.003.03"],
+    camtFormats: ["urn:iso:std:iso:20022:tech:xsd:camt.053.001.02", "urn:iso:std:iso:20022:tech:xsd:camt.052.001.02"],
 };
 
 /**
  * Test users recognized by the mock server.
  */
-export const TEST_USERS: Record<
-    string,
-    { pin: string; name: string; systemId: string }
-> = {
+export const TEST_USERS: Record<string, { pin: string; name: string; systemId: string }> = {
     testuser: {
         pin: "12345",
         name: "Max Mustermann",
@@ -114,12 +105,7 @@ export const TEST_SEGMENT_CAPABILITIES = [
 /**
  * Build a realistic camt.053.001.02 XML document with German banking test data.
  */
-export function buildTestCamt053(
-    iban: string,
-    currency = "EUR",
-    startDate?: Date,
-    endDate?: Date,
-): string {
+export function buildTestCamt053(iban: string, currency = "EUR", startDate?: Date, endDate?: Date): string {
     const now = new Date();
     const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1);
     const end = endDate || now;

@@ -1,7 +1,7 @@
 /**
  * Types specific to the FinTS 4.1 protocol.
  */
-import { SEPAAccount, Balance, Statement, BankCapabilities } from "../types";
+import { SEPAAccount, Balance } from "../types";
 import { TanMethod } from "../tan-method";
 
 /**

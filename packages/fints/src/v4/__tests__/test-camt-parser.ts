@@ -121,7 +121,7 @@ describe("camt-parser", () => {
 
             const result = parseCamt053(xml);
             const entry = result[0].entries[0];
-            expect(entry.amount).toBe(-75.50);
+            expect(entry.amount).toBe(-75.5);
             expect(entry.creditDebitIndicator).toBe("DBIT");
             expect(entry.counterpartyName).toBe("Online Shop GmbH");
             expect(entry.counterpartyIban).toBe("DE44500105175407324931");
@@ -148,8 +148,8 @@ describe("camt-parser", () => {
                 </Document>`;
 
             const result = parseCamt053(xml);
-            expect(result[0].openingBalance).toBe(1000.00);
-            expect(result[0].closingBalance).toBe(1150.00);
+            expect(result[0].openingBalance).toBe(1000.0);
+            expect(result[0].closingBalance).toBe(1150.0);
             expect(result[0].currency).toBe("EUR");
         });
 
@@ -169,7 +169,7 @@ describe("camt-parser", () => {
                 </Document>`;
 
             const result = parseCamt053(xml);
-            expect(result[0].closingBalance).toBe(-500.00);
+            expect(result[0].closingBalance).toBe(-500.0);
         });
 
         it("parses multiple entries", () => {
@@ -196,9 +196,9 @@ describe("camt-parser", () => {
 
             const result = parseCamt053(xml);
             expect(result[0].entries.length).toBe(3);
-            expect(result[0].entries[0].amount).toBe(100.00);
-            expect(result[0].entries[1].amount).toBe(-50.00);
-            expect(result[0].entries[2].amount).toBe(200.00);
+            expect(result[0].entries[0].amount).toBe(100.0);
+            expect(result[0].entries[1].amount).toBe(-50.0);
+            expect(result[0].entries[2].amount).toBe(200.0);
         });
 
         it("parses bank transaction codes", () => {
@@ -240,7 +240,7 @@ describe("camt-parser", () => {
 
             const result = parseCamt053(xml);
             const entry = result[0].entries[0];
-            expect(entry.amount).toBe(42.00);
+            expect(entry.amount).toBe(42.0);
             expect(entry.counterpartyName).toBeUndefined();
             expect(entry.remittanceInformation).toBeUndefined();
         });
@@ -313,7 +313,7 @@ describe("camt-parser", () => {
             expect(result.length).toBe(1);
             expect(result[0].id).toBe("RPT001");
             expect(result[0].entries.length).toBe(1);
-            expect(result[0].entries[0].amount).toBe(200.00);
+            expect(result[0].entries[0].amount).toBe(200.0);
         });
     });
 });

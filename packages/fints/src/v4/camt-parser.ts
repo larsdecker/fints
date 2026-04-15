@@ -6,7 +6,7 @@
  */
 import { XMLParser } from "fast-xml-parser";
 import { CamtStatement, CamtEntry } from "./types";
-import { ensureArray, getXmlValue, getXmlString, getXmlNumber } from "./xml-parser";
+import { ensureArray, getXmlValue, getXmlString } from "./xml-parser";
 
 /**
  * Parser options for camt XML.
@@ -68,19 +68,13 @@ function parseCamtEntry(entry: Record<string, unknown>): CamtEntry {
     const creditDebitIndicator = getXmlString(entry, "CdtDbtInd") === "DBIT" ? "DBIT" : "CRDT";
 
     // Booking date
-    const bookingDate = parseDate(
-        getXmlString(entry, "BookgDt.Dt") || getXmlString(entry, "BookgDt.DtTm"),
-    );
+    const bookingDate = parseDate(getXmlString(entry, "BookgDt.Dt") || getXmlString(entry, "BookgDt.DtTm"));
 
     // Value date
-    const valueDate = parseDate(
-        getXmlString(entry, "ValDt.Dt") || getXmlString(entry, "ValDt.DtTm"),
-    );
+    const valueDate = parseDate(getXmlString(entry, "ValDt.Dt") || getXmlString(entry, "ValDt.DtTm"));
 
     // Transaction details - usually nested under NtryDtls/TxDtls
-    const txDtls = ensureArray(
-        getXmlValue(entry, "NtryDtls.TxDtls") as Record<string, unknown>[],
-    );
+    const txDtls = ensureArray(getXmlValue(entry, "NtryDtls.TxDtls") as Record<string, unknown>[]);
     const firstTx = txDtls[0];
 
     let remittanceInformation: string | undefined;
@@ -102,15 +96,15 @@ function parseCamtEntry(entry: Record<string, unknown>): CamtEntry {
         // For credit entries, counterparty is the debtor; for debit entries, it's the creditor
         if (creditDebitIndicator === "CRDT") {
             counterpartyName = getXmlString(firstTx, "RltdPties.Dbtr.Nm");
-            counterpartyIban =
-                getXmlString(firstTx, "RltdPties.DbtrAcct.Id.IBAN");
-            counterpartyBic = getXmlString(firstTx, "RltdAgts.DbtrAgt.FinInstnId.BIC") ||
+            counterpartyIban = getXmlString(firstTx, "RltdPties.DbtrAcct.Id.IBAN");
+            counterpartyBic =
+                getXmlString(firstTx, "RltdAgts.DbtrAgt.FinInstnId.BIC") ||
                 getXmlString(firstTx, "RltdAgts.DbtrAgt.FinInstnId.BICFI");
         } else {
             counterpartyName = getXmlString(firstTx, "RltdPties.Cdtr.Nm");
-            counterpartyIban =
-                getXmlString(firstTx, "RltdPties.CdtrAcct.Id.IBAN");
-            counterpartyBic = getXmlString(firstTx, "RltdAgts.CdtrAgt.FinInstnId.BIC") ||
+            counterpartyIban = getXmlString(firstTx, "RltdPties.CdtrAcct.Id.IBAN");
+            counterpartyBic =
+                getXmlString(firstTx, "RltdAgts.CdtrAgt.FinInstnId.BIC") ||
                 getXmlString(firstTx, "RltdAgts.CdtrAgt.FinInstnId.BICFI");
         }
 

@@ -65,16 +65,14 @@ export class FinTS4HttpConnection implements FinTS4Connection {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/xml; charset=UTF-8",
-                            Accept: "application/xml",
+                            "Accept": "application/xml",
                         },
                         body: xmlRequest,
                         signal: controller.signal,
                     });
 
                     if (!httpResponse.ok) {
-                        throw new Error(
-                            `FinTS 4.1: Received bad status code ${httpResponse.status} from endpoint.`,
-                        );
+                        throw new Error(`FinTS 4.1: Received bad status code ${httpResponse.status} from endpoint.`);
                     }
 
                     const responseText = await httpResponse.text();
@@ -107,8 +105,7 @@ export class FinTS4HttpConnection implements FinTS4Connection {
                         );
                     }
                     throw new Error(
-                        `FinTS 4.1: Request failed after ${this.maxRetries + 1} attempts: ` +
-                            `${lastError.message}`,
+                        `FinTS 4.1: Request failed after ${this.maxRetries + 1} attempts: ` + `${lastError.message}`,
                     );
                 }
             }

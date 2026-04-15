@@ -3,8 +3,6 @@
  * strategy and all method routing (v3.0 vs v4.1).
  */
 import { NegotiatingClient } from "../../negotiating-client";
-import { FinTS4Client } from "../client";
-import { PinTanClient } from "../../pin-tan-client";
 import { FINTS_NAMESPACE } from "../constants";
 
 // Mock fetch
@@ -98,8 +96,10 @@ describe("NegotiatingClient: Version negotiation strategy", () => {
 
     it("routes capabilities() to v4 client when using v4.1", async () => {
         mockFetchForV4([
-            specSyncResponse(), okResponse("0"), // detectVersion
-            specSyncResponse(), okResponse("0"), // capabilities
+            specSyncResponse(),
+            okResponse("0"), // detectVersion
+            specSyncResponse(),
+            okResponse("0"), // capabilities
         ]);
 
         const client = new NegotiatingClient({
@@ -116,9 +116,11 @@ describe("NegotiatingClient: Version negotiation strategy", () => {
 
     it("routes accounts() to v4 client when using v4.1", async () => {
         mockFetchForV4([
-            specSyncResponse(), okResponse("0"), // detectVersion
-            specSyncResponse(), okResponse("0"), // sync for accounts
-            okResponse("init-d1"),               // init
+            specSyncResponse(),
+            okResponse("0"), // detectVersion
+            specSyncResponse(),
+            okResponse("0"), // sync for accounts
+            okResponse("init-d1"), // init
             `<?xml version="1.0" encoding="UTF-8"?>
                 <FinTSMessage xmlns="${FINTS_NAMESPACE}">
                     <MsgHead><MsgNo>1</MsgNo><DialogID>acct-d1</DialogID></MsgHead>
@@ -154,11 +156,13 @@ describe("NegotiatingClient: Version negotiation strategy", () => {
 
     it("routes balance() to v4 client when using v4.1", async () => {
         mockFetchForV4([
-            specSyncResponse(), okResponse("0"), // detectVersion
-            specSyncResponse(), okResponse("0"), // sync for balance
-            okResponse("init-d1"),               // init
-            okResponse("bal-d1"),                // balance (no data)
-            okResponse("0"),                     // end
+            specSyncResponse(),
+            okResponse("0"), // detectVersion
+            specSyncResponse(),
+            okResponse("0"), // sync for balance
+            okResponse("init-d1"), // init
+            okResponse("bal-d1"), // balance (no data)
+            okResponse("0"), // end
         ]);
 
         const client = new NegotiatingClient({
@@ -181,11 +185,13 @@ describe("NegotiatingClient: Version negotiation strategy", () => {
 
     it("routes statements() to v4 client when using v4.1", async () => {
         mockFetchForV4([
-            specSyncResponse(), okResponse("0"), // detectVersion
-            specSyncResponse(), okResponse("0"), // sync for statements
-            okResponse("init-d1"),               // init
-            okResponse("stmt-d1"),               // statements (empty)
-            okResponse("0"),                     // end
+            specSyncResponse(),
+            okResponse("0"), // detectVersion
+            specSyncResponse(),
+            okResponse("0"), // sync for statements
+            okResponse("init-d1"), // init
+            okResponse("stmt-d1"), // statements (empty)
+            okResponse("0"), // end
         ]);
 
         const client = new NegotiatingClient({

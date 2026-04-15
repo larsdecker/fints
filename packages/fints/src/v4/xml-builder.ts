@@ -104,10 +104,7 @@ export function buildMsgHead(options: {
                     xmlElement("CountryCode", COUNTRY_CODE) +
                     xmlElement("SystemID", escapeXml(options.systemId)),
             ) +
-            xmlElement(
-                "Product",
-                xmlElement("Name", escapeXml(productId)) + xmlElement("Version", PRODUCT_VERSION),
-            ),
+            xmlElement("Product", xmlElement("Name", escapeXml(productId)) + xmlElement("Version", PRODUCT_VERSION)),
     );
 }
 
@@ -154,8 +151,12 @@ export function buildSecurityEnvelope(options: {
 export function buildSegment(segment: XmlSegment): string {
     return xmlElement(
         "Segment",
-        xmlElement("SegHead", xmlElement("Type", segment.type) + xmlElement("Version", String(segment.version)) + xmlElement("SegNo", String(segment.segNo))) +
-            xmlElement("SegBody", segment.body),
+        xmlElement(
+            "SegHead",
+            xmlElement("Type", segment.type) +
+                xmlElement("Version", String(segment.version)) +
+                xmlElement("SegNo", String(segment.segNo)),
+        ) + xmlElement("SegBody", segment.body),
     );
 }
 
@@ -187,8 +188,5 @@ export function buildMessage(options: XmlMessageOptions): string {
 
     const content = msgHead + msgBody + msgTail;
 
-    return (
-        XML_DECLARATION +
-        xmlElement("FinTSMessage", content, { xmlns: FINTS_NAMESPACE })
-    );
+    return XML_DECLARATION + xmlElement("FinTSMessage", content, { xmlns: FINTS_NAMESPACE });
 }

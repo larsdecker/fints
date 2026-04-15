@@ -1,5 +1,5 @@
 import { FinTS4Dialog } from "../dialog";
-import { FinTS4Connection, FinTS4DialogConfig, FinTS4Response } from "../types";
+import { FinTS4Connection, FinTS4DialogConfig } from "../types";
 import { FINTS_NAMESPACE } from "../constants";
 
 /**
@@ -160,9 +160,7 @@ describe("FinTS4Dialog", () => {
             const conn = createMockConnection([buildSuccessResponse("d1")]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
 
-            const response = await dialog.send([
-                { type: "Test", version: 1, segNo: 1, body: "<Data>test</Data>" },
-            ]);
+            const response = await dialog.send([{ type: "Test", version: 1, segNo: 1, body: "<Data>test</Data>" }]);
 
             expect(response.dialogId).toBe("d1");
             expect(response.success).toBe(true);
@@ -179,10 +177,7 @@ describe("FinTS4Dialog", () => {
         });
 
         it("increments message number after successful send", async () => {
-            const conn = createMockConnection([
-                buildSuccessResponse("d1"),
-                buildSuccessResponse("d1"),
-            ]);
+            const conn = createMockConnection([buildSuccessResponse("d1"), buildSuccessResponse("d1")]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
 
             expect(dialog.msgNo).toBe(1);
@@ -196,9 +191,9 @@ describe("FinTS4Dialog", () => {
             const conn = createMockConnection([buildErrorResponse()]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
 
-            await expect(
-                dialog.send([{ type: "Test", version: 1, segNo: 1, body: "" }]),
-            ).rejects.toThrow("FinTS 4.1 request failed");
+            await expect(dialog.send([{ type: "Test", version: 1, segNo: 1, body: "" }])).rejects.toThrow(
+                "FinTS 4.1 request failed",
+            );
         });
 
         it("does not update dialogId when response has '0'", async () => {
@@ -235,10 +230,7 @@ describe("FinTS4Dialog", () => {
         });
 
         it("updates security function when no 999 method found", async () => {
-            const conn = createMockConnection([
-                buildSyncResponse(),
-                buildSuccessResponse("0"),
-            ]);
+            const conn = createMockConnection([buildSyncResponse(), buildSuccessResponse("0")]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
 
             await dialog.sync();
@@ -247,10 +239,7 @@ describe("FinTS4Dialog", () => {
         });
 
         it("updates capabilities from segment versions", async () => {
-            const conn = createMockConnection([
-                buildSyncResponse(),
-                buildSuccessResponse("0"),
-            ]);
+            const conn = createMockConnection([buildSyncResponse(), buildSuccessResponse("0")]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
 
             await dialog.sync();
@@ -262,10 +251,7 @@ describe("FinTS4Dialog", () => {
         });
 
         it("ends the sync dialog", async () => {
-            const conn = createMockConnection([
-                buildSyncResponse(),
-                buildSuccessResponse("0"),
-            ]);
+            const conn = createMockConnection([buildSyncResponse(), buildSuccessResponse("0")]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
 
             await dialog.sync();
@@ -292,7 +278,16 @@ describe("FinTS4Dialog", () => {
             const conn = createMockConnection([buildSuccessResponse("d1")]);
             const dialog = new FinTS4Dialog(baseConfig, conn);
             dialog.tanMethods = [
-                { securityFunction: "912", tanProcess: "2", techId: "", name: "pushTAN", maxLengthInput: 6, allowedFormat: "0", tanListNumberRequired: false, cancellable: false },
+                {
+                    securityFunction: "912",
+                    tanProcess: "2",
+                    techId: "",
+                    name: "pushTAN",
+                    maxLengthInput: 6,
+                    allowedFormat: "0",
+                    tanListNumberRequired: false,
+                    cancellable: false,
+                },
             ];
             dialog.tanVersion = 2;
 

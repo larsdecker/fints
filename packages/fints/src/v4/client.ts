@@ -124,11 +124,7 @@ export class FinTS4Client {
      *
      * Returns parsed camt statements with transaction entries.
      */
-    public async camtStatements(
-        account: SEPAAccount,
-        startDate?: Date,
-        endDate?: Date,
-    ): Promise<CamtStatement[]> {
+    public async camtStatements(account: SEPAAccount, startDate?: Date, endDate?: Date): Promise<CamtStatement[]> {
         const dialog = this.createDialog();
         await dialog.sync();
         await dialog.init();
@@ -179,11 +175,7 @@ export class FinTS4Client {
      * Fetch account statements and convert them to the common Statement format
      * used by the FinTS 3.0 client for backward compatibility.
      */
-    public async statements(
-        account: SEPAAccount,
-        startDate?: Date,
-        endDate?: Date,
-    ): Promise<Statement[]> {
+    public async statements(account: SEPAAccount, startDate?: Date, endDate?: Date): Promise<Statement[]> {
         const camtStatements = await this.camtStatements(account, startDate, endDate);
         return this.convertCamtToStatements(camtStatements);
     }
@@ -215,43 +207,45 @@ export class FinTS4Client {
                 referenceNumber: stmt.id,
                 accountId: stmt.iban || "",
                 number: stmt.id,
-                openingBalance: stmt.openingBalance != null
-                    ? this.toBalanceInfo(stmt.openingBalance, stmt.creationDate, currency)
-                    : undefined,
-                closingBalance: stmt.closingBalance != null
-                    ? this.toBalanceInfo(stmt.closingBalance, stmt.creationDate, currency)
-                    : undefined,
+                openingBalance:
+                    stmt.openingBalance != null
+                        ? this.toBalanceInfo(stmt.openingBalance, stmt.creationDate, currency)
+                        : undefined,
+                closingBalance:
+                    stmt.closingBalance != null
+                        ? this.toBalanceInfo(stmt.closingBalance, stmt.creationDate, currency)
+                        : undefined,
                 transactions: stmt.entries.map((entry) => ({
-                id: entry.entryReference || "",
-                code: entry.bankTransactionCode || "",
-                fundsCode: "",
-                isCredit: entry.creditDebitIndicator === "CRDT",
-                isExpense: entry.creditDebitIndicator === "DBIT",
-                currency: entry.currency,
-                description: entry.remittanceInformation || "",
-                amount: Math.abs(entry.amount),
-                valueDate: entry.valueDate ? entry.valueDate.toISOString().slice(0, 10) : "",
-                entryDate: entry.bookingDate ? entry.bookingDate.toISOString().slice(0, 10) : "",
-                customerReference: entry.endToEndReference || "",
-                bankReference: "",
-                descriptionStructured: entry.counterpartyName
-                    ? {
-                          reference: {
-                              raw: entry.remittanceInformation || "",
-                              endToEndRef: entry.endToEndReference,
-                              mandateRef: entry.mandateReference,
-                              iban: entry.counterpartyIban,
-                              bic: entry.counterpartyBic,
-                              text: entry.remittanceInformation,
-                          },
-                          name: entry.counterpartyName || "",
-                          iban: entry.counterpartyIban || "",
-                          bic: entry.counterpartyBic || "",
-                          text: entry.remittanceInformation || "",
-                          primaNota: "",
-                      }
-                    : undefined,
-            })),
+                    id: entry.entryReference || "",
+                    code: entry.bankTransactionCode || "",
+                    fundsCode: "",
+                    isCredit: entry.creditDebitIndicator === "CRDT",
+                    isExpense: entry.creditDebitIndicator === "DBIT",
+                    currency: entry.currency,
+                    description: entry.remittanceInformation || "",
+                    amount: Math.abs(entry.amount),
+                    valueDate: entry.valueDate ? entry.valueDate.toISOString().slice(0, 10) : "",
+                    entryDate: entry.bookingDate ? entry.bookingDate.toISOString().slice(0, 10) : "",
+                    customerReference: entry.endToEndReference || "",
+                    bankReference: "",
+                    descriptionStructured: entry.counterpartyName
+                        ? {
+                              reference: {
+                                  raw: entry.remittanceInformation || "",
+                                  endToEndRef: entry.endToEndReference,
+                                  mandateRef: entry.mandateReference,
+                                  iban: entry.counterpartyIban,
+                                  bic: entry.counterpartyBic,
+                                  text: entry.remittanceInformation,
+                              },
+                              name: entry.counterpartyName || "",
+                              iban: entry.counterpartyIban || "",
+                              bic: entry.counterpartyBic || "",
+                              text: entry.remittanceInformation || "",
+                              primaNota: "",
+                          }
+                        : undefined,
+                })),
             };
         });
     }

@@ -21,10 +21,7 @@ export const TEST_BANK_V3 = {
 /**
  * Test users recognized by the mock server.
  */
-export const TEST_USERS_V3: Record<
-    string,
-    { pin: string; name: string; systemId: string }
-> = {
+export const TEST_USERS_V3: Record<string, { pin: string; name: string; systemId: string }> = {
     testuser: {
         pin: "12345",
         name: "Max Mustermann",
@@ -98,11 +95,7 @@ export const TEST_ACCOUNTS_V3 = [
  * Build a realistic MT940 statement for a test account.
  * MT940 is the SWIFT format used by FinTS 3.0 for account statements.
  */
-export function buildTestMT940(
-    accountNumber: string,
-    blz: string,
-    currency = "EUR",
-): string {
+export function buildTestMT940(accountNumber: string, blz: string, currency = "EUR"): string {
     const today = new Date();
     const yy = String(today.getFullYear()).slice(2);
     const mm = String(today.getMonth() + 1).padStart(2, "0");

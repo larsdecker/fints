@@ -17,15 +17,8 @@
 import { Connection } from "../types";
 import { Request } from "../request";
 import { Response } from "../response";
-import { parse } from "../utils";
 import { HEADER_LENGTH } from "../constants";
-import {
-    TEST_BANK_V3,
-    TEST_USERS_V3,
-    TEST_TAN_METHODS_V3,
-    TEST_ACCOUNTS_V3,
-    buildTestMT940,
-} from "./test-data";
+import { TEST_BANK_V3, TEST_USERS_V3, TEST_TAN_METHODS_V3, TEST_ACCOUNTS_V3, buildTestMT940 } from "./test-data";
 
 /**
  * State of a dialog in the mock server.
@@ -180,14 +173,20 @@ export class MockBankServerV3 implements Connection {
         const innerSegments = [
             // HNSHK (signature header)
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
             // HIRMG (message return codes)
-            this.buildSegment("HIRMG", 3, 2, [
-                `0010::Nachricht entgegengenommen`,
-                `0020::Auftrag ausgefuehrt`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`, `0020::Auftrag ausgefuehrt`]),
             // HIRMS (segment return codes)
             this.buildSegment("HIRMS", 4, 2, [
                 `3920::Zugelassene TAN-Verfahren fur den Benutzer:${TEST_TAN_METHODS_V3.map((m) => m.securityFunction).join(":")}`,
@@ -199,7 +198,9 @@ export class MockBankServerV3 implements Connection {
             this.buildBPASegment(6),
             // HISPAS (SEPA account parameter)
             this.buildSegment("HISPAS", 7, 1, [
-                `1`, `1`, `1`,
+                `1`,
+                `1`,
+                `1`,
                 `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`,
                 `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.002.003.03`,
             ]),
@@ -231,15 +232,20 @@ export class MockBankServerV3 implements Connection {
 
         const innerSegments = [
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
-            this.buildSegment("HIRMG", 3, 2, [
-                `0010::Nachricht entgegengenommen`,
-            ]),
-            this.buildSegment("HIRMS", 4, 2, [
-                `0020::Auftrag ausgefuehrt`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Auftrag ausgefuehrt`]),
             this.buildSegment("HNSHA", 5, 2, [`2`, ``, ``, ``]),
         ];
 
@@ -251,15 +257,20 @@ export class MockBankServerV3 implements Connection {
 
         const innerSegments = [
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
-            this.buildSegment("HIRMG", 3, 2, [
-                `0010::Nachricht entgegengenommen`,
-            ]),
-            this.buildSegment("HIRMS", 4, 2, [
-                `0100::Dialog beendet`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0100::Dialog beendet`]),
             this.buildSegment("HNSHA", 5, 2, [`2`, ``, ``, ``]),
         ];
 
@@ -269,15 +280,20 @@ export class MockBankServerV3 implements Connection {
     private handleAccountList(dialogId: string, msgNo: number): string {
         const innerSegments = [
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
-            this.buildSegment("HIRMG", 3, 2, [
-                `0010::Nachricht entgegengenommen`,
-            ]),
-            this.buildSegment("HIRMS", 4, 2, [
-                `0020::Auftrag ausgefuehrt`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Auftrag ausgefuehrt`]),
             ...this.buildHISPASegments(5),
             this.buildSegment("HNSHA", 99, 2, [`2`, ``, ``, ``]),
         ];
@@ -288,15 +304,20 @@ export class MockBankServerV3 implements Connection {
     private handleBalance(dialogId: string, msgNo: number, _segment: any): string {
         const innerSegments = [
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
-            this.buildSegment("HIRMG", 3, 2, [
-                `0010::Nachricht entgegengenommen`,
-            ]),
-            this.buildSegment("HIRMS", 4, 2, [
-                `0020::Kontosaldo ermittelt`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Kontosaldo ermittelt`]),
             this.buildHISALSegment(5),
             this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
         ];
@@ -310,15 +331,20 @@ export class MockBankServerV3 implements Connection {
 
         const innerSegments = [
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
-            this.buildSegment("HIRMG", 3, 2, [
-                `0010::Nachricht entgegengenommen`,
-            ]),
-            this.buildSegment("HIRMS", 4, 2, [
-                `0020::Auftrag ausgefuehrt`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Auftrag ausgefuehrt`]),
             this.buildHIKAZSegment(5, mt940),
             this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
         ];
@@ -377,12 +403,19 @@ export class MockBankServerV3 implements Connection {
     private buildErrorResponse(dialogId: string, msgNo: number, code: string, message: string): string {
         const innerSegments = [
             this.buildSegment("HNSHK", 2, 4, [
-                `PIN:1`, `999`, `1`, `1`, `1`, `2::0`, `1`, `1:19700101:000000`, `1:999:1`, `6:10:16`,
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
                 `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
             ]),
-            this.buildSegment("HIRMG", 3, 2, [
-                `${code}::${message}`,
-            ]),
+            this.buildSegment("HIRMG", 3, 2, [`${code}::${message}`]),
             this.buildSegment("HNSHA", 4, 2, [`2`, ``, ``, ``]),
         ];
 
@@ -394,11 +427,11 @@ export class MockBankServerV3 implements Connection {
             `${TEST_BANK_V3.bpdVersion}`,
             `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}`,
             `${TEST_BANK_V3.bankName}`,
-            `3`,   // Number of languages
-            `1`,   // Default language
-            `3`,   // Number of HBCI versions
+            `3`, // Number of languages
+            `1`, // Default language
+            `3`, // Number of HBCI versions
             `${TEST_BANK_V3.hbciVersion}`,
-            `0`,   // Max message size
+            `0`, // Max message size
         ]);
     }
 
@@ -420,45 +453,43 @@ export class MockBankServerV3 implements Connection {
         //   decoupledManualConfirmationAllowed, decoupledAutoConfirmationAllowed
         const methodFields = TEST_TAN_METHODS_V3.map((m) =>
             [
-                m.securityFunction,   // 1 securityFunction
-                m.tanProcess,         // 2 tanProcess
-                m.techId,             // 3 techId
-                "",                   // 4 zkaId
-                "",                   // 5 zkaVersion
-                m.name,               // 6 name
-                m.maxLengthInput,     // 7 maxLengthInput
-                m.allowedFormat,      // 8 allowedFormat
-                "",                   // 9 textReturnvalue
-                m.maxLengthInput,     // 10 maxLengthReturnvalue
-                "1",                  // 11 numberOfSupportedLists
-                "J",                  // 12 multiple
-                "1",                  // 13 tanTimeDialogAssociation
-                "0",                  // 14 tanDialogOptions
-                "N",                  // 15 tanListNumberRequired
-                "J",                  // 16 cancellable
-                "N",                  // 17 smsChargeAccountRequired
-                "N",                  // 18 principalAccountRequired
-                "N",                  // 19 challengeClassRequired
-                "N",                  // 20 challengeValueRequired
-                "N",                  // 21 challengeStructured
-                "00",                 // 22 initializationMode
-                "1",                  // 23 supportedMediaNumber
-                "N",                  // 24 hhdUcRequired
-                "0",                  // 25 activeTanMedia
-                m.numStatusRequests,  // 26 decoupledMaxStatusRequests
-                m.firstDelaySeconds,  // 27 decoupledWaitBeforeFirstStatusRequest
+                m.securityFunction, // 1 securityFunction
+                m.tanProcess, // 2 tanProcess
+                m.techId, // 3 techId
+                "", // 4 zkaId
+                "", // 5 zkaVersion
+                m.name, // 6 name
+                m.maxLengthInput, // 7 maxLengthInput
+                m.allowedFormat, // 8 allowedFormat
+                "", // 9 textReturnvalue
+                m.maxLengthInput, // 10 maxLengthReturnvalue
+                "1", // 11 numberOfSupportedLists
+                "J", // 12 multiple
+                "1", // 13 tanTimeDialogAssociation
+                "0", // 14 tanDialogOptions
+                "N", // 15 tanListNumberRequired
+                "J", // 16 cancellable
+                "N", // 17 smsChargeAccountRequired
+                "N", // 18 principalAccountRequired
+                "N", // 19 challengeClassRequired
+                "N", // 20 challengeValueRequired
+                "N", // 21 challengeStructured
+                "00", // 22 initializationMode
+                "1", // 23 supportedMediaNumber
+                "N", // 24 hhdUcRequired
+                "0", // 25 activeTanMedia
+                m.numStatusRequests, // 26 decoupledMaxStatusRequests
+                m.firstDelaySeconds, // 27 decoupledWaitBeforeFirstStatusRequest
                 m.delayBetweenSeconds, // 28 decoupledWaitBetweenStatusRequests
-                "N",                  // 29 decoupledManualConfirmationAllowed
-                "N",                  // 30 decoupledAutoConfirmationAllowed
-            ].join(":")
+                "N", // 29 decoupledManualConfirmationAllowed
+                "N", // 30 decoupledAutoConfirmationAllowed
+            ].join(":"),
         ).join(":");
 
         // The 4th DEG: oneStepAllowed:multiple:securityProfile:<all method fields>
         const tanDeg = `J:N:900:${methodFields}`;
 
-        return this.buildSegment("HITANS", segNo, 7, [
-            `1`, `1`, `1`, tanDeg,
-        ]);
+        return this.buildSegment("HITANS", segNo, 7, [`1`, `1`, `1`, tanDeg]);
     }
 
     private buildHIUPDSegments(startSegNo: number, userId: string): string[] {
@@ -472,9 +503,9 @@ export class MockBankServerV3 implements Connection {
                 `${acc.accountType}`,
                 acc.currency,
                 user?.name || "",
-                ``,  // account limit
-                ``,  // extension
-                `HKSPA:1+HKSAL:1+HKKAZ:1`,  // allowed transactions
+                ``, // account limit
+                ``, // extension
+                `HKSPA:1+HKSAL:1+HKKAZ:1`, // allowed transactions
             ]);
         });
     }
@@ -497,9 +528,9 @@ export class MockBankServerV3 implements Connection {
             `${account.accountType}::${TEST_BANK_V3.countryCode}:${account.blz}:${account.accountNumber}`,
             account.accountNumber,
             account.currency,
-            `C:13095,67:EUR:${dateStr}`,   // Booked balance
-            `C:13095,67:EUR:${dateStr}`,   // Available balance (same)
-            `5000,00:EUR`,                  // Credit limit
+            `C:13095,67:EUR:${dateStr}`, // Booked balance
+            `C:13095,67:EUR:${dateStr}`, // Available balance (same)
+            `5000,00:EUR`, // Credit limit
         ]);
     }
 
