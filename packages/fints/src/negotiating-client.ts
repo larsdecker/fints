@@ -54,6 +54,16 @@ export interface NegotiatingClientConfig extends PinTanClientConfig {
      * If not provided, uses the same URL as for v3.0.
      */
     v4Url?: string;
+
+    /**
+     * Maximum number of retry attempts for v4.1 connections.
+     */
+    maxRetries?: number;
+
+    /**
+     * Base delay for retry backoff in milliseconds.
+     */
+    retryDelay?: number;
 }
 
 /**
