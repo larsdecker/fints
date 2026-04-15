@@ -164,9 +164,26 @@ export function buildTanSegment(options: {
 }
 
 /**
- * Format a Date object as YYYY-MM-DD string.
+ * Build a TAN submission segment for the two-step TAN flow (process 2).
+ *
+ * Use this after receiving a TAN challenge (return code `0030`) to submit the
+ * user-entered TAN. Include the TAN value itself in the message via `options.tan`
+ * in `dialog.send()`.
  */
-function formatDate(date: Date): string {
+export function buildTanSubmitSegment(options: {
+    segNo: number;
+    version: number;
+    transactionReference: string;
+}): XmlSegment {
+    return {
+        type: "TAN",
+        version: options.version,
+        segNo: options.segNo,
+        body:
+            xmlElement("TANProcess", "2") +
+            xmlElement("TransactionReference", escapeXml(options.transactionReference)),
+    };
+}
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");

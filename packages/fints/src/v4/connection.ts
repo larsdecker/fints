@@ -6,7 +6,7 @@
  * FinTS 4.1 uses XML over HTTP POST.
  */
 import "isomorphic-fetch";
-import { FinTS4Connection } from "./types";
+import { FinTS4Connection, FinTS4TlsOptions } from "./types";
 import { verbose } from "../logger";
 
 /**
@@ -23,6 +23,38 @@ export interface FinTS4ConnectionConfig {
     maxRetries?: number;
     /** Base delay for exponential backoff in ms. */
     retryDelay?: number;
+    /**
+     * Additional options forwarded to `fetch()` on every request.
+     * In Node.js, use this to pass a custom `https.Agent`:
+     * ```typescript
+     * import https from "https";
+     * const agent = new https.Agent({ rejectUnauthorized: false });
+     * new FinTS4HttpConnection({ url, fetchOptions: { agent } });
+     * ```
+     */
+    fetchOptions?: Record<string, unknown>;
+}
+
+/**
+ * Create an `https.Agent` for Node.js with the given TLS options.
+ *
+ * Pass the returned agent via `fetchOptions.agent` when constructing
+ * `FinTS4HttpConnection` or `FinTS4ClientConfig`:
+ *
+ * ```typescript
+ * const agent = createTlsAgent({ rejectUnauthorized: false }); // dev only!
+ * const client = new FinTS4Client({ ..., fetchOptions: { agent } });
+ * ```
+ *
+ * This function throws if called outside a Node.js environment.
+ */
+export function createTlsAgent(options: FinTS4TlsOptions): unknown {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const https = require("https") as typeof import("https");
+    return new https.Agent({
+        rejectUnauthorized: options.rejectUnauthorized ?? true,
+        ...(options.ca ? { ca: options.ca } : {}),
+    });
 }
 
 /**
@@ -34,6 +66,7 @@ export class FinTS4HttpConnection implements FinTS4Connection {
     private timeout: number;
     private maxRetries: number;
     private retryDelay: number;
+    private fetchOptions: Record<string, unknown>;
 
     constructor(config: FinTS4ConnectionConfig) {
         this.url = config.url;
@@ -41,6 +74,7 @@ export class FinTS4HttpConnection implements FinTS4Connection {
         this.timeout = config.timeout ?? 30000;
         this.maxRetries = config.maxRetries ?? 3;
         this.retryDelay = config.retryDelay ?? 1000;
+        this.fetchOptions = config.fetchOptions ?? {};
     }
 
     /**
@@ -65,10 +99,11 @@ export class FinTS4HttpConnection implements FinTS4Connection {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/xml; charset=UTF-8",
-                            "Accept": "application/xml",
+                            Accept: "application/xml",
                         },
                         body: xmlRequest,
                         signal: controller.signal,
+                        ...this.fetchOptions,
                     });
 
                     if (!httpResponse.ok) {

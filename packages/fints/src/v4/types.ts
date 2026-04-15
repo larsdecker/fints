@@ -5,6 +5,37 @@ import { SEPAAccount, Balance } from "../types";
 import { TanMethod } from "../tan-method";
 
 /**
+ * A TAN challenge issued by the server in a two-step TAN flow.
+ * The server sends this when a transaction needs additional authentication.
+ */
+export interface TanChallenge {
+    /** The text of the challenge to display to the user. */
+    challengeText?: string;
+    /** The server-issued transaction reference needed for TAN submission. */
+    transactionReference: string;
+    /** Optional HHD-encoded challenge data for chip-TAN devices. */
+    challengeHhd?: string;
+    /** Name of the TAN method that issued the challenge. */
+    tanMethodName?: string;
+    /** Time in seconds until the challenge expires (if provided by the bank). */
+    challengeValidSeconds?: number;
+}
+
+/**
+ * Callback invoked when the server requires a TAN to proceed.
+ * The implementation should show the challenge to the user and return the TAN they enter.
+ *
+ * @example
+ * ```typescript
+ * const tanCallback: TanCallback = async (challenge) => {
+ *   console.log(challenge.challengeText);        // "Please confirm: Transfer 100 EUR"
+ *   return await promptUser("Enter TAN: ");       // user types their TAN
+ * };
+ * ```
+ */
+export type TanCallback = (challenge: TanChallenge) => Promise<string>;
+
+/**
  * Configuration for a FinTS 4.1 dialog.
  */
 export interface FinTS4DialogConfig {
@@ -18,6 +49,11 @@ export interface FinTS4DialogConfig {
     systemId: string;
     /** Product registration ID. */
     productId?: string;
+    /**
+     * Callback invoked when the server issues a TAN challenge.
+     * If not provided and a TAN is required, a `TanRequiredError` is thrown.
+     */
+    tanCallback?: TanCallback;
 }
 
 /**
@@ -42,6 +78,47 @@ export interface FinTS4ClientConfig {
     maxRetries?: number;
     /** Base delay for retry backoff in milliseconds. */
     retryDelay?: number;
+    /**
+     * Callback invoked when the server issues a TAN challenge.
+     * If not provided and a TAN is required, a `TanRequiredError` is thrown.
+     */
+    tanCallback?: TanCallback;
+    /**
+     * Additional options passed directly to the underlying `fetch()` call.
+     * Useful for providing a custom TLS agent in Node.js:
+     * ```typescript
+     * import https from "https";
+     * const agent = new https.Agent({ rejectUnauthorized: false });
+     * const client = new FinTS4Client({ ..., fetchOptions: { agent } });
+     * ```
+     */
+    fetchOptions?: Record<string, unknown>;
+    /**
+     * TLS configuration for bank-specific certificate requirements (Node.js only).
+     * Use `createTlsAgent(tlsOptions)` to create an agent and pass it via `fetchOptions`.
+     */
+    tlsOptions?: FinTS4TlsOptions;
+    /**
+     * Preferred HBCI protocol version string (e.g. "4.1", "4.0").
+     * Defaults to "4.1". The client will negotiate downward if the bank rejects the preferred version.
+     */
+    preferredHbciVersion?: string;
+}
+
+/**
+ * TLS configuration for FinTS 4.1 connections (Node.js only).
+ */
+export interface FinTS4TlsOptions {
+    /**
+     * Whether to reject connections with unauthorized (e.g. self-signed) certificates.
+     * Defaults to `true`. Set to `false` only for testing — never in production.
+     */
+    rejectUnauthorized?: boolean;
+    /**
+     * Custom CA certificate(s) as PEM-encoded strings.
+     * Use this when the bank uses a certificate signed by a private CA.
+     */
+    ca?: string | string[];
 }
 
 /**
@@ -102,6 +179,17 @@ export interface FinTS4Response {
     touchdown?: string;
     /** Raw parsed XML object for further processing. */
     rawXml?: unknown;
+    /**
+     * TAN challenge from the server. Present when the server requires strong customer
+     * authentication (return code `0030`). Pass to the user and submit via `tanCallback`.
+     */
+    tanChallenge?: TanChallenge;
+    /**
+     * Whether the server requires a TAN to proceed (return code `0030`).
+     * When `true` and `tanChallenge` is present, the dialog will automatically
+     * handle the TAN flow if `tanCallback` is configured.
+     */
+    tanRequired?: boolean;
 }
 
 /**
@@ -140,6 +228,12 @@ export interface BankParameterData {
     painFormats?: string[];
     /** Supported camt formats. */
     camtFormats?: string[];
+    /** Minimum number of signatures required for balance queries. */
+    minSignaturesBalance?: number;
+    /** Minimum number of signatures required for account statements. */
+    minSignaturesStatement?: number;
+    /** Negotiated HBCI version (highest version supported by both client and server). */
+    negotiatedVersion?: string;
 }
 
 /**
