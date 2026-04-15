@@ -52,4 +52,68 @@ describe("Dialog", () => {
             expect(dialog.dialogId).toBe("4711");
         }
     });
+
+    test("capabilities getter reflects fields set during sync", () => {
+        const dialog = new Dialog(baseConfig, {} as any);
+
+        // Simulate the state after a sync response has been processed.
+        dialog.supportsBalance = true;
+        dialog.supportsTransactions = true;
+        dialog.hiwpdsVersion = 6;
+        dialog.supportsStandingOrders = true;
+        dialog.supportsCreditTransfer = true;
+        dialog.supportsDirectDebit = false;
+        dialog.hikazsMinSignatures = 1;
+        dialog.hisalsMinSignatures = 0;
+
+        const caps = dialog.capabilities;
+
+        expect(caps.supportsAccounts).toBe(true);
+        expect(caps.supportsBalance).toBe(true);
+        expect(caps.supportsTransactions).toBe(true);
+        expect(caps.supportsHoldings).toBe(true);
+        expect(caps.supportsStandingOrders).toBe(true);
+        expect(caps.supportsCreditTransfer).toBe(true);
+        expect(caps.supportsDirectDebit).toBe(false);
+        expect(caps.requiresTanForTransactions).toBe(true);
+        expect(caps.requiresTanForBalance).toBe(false);
+    });
+
+    test("capabilities getter returns false for unsupported features", () => {
+        const dialog = new Dialog(baseConfig, {} as any);
+
+        // Simulate a bank that advertises no optional features.
+        dialog.supportsBalance = false;
+        dialog.supportsTransactions = false;
+        dialog.hiwpdsVersion = 0;
+        dialog.supportsStandingOrders = false;
+        dialog.supportsCreditTransfer = false;
+        dialog.supportsDirectDebit = false;
+        dialog.hikazsMinSignatures = 0;
+        dialog.hisalsMinSignatures = 0;
+
+        const caps = dialog.capabilities;
+
+        expect(caps.supportsAccounts).toBe(true); // always true
+        expect(caps.supportsBalance).toBe(false);
+        expect(caps.supportsTransactions).toBe(false);
+        expect(caps.supportsHoldings).toBe(false);
+        expect(caps.supportsStandingOrders).toBe(false);
+        expect(caps.supportsCreditTransfer).toBe(false);
+        expect(caps.supportsDirectDebit).toBe(false);
+        expect(caps.requiresTanForTransactions).toBe(false);
+        expect(caps.requiresTanForBalance).toBe(false);
+    });
+
+    test("capabilities getter returns false before sync() is called", () => {
+        const dialog = new Dialog(baseConfig, {} as any);
+        // No sync() has run - all support flags should be false
+        const caps = dialog.capabilities;
+        expect(caps.supportsBalance).toBe(false);
+        expect(caps.supportsTransactions).toBe(false);
+        expect(caps.supportsHoldings).toBe(false);
+        expect(caps.supportsStandingOrders).toBe(false);
+        expect(caps.supportsCreditTransfer).toBe(false);
+        expect(caps.supportsDirectDebit).toBe(false);
+    });
 });

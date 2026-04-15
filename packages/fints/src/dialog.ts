@@ -1,4 +1,4 @@
-import { Connection } from "./types";
+import { Connection, BankCapabilities } from "./types";
 import {
     HKIDN,
     HKVVB,
@@ -104,6 +104,41 @@ export class Dialog extends DialogConfig {
      */
     public hiwpdsVersion = 0;
     /**
+     * Whether the bank supports querying account balances (HKSAL).
+     * Set to `true` during synchronization if the bank returns a HISALS parameter segment.
+     */
+    public supportsBalance = false;
+    /**
+     * Whether the bank supports fetching bank statements / transaction history (HKKAZ).
+     * Set to `true` during synchronization if the bank returns a HIKAZS parameter segment.
+     */
+    public supportsTransactions = false;
+    /**
+     * Whether the bank supports fetching standing orders (HKCDB).
+     * Set to `true` during synchronization if the bank returns a HICDBS parameter segment.
+     */
+    public supportsStandingOrders = false;
+    /**
+     * Whether the bank supports SEPA credit transfers (HKCCS).
+     * Set to `true` during synchronization if the bank returns a HICCSS parameter segment.
+     */
+    public supportsCreditTransfer = false;
+    /**
+     * Whether the bank supports SEPA direct debits (HKDSE).
+     * Set to `true` during synchronization if the bank returns a HIDSES parameter segment.
+     */
+    public supportsDirectDebit = false;
+    /**
+     * Minimum number of signatures required to fetch bank statements (from HIKAZS).
+     * A value greater than `0` means a TAN is required.
+     */
+    public hikazsMinSignatures = 0;
+    /**
+     * Minimum number of signatures required to query account balances (from HISALS).
+     * A value greater than `0` means a TAN is required.
+     */
+    public hisalsMinSignatures = 0;
+    /**
      * A list of supported SEPA pain-formats as configured by the server.
      */
     public painFormats: string[] = [];
@@ -148,17 +183,29 @@ export class Dialog extends DialogConfig {
         const response = await this.send(new Request({ blz, name, pin, systemId, dialogId, msgNo, segments }));
         this.systemId = escapeFinTS(response.systemId);
         this.dialogId = response.dialogId;
-        this.hisalsVersion = response.segmentMaxVersion(HISALS);
-        this.hikazsVersion = response.segmentMaxVersion(HIKAZS);
-        this.hicdbVersion = response.segmentMaxVersion(HICDBS);
+        const hisalsVer = response.segmentMaxVersion(HISALS);
+        this.supportsBalance = hisalsVer > 0;
+        if (hisalsVer > 0) this.hisalsVersion = hisalsVer;
+        const hikazsVer = response.segmentMaxVersion(HIKAZS);
+        this.supportsTransactions = hikazsVer > 0;
+        if (hikazsVer > 0) this.hikazsVersion = hikazsVer;
+        const hicdbVer = response.segmentMaxVersion(HICDBS);
+        this.supportsStandingOrders = hicdbVer > 0;
+        if (hicdbVer > 0) this.hicdbVersion = hicdbVer;
         const hkdseVersion = response.segmentMaxVersion(HIDSES);
         this.hkdseVersion = hkdseVersion > 0 ? hkdseVersion : 1;
+        this.supportsDirectDebit = hkdseVersion > 0;
         const hkccsVersion = response.segmentMaxVersion(HICCSS);
         this.hkccsVersion = hkccsVersion > 0 ? hkccsVersion : 1;
+        this.supportsCreditTransfer = hkccsVersion > 0;
         this.hiwpdsVersion = response.segmentMaxVersion(HIWPDS);
         this.hktanVersion = response.segmentMaxVersion(HITANS);
         this.tanMethods = response.supportedTanMethods;
         this.painFormats = response.painFormats;
+        const hikazs = response.findSegment(HIKAZS);
+        this.hikazsMinSignatures = hikazs?.minSignatures ?? 0;
+        const hisals = response.findSegment(HISALS);
+        this.hisalsMinSignatures = hisals?.minSignatures ?? 0;
         const hiupd = response.findSegments(HIUPD);
         this.hiupd = hiupd;
         await this.end();
@@ -325,5 +372,26 @@ export class Dialog extends DialogConfig {
             this.decoupledTanManager.cancel();
             this.decoupledTanManager = undefined;
         }
+    }
+
+    /**
+     * Returns the capabilities of the bank based on the parameter segments
+     * received during the last synchronisation.
+     *
+     * Call this only after `sync()` has been invoked so that all version
+     * fields have been populated from the server response.
+     */
+    public get capabilities(): BankCapabilities {
+        return {
+            supportsAccounts: true,
+            supportsBalance: this.supportsBalance,
+            supportsTransactions: this.supportsTransactions,
+            supportsHoldings: this.hiwpdsVersion > 0,
+            supportsStandingOrders: this.supportsStandingOrders,
+            supportsCreditTransfer: this.supportsCreditTransfer,
+            supportsDirectDebit: this.supportsDirectDebit,
+            requiresTanForTransactions: this.hikazsMinSignatures > 0,
+            requiresTanForBalance: this.hisalsMinSignatures > 0,
+        };
     }
 }
