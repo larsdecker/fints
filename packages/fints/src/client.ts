@@ -18,6 +18,9 @@ import {
     HIDSE,
     HKCCS,
     HICCS,
+    HKPAE,
+    HKCSE,
+    HICSE,
 } from "./segments";
 import { Request } from "./request";
 import { Response } from "./response";
@@ -31,6 +34,8 @@ import {
     DirectDebitSubmission,
     CreditTransferRequest,
     CreditTransferSubmission,
+    ScheduledCreditTransferRequest,
+    ScheduledCreditTransferSubmission,
     BankCapabilities,
 } from "./types";
 import { read } from "mt940-js";
@@ -542,6 +547,137 @@ export abstract class Client {
         ];
         const response = await dialog.send(this.createRequest(dialog, segments, tan));
         const acknowledgement = response.findSegment(HIDSE);
+        if (acknowledgement) {
+            submission.taskId = acknowledgement.taskId;
+        }
+        await dialog.end();
+        return submission;
+    }
+
+    /**
+     * Change the PIN for the currently authenticated user.
+     *
+     * Sends an HKPAE segment with the new PIN. The old PIN is provided via the
+     * standard HNSHA authentication mechanism (i.e. the `pin` field of the client
+     * configuration).
+     *
+     * @param newPin The new PIN to set.
+     * @param existingDialog Optionally reuse an already authenticated dialog instance.
+     */
+    public async changePin(newPin: string, existingDialog?: Dialog): Promise<void> {
+        const dialog = existingDialog ?? this.createDialog();
+        const shouldInitializeDialog = !existingDialog;
+        if (shouldInitializeDialog) {
+            await dialog.sync();
+            await dialog.init();
+        }
+        const segments: Segment<any>[] = [new HKPAE({ segNo: 3, version: 3, newPin })];
+        if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            segments.push(
+                new HKTAN({
+                    segNo: 4,
+                    version,
+                    process: "4",
+                    segmentReference: "HKPAE",
+                    medium: dialog.tanMethods[0].name,
+                }),
+            );
+        }
+        await dialog.send(this.createRequest(dialog, segments));
+        if (shouldInitializeDialog) {
+            await dialog.end();
+        }
+    }
+
+    /**
+     * Submit a scheduled (future-dated) SEPA credit transfer (Terminüberweisung).
+     *
+     * The execution date is encoded inside the pain.001 XML message as
+     * ReqdExctnDt.  The bank must advertise HICSES support during synchronisation;
+     * otherwise an error is thrown.
+     *
+     * @param account The debtor SEPA account.
+     * @param request The scheduled credit transfer details (must include `executionDate`).
+     * @return Submission metadata including the bank-assigned task ID.
+     */
+    public async scheduledCreditTransfer(
+        account: SEPAAccount,
+        request: ScheduledCreditTransferRequest,
+    ): Promise<ScheduledCreditTransferSubmission> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+        const descriptor = selectPain001Descriptor(dialog.painFormats);
+        const submission = buildCreditTransferSubmission(request, account, descriptor);
+        const segments: Segment<any>[] = [
+            new HKCSE({
+                segNo: 3,
+                version: dialog.hicseVersion || 1,
+                account,
+                painDescriptor: descriptor,
+                painMessage: submission.xml,
+            }),
+        ];
+        if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+            const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+            segments.push(
+                new HKTAN({
+                    segNo: 4,
+                    version,
+                    process: "4",
+                    segmentReference: "HKCSE",
+                    medium: dialog.tanMethods[0].name,
+                }),
+            );
+        }
+        try {
+            const requestMessage = this.createRequest(dialog, segments);
+            const response = await dialog.send(requestMessage);
+            const acknowledgement = response.findSegmentForReference(HICSE, segments[0]) || response.findSegment(HICSE);
+            if (acknowledgement) {
+                submission.taskId = acknowledgement.taskId;
+            }
+            await dialog.end();
+            return submission;
+        } catch (error) {
+            if (error instanceof TanRequiredError) {
+                error.creditTransferSubmission = submission;
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Complete a scheduled credit transfer that was interrupted by a TAN challenge.
+     *
+     * @param savedDialog The dialog data returned with the {@link TanRequiredError}.
+     * @param transactionReference The transaction reference from the challenge message.
+     * @param tan The TAN to authorize the submission.
+     * @param submission The submission object returned by {@link scheduledCreditTransfer}.
+     * @return The updated submission with the final task ID.
+     */
+    public async completeScheduledCreditTransfer(
+        savedDialog: DialogConfig,
+        transactionReference: string,
+        tan: string,
+        submission: ScheduledCreditTransferSubmission,
+    ): Promise<ScheduledCreditTransferSubmission> {
+        const dialog = this.createDialog(savedDialog);
+        dialog.msgNo = dialog.msgNo + 1;
+        const version = dialog.hktanVersion >= 7 ? 7 : dialog.hktanVersion;
+        const segments: Segment<any>[] = [
+            new HKTAN({
+                segNo: 3,
+                version,
+                process: "2",
+                segmentReference: "HKCSE",
+                aref: transactionReference,
+                medium: dialog.tanMethods[0]?.name,
+            }),
+        ];
+        const response = await dialog.send(this.createRequest(dialog, segments, tan));
+        const acknowledgement = response.findSegment(HICSE);
         if (acknowledgement) {
             submission.taskId = acknowledgement.taskId;
         }
