@@ -12,7 +12,7 @@ describe("HKPAE (PIN Change Request Segment)", () => {
     it("includes the new PIN twice (confirmation)", () => {
         const segment = new HKPAE({ segNo: 3, version: 3, newPin: "99999" });
         const str = segment.toString();
-        const parts = str.replace("'", "").split("+");
+        const parts = str.replace(/'/g, "").split("+");
         // parts[0] = "HKPAE:3:3", parts[1] = "99999", parts[2] = "99999"
         expect(parts[1]).toBe("99999");
         expect(parts[2]).toBe("99999");
