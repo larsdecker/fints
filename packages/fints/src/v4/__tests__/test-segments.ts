@@ -296,7 +296,9 @@ describe("v4 segments", () => {
                 painMessage: "<Document />",
             });
             expect(seg.type).toBe("CreditTransfer");
-            expect(seg.body).toContain("<PainDescriptor>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</PainDescriptor>");
+            expect(seg.body).toContain(
+                "<PainDescriptor>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</PainDescriptor>",
+            );
             expect(seg.body).toContain("&lt;Document /&gt;");
         });
 
@@ -309,7 +311,9 @@ describe("v4 segments", () => {
                 painMessage: "<Document />",
             });
             expect(seg.type).toBe("DirectDebit");
-            expect(seg.body).toContain("<PainDescriptor>urn:iso:std:iso:20022:tech:xsd:pain.008.001.02</PainDescriptor>");
+            expect(seg.body).toContain(
+                "<PainDescriptor>urn:iso:std:iso:20022:tech:xsd:pain.008.001.02</PainDescriptor>",
+            );
             expect(seg.body).toContain("&lt;Document /&gt;");
         });
     });

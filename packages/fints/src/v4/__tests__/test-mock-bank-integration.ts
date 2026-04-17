@@ -8,7 +8,13 @@
  */
 import { FinTS4Dialog } from "../dialog";
 import { MockBankServer } from "../test-server/mock-bank-server";
-import { TEST_BANK, TEST_ACCOUNTS, TEST_TAN_METHODS, TEST_HOLDINGS, TEST_STANDING_ORDERS } from "../test-server/test-data";
+import {
+    TEST_BANK,
+    TEST_ACCOUNTS,
+    TEST_TAN_METHODS,
+    TEST_HOLDINGS,
+    TEST_STANDING_ORDERS,
+} from "../test-server/test-data";
 import { parseCamt053 } from "../camt-parser";
 import {
     buildAccountListSegment,

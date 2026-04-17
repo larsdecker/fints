@@ -180,7 +180,9 @@ function parseStandingOrders(xml: unknown): StandingOrder[] {
         timeUnit: getXmlString(order, "TimeUnit") || "M",
         interval: getXmlNumber(order, "Interval") || 1,
         orderDay: getXmlNumber(order, "OrderDay"),
-        lastOrderDate: getXmlString(order, "LastOrderDate") ? new Date(getXmlString(order, "LastOrderDate")!) : undefined,
+        lastOrderDate: getXmlString(order, "LastOrderDate")
+            ? new Date(getXmlString(order, "LastOrderDate")!)
+            : undefined,
         creationDate: new Date(getXmlString(order, "CreationDate") || ""),
         debitor: {
             name: getXmlString(order, "Debitor.Name") || "",

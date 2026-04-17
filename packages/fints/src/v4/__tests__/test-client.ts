@@ -35,7 +35,13 @@ function buildSyncResponse(): string {
                 </Segment>
                 <Segment>
                     <SegHead><Type>BPD</Type><Version>1</Version><SegNo>2</SegNo></SegHead>
-                    <SegBody><BPD><BankName>Test Bank</BankName></BPD></SegBody>
+                    <SegBody>
+                        <BPD>
+                            <BankName>Test Bank</BankName>
+                            <PainFormat>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</PainFormat>
+                            <PainFormat>urn:iso:std:iso:20022:tech:xsd:pain.008.001.02</PainFormat>
+                        </BPD>
+                    </SegBody>
                 </Segment>
                 <Segment>
                     <SegHead><Type>Balance</Type><Version>2</Version><SegNo>3</SegNo></SegHead>

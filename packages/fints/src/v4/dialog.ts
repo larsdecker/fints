@@ -445,13 +445,11 @@ export class FinTS4Dialog {
         this.supportsHoldings = holdingsVer > 0;
         if (holdingsVer > 0) this.holdingsVersion = holdingsVer;
 
-        const standingOrdersVer =
-            this.segmentVersions.get("StandingOrders") || this.segmentVersions.get("HICDBS") || 0;
+        const standingOrdersVer = this.segmentVersions.get("StandingOrders") || this.segmentVersions.get("HICDBS") || 0;
         this.supportsStandingOrders = standingOrdersVer > 0;
         if (standingOrdersVer > 0) this.standingOrdersVersion = standingOrdersVer;
 
-        const creditTransferVer =
-            this.segmentVersions.get("CreditTransfer") || this.segmentVersions.get("HICCSS") || 0;
+        const creditTransferVer = this.segmentVersions.get("CreditTransfer") || this.segmentVersions.get("HICCSS") || 0;
         this.supportsCreditTransfer = creditTransferVer > 0;
         if (creditTransferVer > 0) this.creditTransferVersion = creditTransferVer;
 

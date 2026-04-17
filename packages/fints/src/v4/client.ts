@@ -280,7 +280,10 @@ export class FinTS4Client {
     /**
      * Submit a SEPA credit transfer.
      */
-    public async creditTransfer(account: SEPAAccount, request: CreditTransferRequest): Promise<CreditTransferSubmission> {
+    public async creditTransfer(
+        account: SEPAAccount,
+        request: CreditTransferRequest,
+    ): Promise<CreditTransferSubmission> {
         const dialog = this.createDialog();
         await dialog.sync();
         await dialog.init();
