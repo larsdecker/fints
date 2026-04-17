@@ -19,7 +19,7 @@ This library includes an implementation of the **FinTS 4.1 XML-based protocol** 
 - **Protocol negotiation is best-effort.** The implementation will automatically try fallback versions (`4.1 → 4.0 → 3.0`) when a bank rejects the preferred version, but real-world servers may behave unpredictably.
 - **TAN flows are partially supported.** The interactive two-step TAN flow (PIN+TAN, chipTAN, pushTAN) is implemented via a `tanCallback`, but edge cases — such as HHD/Flickercode visualisation, multi-challenge flows, or bank-specific challenge formats — may require additional handling.
 - **BPD/UPD parsing is partially generic.** The FinTS 4.1 XML structure leaves room for bank-specific element naming. The parser applies fallback strategies, but untested banks may require further mapping.
-- **No write operations.** `FinTS4Client` is currently read-only (accounts, balances, statements). Credit transfers and direct debits are only available via the stable `PinTanClient` (FinTS 3.0).
+- **Feature parity with FinTS 3.0 in progress.** `FinTS4Client` now also supports holdings, standing orders, credit transfers, and direct debits. As with all FinTS 4.1 support, behavior can differ between banks and should be validated per institute.
 - **TLS certificate requirements.** Banks with private CA certificates or strict TLS policies require a custom Node.js `https.Agent`, which must be passed via `fetchOptions`. See [Custom TLS / HTTPS configuration](#-custom-tls--https-configuration-nodejs-only) below.
 
 For production use with the widest bank compatibility, use the **`PinTanClient` (FinTS 3.0)** described in the Quick Start section.

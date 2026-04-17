@@ -920,11 +920,15 @@ describe("FinTS 4.1 Specification: Response Parsing (§B.6)", () => {
 // ---------------------------------------------------------------------------
 
 describe("FinTS 4.1 Specification: Bank Capabilities (§E)", () => {
-    it("capabilities reflect read-only support (no credit transfer, no direct debit)", () => {
+    it("capabilities reflect FinTS 3 parity flags", () => {
         const conn = createMockConnection([]);
         const dialog = new FinTS4Dialog(dialogConfig, conn);
         dialog.supportsBalance = true;
         dialog.supportsStatements = true;
+        dialog.supportsHoldings = true;
+        dialog.supportsStandingOrders = true;
+        dialog.supportsCreditTransfer = true;
+        dialog.supportsDirectDebit = true;
 
         const caps = dialog.capabilities;
 
@@ -933,10 +937,9 @@ describe("FinTS 4.1 Specification: Bank Capabilities (§E)", () => {
         expect(caps.supportsBalance).toBe(true);
         expect(caps.supportsTransactions).toBe(true);
 
-        // Not yet implemented in v4.1 client
-        expect(caps.supportsHoldings).toBe(false);
-        expect(caps.supportsStandingOrders).toBe(false);
-        expect(caps.supportsCreditTransfer).toBe(false);
-        expect(caps.supportsDirectDebit).toBe(false);
+        expect(caps.supportsHoldings).toBe(true);
+        expect(caps.supportsStandingOrders).toBe(true);
+        expect(caps.supportsCreditTransfer).toBe(true);
+        expect(caps.supportsDirectDebit).toBe(true);
     });
 });

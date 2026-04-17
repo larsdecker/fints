@@ -6,6 +6,10 @@ import {
     buildBalanceSegment,
     buildAccountStatementSegment,
     buildTanSegment,
+    buildHoldingsSegment,
+    buildStandingOrdersSegment,
+    buildCreditTransferSegment,
+    buildDirectDebitSegment,
 } from "../segments";
 import { FINTS_VERSION, COUNTRY_CODE } from "../constants";
 import { SEPAAccount } from "../../types";
@@ -256,6 +260,57 @@ describe("v4 segments", () => {
             expect(seg.body).not.toContain("<SegmentReference>");
             expect(seg.body).not.toContain("<TANMedium>");
             expect(seg.body).not.toContain("<TransactionReference>");
+        });
+    });
+
+    describe("extended v4 parity segments", () => {
+        it("builds holdings segment", () => {
+            const seg = buildHoldingsSegment({
+                segNo: 3,
+                version: 1,
+                account: testAccount,
+                touchdown: "td-1",
+            });
+            expect(seg.type).toBe("Holdings");
+            expect(seg.body).toContain("<Touchdown>td-1</Touchdown>");
+            expect(seg.body).toContain("<IBAN>DE89370400440532013000</IBAN>");
+        });
+
+        it("builds standing orders segment", () => {
+            const seg = buildStandingOrdersSegment({
+                segNo: 3,
+                version: 1,
+                account: testAccount,
+                painFormats: ["urn:iso:std:iso:20022:tech:xsd:pain.001.003.03"],
+            });
+            expect(seg.type).toBe("StandingOrders");
+            expect(seg.body).toContain("<PainFormat>urn:iso:std:iso:20022:tech:xsd:pain.001.003.03</PainFormat>");
+        });
+
+        it("builds credit transfer segment", () => {
+            const seg = buildCreditTransferSegment({
+                segNo: 3,
+                version: 1,
+                account: testAccount,
+                painDescriptor: "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03",
+                painMessage: "<Document />",
+            });
+            expect(seg.type).toBe("CreditTransfer");
+            expect(seg.body).toContain("<PainDescriptor>urn:iso:std:iso:20022:tech:xsd:pain.001.001.03</PainDescriptor>");
+            expect(seg.body).toContain("&lt;Document /&gt;");
+        });
+
+        it("builds direct debit segment", () => {
+            const seg = buildDirectDebitSegment({
+                segNo: 3,
+                version: 1,
+                account: testAccount,
+                painDescriptor: "urn:iso:std:iso:20022:tech:xsd:pain.008.001.02",
+                painMessage: "<Document />",
+            });
+            expect(seg.type).toBe("DirectDebit");
+            expect(seg.body).toContain("<PainDescriptor>urn:iso:std:iso:20022:tech:xsd:pain.008.001.02</PainDescriptor>");
+            expect(seg.body).toContain("&lt;Document /&gt;");
         });
     });
 });

@@ -45,6 +45,22 @@ function buildSyncResponse(): string {
                     <SegHead><Type>AccountStatement</Type><Version>1</Version><SegNo>4</SegNo></SegHead>
                     <SegBody></SegBody>
                 </Segment>
+                <Segment>
+                    <SegHead><Type>Holdings</Type><Version>1</Version><SegNo>5</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>StandingOrders</Type><Version>1</Version><SegNo>6</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>CreditTransfer</Type><Version>1</Version><SegNo>7</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>DirectDebit</Type><Version>1</Version><SegNo>8</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
             </MsgBody>
             <MsgTail><MsgNo>1</MsgNo></MsgTail>
         </FinTSMessage>`;
@@ -89,6 +105,69 @@ function buildStatementsResponse(): string {
             <SegBody>
                 <CamtData>${camtData}</CamtData>
             </SegBody>
+        </Segment>`,
+    );
+}
+
+function buildHoldingsResponse(): string {
+    return buildOkResponse(
+        "hold-d1",
+        `<Segment>
+            <SegHead><Type>Holdings</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+            <SegBody>
+                <Holding>
+                    <ISIN>DE000BASF111</ISIN>
+                    <Name>BASF SE</Name>
+                    <MarketPrice>49.25</MarketPrice>
+                    <Currency>EUR</Currency>
+                    <ValuationDate>2024-06-15</ValuationDate>
+                    <Pieces>12</Pieces>
+                    <TotalValue>591.00</TotalValue>
+                    <AcquisitionPrice>42.10</AcquisitionPrice>
+                </Holding>
+            </SegBody>
+        </Segment>`,
+    );
+}
+
+function buildStandingOrdersResponse(): string {
+    return buildOkResponse(
+        "so-d1",
+        `<Segment>
+            <SegHead><Type>StandingOrders</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+            <SegBody>
+                <StandingOrder>
+                    <NextOrderDate>2024-07-01</NextOrderDate>
+                    <TimeUnit>M</TimeUnit>
+                    <Interval>1</Interval>
+                    <OrderDay>1</OrderDay>
+                    <CreationDate>2024-01-01</CreationDate>
+                    <Debitor><Name>Max Mustermann</Name><IBAN>DE1</IBAN><BIC>BIC1</BIC></Debitor>
+                    <Creditor><Name>Hausverwaltung</Name><IBAN>DE2</IBAN><BIC>BIC2</BIC></Creditor>
+                    <Amount>850</Amount>
+                    <PaymentPurpose>Miete</PaymentPurpose>
+                </StandingOrder>
+            </SegBody>
+        </Segment>`,
+    );
+}
+
+function buildCreditTransferResponse(): string {
+    return buildOkResponse(
+        "ct-d1",
+        `<Segment>
+            <SegHead><Type>CreditTransferResponse</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+            <SegBody><TaskId>CT-000001</TaskId></SegBody>
+        </Segment>`,
+    );
+}
+
+function buildDirectDebitResponse(): string {
+    return buildOkResponse(
+        "dd-d1",
+        `<Segment>
+            <SegHead><Type>DirectDebitResponse</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+            <SegBody><TaskId>DD-000001</TaskId></SegBody>
         </Segment>`,
     );
 }
@@ -222,6 +301,106 @@ describe("FinTS4Client", () => {
             expect(statements[0].transactions.length).toBe(1);
             expect(statements[0].transactions[0].amount).toBe(100.0);
             expect(statements[0].transactions[0].isCredit).toBe(true);
+        });
+    });
+
+    describe("holdings", () => {
+        it("fetches holdings", async () => {
+            mockFetch([
+                buildSyncResponse(),
+                buildOkResponse("0"),
+                buildOkResponse("init-d1"),
+                buildHoldingsResponse(),
+                buildOkResponse("0"),
+            ]);
+            const client = new FinTS4Client(clientConfig);
+            const account = {
+                iban: "DE89370400440532013000",
+                bic: "COBADEFFXXX",
+                accountNumber: "0532013000",
+                blz: "37040044",
+            };
+            const holdings = await client.holdings(account);
+            expect(holdings).toHaveLength(1);
+            expect(holdings[0].isin).toBe("DE000BASF111");
+        });
+    });
+
+    describe("standingOrders", () => {
+        it("fetches standing orders", async () => {
+            mockFetch([
+                buildSyncResponse(),
+                buildOkResponse("0"),
+                buildOkResponse("init-d1"),
+                buildStandingOrdersResponse(),
+                buildOkResponse("0"),
+            ]);
+            const client = new FinTS4Client(clientConfig);
+            const account = {
+                iban: "DE89370400440532013000",
+                bic: "COBADEFFXXX",
+                accountNumber: "0532013000",
+                blz: "37040044",
+            };
+            const orders = await client.standingOrders(account);
+            expect(orders).toHaveLength(1);
+            expect(orders[0].paymentPurpose).toBe("Miete");
+        });
+    });
+
+    describe("creditTransfer", () => {
+        it("submits a credit transfer and returns task ID", async () => {
+            mockFetch([
+                buildSyncResponse(),
+                buildOkResponse("0"),
+                buildOkResponse("init-d1"),
+                buildCreditTransferResponse(),
+                buildOkResponse("0"),
+            ]);
+            const client = new FinTS4Client(clientConfig);
+            const account = {
+                iban: "DE89370400440532013000",
+                bic: "COBADEFFXXX",
+                accountNumber: "0532013000",
+                blz: "37040044",
+            };
+            const submission = await client.creditTransfer(account, {
+                debtorName: "Max Mustermann",
+                creditor: { name: "Empfänger", iban: "DE44500105175407324931", bic: "INGDDEFFXXX" },
+                amount: 50,
+                remittanceInformation: "Test",
+            });
+            expect(submission.taskId).toBe("CT-000001");
+        });
+    });
+
+    describe("directDebit", () => {
+        it("submits a direct debit and returns task ID", async () => {
+            mockFetch([
+                buildSyncResponse(),
+                buildOkResponse("0"),
+                buildOkResponse("init-d1"),
+                buildDirectDebitResponse(),
+                buildOkResponse("0"),
+            ]);
+            const client = new FinTS4Client(clientConfig);
+            const account = {
+                iban: "DE89370400440532013000",
+                bic: "COBADEFFXXX",
+                accountNumber: "0532013000",
+                blz: "37040044",
+            };
+            const submission = await client.directDebit(account, {
+                creditorName: "ACME GmbH",
+                creditorId: "DE98ZZZ09999999999",
+                debtor: { name: "Max Mustermann", iban: "DE02120300000000202051", bic: "BYLADEM1001" },
+                amount: 42.5,
+                mandateId: "MANDATE-123",
+                mandateSignatureDate: new Date("2022-01-10"),
+                requestedCollectionDate: new Date("2024-07-01"),
+                remittanceInformation: "Test",
+            });
+            expect(submission.taskId).toBe("DD-000001");
         });
     });
 });

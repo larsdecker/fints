@@ -33,6 +33,8 @@ import {
     TEST_USERS,
     TEST_TAN_METHODS,
     TEST_ACCOUNTS,
+    TEST_HOLDINGS,
+    TEST_STANDING_ORDERS,
     TEST_SEGMENT_CAPABILITIES,
     buildTestCamt053,
 } from "./test-data";
@@ -134,6 +136,16 @@ export class MockBankServer {
             } else if (segmentTypes.includes("AccountStatement")) {
                 const stmtSeg = segments.find((s) => s.type === "AccountStatement");
                 response = this.handleAccountStatement(msgNo, dialogId, stmtSeg?.body);
+            } else if (segmentTypes.includes("Holdings")) {
+                const holdingsSeg = segments.find((s) => s.type === "Holdings");
+                response = this.handleHoldings(msgNo, dialogId, holdingsSeg?.body);
+            } else if (segmentTypes.includes("StandingOrders")) {
+                const standingOrdersSeg = segments.find((s) => s.type === "StandingOrders");
+                response = this.handleStandingOrders(msgNo, dialogId, standingOrdersSeg?.body);
+            } else if (segmentTypes.includes("CreditTransfer")) {
+                response = this.handleCreditTransfer(msgNo, dialogId);
+            } else if (segmentTypes.includes("DirectDebit")) {
+                response = this.handleDirectDebit(msgNo, dialogId);
             } else {
                 response = this.buildErrorResponse(msgNo, dialogId, "9010", "Unbekannter Geschäftsvorfall");
             }
@@ -329,6 +341,122 @@ export class MockBankServer {
         );
     }
 
+    private handleHoldings(msgNo: number, dialogId: string, body?: Record<string, unknown>): string {
+        const dialog = this.dialogs.get(dialogId);
+        if (!dialog) {
+            return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
+        }
+
+        const iban = this.extractIban(body);
+        const account = TEST_ACCOUNTS.find((a) => a.iban === iban);
+        if (!account) {
+            return this.buildErrorResponse(msgNo, dialogId, "9010", `Konto ${iban || "unbekannt"} nicht gefunden`);
+        }
+
+        const holdingsXml = TEST_HOLDINGS.map(
+            (holding) => `
+                <Holding>
+                    <ISIN>${holding.isin}</ISIN>
+                    <Name>${this.escapeXml(holding.name)}</Name>
+                    <MarketPrice>${holding.marketPrice}</MarketPrice>
+                    <Currency>${holding.currency}</Currency>
+                    <ValuationDate>${holding.valuationDate}</ValuationDate>
+                    <Pieces>${holding.pieces}</Pieces>
+                    <TotalValue>${holding.totalValue}</TotalValue>
+                    <AcquisitionPrice>${holding.acquisitionPrice}</AcquisitionPrice>
+                </Holding>`,
+        ).join("");
+
+        const holdingsSeg = this.buildSegment("Holdings", 1, 3, holdingsXml);
+        return this.buildResponse(
+            msgNo,
+            dialogId,
+            this.buildReturnValue("0010", "Nachricht entgegengenommen") +
+                this.buildReturnValue("0020", "Auftrag ausgeführt") +
+                holdingsSeg,
+        );
+    }
+
+    private handleStandingOrders(msgNo: number, dialogId: string, body?: Record<string, unknown>): string {
+        const dialog = this.dialogs.get(dialogId);
+        if (!dialog) {
+            return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
+        }
+
+        const iban = this.extractIban(body);
+        const account = TEST_ACCOUNTS.find((a) => a.iban === iban);
+        if (!account) {
+            return this.buildErrorResponse(msgNo, dialogId, "9010", `Konto ${iban || "unbekannt"} nicht gefunden`);
+        }
+
+        const standingOrdersXml = TEST_STANDING_ORDERS.map(
+            (order) => `
+                <StandingOrder>
+                    <NextOrderDate>${order.nextOrderDate}</NextOrderDate>
+                    <TimeUnit>${order.timeUnit}</TimeUnit>
+                    <Interval>${order.interval}</Interval>
+                    <OrderDay>${order.orderDay}</OrderDay>
+                    <LastOrderDate>${order.lastOrderDate}</LastOrderDate>
+                    <CreationDate>${order.creationDate}</CreationDate>
+                    <Debitor>
+                        <Name>${this.escapeXml(order.debitor.name)}</Name>
+                        <IBAN>${order.debitor.iban}</IBAN>
+                        <BIC>${order.debitor.bic}</BIC>
+                    </Debitor>
+                    <Creditor>
+                        <Name>${this.escapeXml(order.creditor.name)}</Name>
+                        <IBAN>${order.creditor.iban}</IBAN>
+                        <BIC>${order.creditor.bic}</BIC>
+                    </Creditor>
+                    <Amount>${order.amount}</Amount>
+                    <PaymentPurpose>${this.escapeXml(order.paymentPurpose)}</PaymentPurpose>
+                </StandingOrder>`,
+        ).join("");
+
+        const standingOrdersSeg = this.buildSegment("StandingOrders", 1, 3, standingOrdersXml);
+        return this.buildResponse(
+            msgNo,
+            dialogId,
+            this.buildReturnValue("0010", "Nachricht entgegengenommen") +
+                this.buildReturnValue("0020", "Auftrag ausgeführt") +
+                standingOrdersSeg,
+        );
+    }
+
+    private handleCreditTransfer(msgNo: number, dialogId: string): string {
+        const dialog = this.dialogs.get(dialogId);
+        if (!dialog) {
+            return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
+        }
+
+        const taskId = `CT-${String(this.nextDialogId++).padStart(6, "0")}`;
+        const responseSegment = this.buildSegment("CreditTransferResponse", 1, 3, `<TaskId>${taskId}</TaskId>`);
+        return this.buildResponse(
+            msgNo,
+            dialogId,
+            this.buildReturnValue("0010", "Nachricht entgegengenommen") +
+                this.buildReturnValue("0020", "Auftrag ausgeführt") +
+                responseSegment,
+        );
+    }
+
+    private handleDirectDebit(msgNo: number, dialogId: string): string {
+        const dialog = this.dialogs.get(dialogId);
+        if (!dialog) {
+            return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
+        }
+
+        const taskId = `DD-${String(this.nextDialogId++).padStart(6, "0")}`;
+        const responseSegment = this.buildSegment("DirectDebitResponse", 1, 3, `<TaskId>${taskId}</TaskId>`);
+        return this.buildResponse(
+            msgNo,
+            dialogId,
+            this.buildReturnValue("0010", "Nachricht entgegengenommen") +
+                this.buildReturnValue("0020", "Auftrag ausgeführt") +
+                responseSegment,
+        );
+    }
+
     // -----------------------------------------------------------------------
     // Helper methods
     // -----------------------------------------------------------------------
@@ -459,6 +587,10 @@ export class MockBankServer {
                     <Transaction>HKCAZ</Transaction>
                     <Transaction>HKSAL</Transaction>
                     <Transaction>HKSPA</Transaction>
+                    <Transaction>HKWPD</Transaction>
+                    <Transaction>HKCDB</Transaction>
+                    <Transaction>HKCCS</Transaction>
+                    <Transaction>HKDSE</Transaction>
                 </Account>`,
         ).join("");
 

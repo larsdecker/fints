@@ -135,6 +135,120 @@ export function buildAccountStatementSegment(options: {
 }
 
 /**
+ * Build a holdings request segment (equivalent to HKWPD in v3).
+ */
+export function buildHoldingsSegment(options: {
+    segNo: number;
+    version: number;
+    account: SEPAAccount;
+    touchdown?: string;
+}): XmlSegment {
+    const accountXml =
+        xmlElement("IBAN", escapeXml(options.account.iban)) +
+        xmlElement("BIC", escapeXml(options.account.bic)) +
+        xmlElement("AccountNumber", escapeXml(options.account.accountNumber)) +
+        xmlElement("BLZ", escapeXml(options.account.blz));
+
+    let body = xmlElement("Account", accountXml);
+    if (options.touchdown) {
+        body += xmlElement("Touchdown", escapeXml(options.touchdown));
+    }
+
+    return {
+        type: "Holdings",
+        version: options.version,
+        segNo: options.segNo,
+        body,
+    };
+}
+
+/**
+ * Build a standing order list request segment (equivalent to HKCDB in v3).
+ */
+export function buildStandingOrdersSegment(options: {
+    segNo: number;
+    version: number;
+    account: SEPAAccount;
+    painFormats?: string[];
+    touchdown?: string;
+}): XmlSegment {
+    const accountXml =
+        xmlElement("IBAN", escapeXml(options.account.iban)) +
+        xmlElement("BIC", escapeXml(options.account.bic)) +
+        xmlElement("AccountNumber", escapeXml(options.account.accountNumber)) +
+        xmlElement("BLZ", escapeXml(options.account.blz));
+
+    let body = xmlElement("Account", accountXml);
+    for (const format of options.painFormats || []) {
+        body += xmlElement("PainFormat", escapeXml(format));
+    }
+    if (options.touchdown) {
+        body += xmlElement("Touchdown", escapeXml(options.touchdown));
+    }
+
+    return {
+        type: "StandingOrders",
+        version: options.version,
+        segNo: options.segNo,
+        body,
+    };
+}
+
+/**
+ * Build a SEPA credit transfer submission segment (equivalent to HKCCS in v3).
+ */
+export function buildCreditTransferSegment(options: {
+    segNo: number;
+    version: number;
+    account: SEPAAccount;
+    painDescriptor: string;
+    painMessage: string;
+}): XmlSegment {
+    const accountXml =
+        xmlElement("IBAN", escapeXml(options.account.iban)) +
+        xmlElement("BIC", escapeXml(options.account.bic)) +
+        xmlElement("AccountNumber", escapeXml(options.account.accountNumber)) +
+        xmlElement("BLZ", escapeXml(options.account.blz));
+
+    return {
+        type: "CreditTransfer",
+        version: options.version,
+        segNo: options.segNo,
+        body:
+            xmlElement("Account", accountXml) +
+            xmlElement("PainDescriptor", escapeXml(options.painDescriptor)) +
+            xmlElement("PainMessage", escapeXml(options.painMessage)),
+    };
+}
+
+/**
+ * Build a SEPA direct debit submission segment (equivalent to HKDSE in v3).
+ */
+export function buildDirectDebitSegment(options: {
+    segNo: number;
+    version: number;
+    account: SEPAAccount;
+    painDescriptor: string;
+    painMessage: string;
+}): XmlSegment {
+    const accountXml =
+        xmlElement("IBAN", escapeXml(options.account.iban)) +
+        xmlElement("BIC", escapeXml(options.account.bic)) +
+        xmlElement("AccountNumber", escapeXml(options.account.accountNumber)) +
+        xmlElement("BLZ", escapeXml(options.account.blz));
+
+    return {
+        type: "DirectDebit",
+        version: options.version,
+        segNo: options.segNo,
+        body:
+            xmlElement("Account", accountXml) +
+            xmlElement("PainDescriptor", escapeXml(options.painDescriptor)) +
+            xmlElement("PainMessage", escapeXml(options.painMessage)),
+    };
+}
+
+/**
  * Build a TAN request segment for v4.1.
  */
 export function buildTanSegment(options: {

@@ -80,6 +80,14 @@ export class FinTS4Dialog {
     public supportsStatements = false;
     /** Whether the bank supports account listing. */
     public supportsAccounts = true;
+    /** Whether the bank supports holdings. */
+    public supportsHoldings = false;
+    /** Whether the bank supports standing orders. */
+    public supportsStandingOrders = false;
+    /** Whether the bank supports credit transfer submissions. */
+    public supportsCreditTransfer = false;
+    /** Whether the bank supports direct debit submissions. */
+    public supportsDirectDebit = false;
     /** Supported camt formats. */
     public supportedCamtFormats: string[] = [];
     /** Supported pain formats. */
@@ -90,6 +98,14 @@ export class FinTS4Dialog {
     public statementVersion = 1;
     /** The version for TAN segment. */
     public tanVersion = 1;
+    /** The version for holdings segment. */
+    public holdingsVersion = 1;
+    /** The version for standing orders segment. */
+    public standingOrdersVersion = 1;
+    /** The version for credit transfer segment. */
+    public creditTransferVersion = 1;
+    /** The version for direct debit segment. */
+    public directDebitVersion = 1;
     /** Security function to use. */
     public securityFunction = "999";
     /** Minimum signatures required for statements. */
@@ -425,6 +441,24 @@ export class FinTS4Dialog {
         const tanVer = this.segmentVersions.get("TAN") || this.segmentVersions.get("HITANS") || 0;
         if (tanVer > 0) this.tanVersion = tanVer;
 
+        const holdingsVer = this.segmentVersions.get("Holdings") || this.segmentVersions.get("HIWPDS") || 0;
+        this.supportsHoldings = holdingsVer > 0;
+        if (holdingsVer > 0) this.holdingsVersion = holdingsVer;
+
+        const standingOrdersVer =
+            this.segmentVersions.get("StandingOrders") || this.segmentVersions.get("HICDBS") || 0;
+        this.supportsStandingOrders = standingOrdersVer > 0;
+        if (standingOrdersVer > 0) this.standingOrdersVersion = standingOrdersVer;
+
+        const creditTransferVer =
+            this.segmentVersions.get("CreditTransfer") || this.segmentVersions.get("HICCSS") || 0;
+        this.supportsCreditTransfer = creditTransferVer > 0;
+        if (creditTransferVer > 0) this.creditTransferVersion = creditTransferVer;
+
+        const directDebitVer = this.segmentVersions.get("DirectDebit") || this.segmentVersions.get("HIDSES") || 0;
+        this.supportsDirectDebit = directDebitVer > 0;
+        if (directDebitVer > 0) this.directDebitVersion = directDebitVer;
+
         // Update min-signature requirements from BPD
         if (this.bpd?.minSignaturesBalance != null) {
             this.balanceMinSignatures = this.bpd.minSignaturesBalance;
@@ -442,10 +476,10 @@ export class FinTS4Dialog {
             supportsAccounts: true,
             supportsBalance: this.supportsBalance,
             supportsTransactions: this.supportsStatements,
-            supportsHoldings: false, // Not yet implemented in v4.1
-            supportsStandingOrders: false, // Not yet implemented in v4.1
-            supportsCreditTransfer: false, // Read-only for now
-            supportsDirectDebit: false, // Read-only for now
+            supportsHoldings: this.supportsHoldings,
+            supportsStandingOrders: this.supportsStandingOrders,
+            supportsCreditTransfer: this.supportsCreditTransfer,
+            supportsDirectDebit: this.supportsDirectDebit,
             requiresTanForTransactions: this.statementsMinSignatures > 0,
             requiresTanForBalance: this.balanceMinSignatures > 0,
         };

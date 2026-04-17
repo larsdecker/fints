@@ -104,6 +104,22 @@ function buildSyncResponse(): string {
                     </SegHead>
                     <SegBody></SegBody>
                 </Segment>
+                <Segment>
+                    <SegHead><Type>Holdings</Type><Version>1</Version><SegNo>6</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>StandingOrders</Type><Version>1</Version><SegNo>7</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>CreditTransfer</Type><Version>1</Version><SegNo>8</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>DirectDebit</Type><Version>1</Version><SegNo>9</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
             </MsgBody>
             <MsgTail><MsgNo>1</MsgNo></MsgTail>
         </FinTSMessage>`;
@@ -246,6 +262,10 @@ describe("FinTS4Dialog", () => {
 
             expect(dialog.supportsBalance).toBe(true);
             expect(dialog.supportsStatements).toBe(true);
+            expect(dialog.supportsHoldings).toBe(true);
+            expect(dialog.supportsStandingOrders).toBe(true);
+            expect(dialog.supportsCreditTransfer).toBe(true);
+            expect(dialog.supportsDirectDebit).toBe(true);
             expect(dialog.balanceVersion).toBe(3);
             expect(dialog.statementVersion).toBe(2);
         });
@@ -328,16 +348,20 @@ describe("FinTS4Dialog", () => {
             const dialog = new FinTS4Dialog(baseConfig, conn);
             dialog.supportsBalance = true;
             dialog.supportsStatements = true;
+            dialog.supportsHoldings = true;
+            dialog.supportsStandingOrders = true;
+            dialog.supportsCreditTransfer = true;
+            dialog.supportsDirectDebit = true;
 
             const caps = dialog.capabilities;
 
             expect(caps.supportsAccounts).toBe(true);
             expect(caps.supportsBalance).toBe(true);
             expect(caps.supportsTransactions).toBe(true);
-            expect(caps.supportsHoldings).toBe(false);
-            expect(caps.supportsStandingOrders).toBe(false);
-            expect(caps.supportsCreditTransfer).toBe(false);
-            expect(caps.supportsDirectDebit).toBe(false);
+            expect(caps.supportsHoldings).toBe(true);
+            expect(caps.supportsStandingOrders).toBe(true);
+            expect(caps.supportsCreditTransfer).toBe(true);
+            expect(caps.supportsDirectDebit).toBe(true);
         });
 
         it("returns false for unsupported features before sync", () => {

@@ -1,7 +1,7 @@
 /**
  * Types specific to the FinTS 4.1 protocol.
  */
-import { SEPAAccount, Balance } from "../types";
+import { SEPAAccount, Balance, Holding, StandingOrder } from "../types";
 import { TanMethod } from "../tan-method";
 
 /**
@@ -167,6 +167,12 @@ export interface FinTS4Response {
     balance?: Balance;
     /** Raw camt XML data for statement parsing. */
     camtData?: string;
+    /** Parsed holdings positions. */
+    holdings?: Holding[];
+    /** Parsed standing orders. */
+    standingOrders?: StandingOrder[];
+    /** Task identifier for submitted orders. */
+    taskId?: string;
     /** Supported HBCI versions. */
     supportedHbciVersions?: string[];
     /** Supported segment versions (segment type -> max version). */

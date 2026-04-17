@@ -13,7 +13,7 @@ import {
     TanChallenge,
 } from "./types";
 import { TanMethod } from "../tan-method";
-import { SEPAAccount, Balance } from "../types";
+import { SEPAAccount, Balance, Holding, StandingOrder } from "../types";
 
 /**
  * Parser options for fast-xml-parser.
@@ -41,6 +41,8 @@ const parserOptions = {
             "Entry",
             "Ntry",
             "Stmt",
+            "Holding",
+            "StandingOrder",
         ].includes(name);
     },
 };
@@ -146,6 +148,52 @@ function parseAccounts(xml: unknown): SEPAAccount[] {
         blz: getXmlString(acct, "BLZ") || "",
         accountOwnerName: getXmlString(acct, "OwnerName"),
         accountName: getXmlString(acct, "AccountName"),
+    }));
+}
+
+/**
+ * Parse holdings from a FinTS 4.1 XML response.
+ */
+function parseHoldings(xml: unknown): Holding[] {
+    const holdings = ensureArray(getXmlValue(xml, "Holding") as Record<string, unknown>[]);
+    return holdings.map((position) => ({
+        isin: getXmlString(position, "ISIN"),
+        name: getXmlString(position, "Name"),
+        marketPrice: getXmlNumber(position, "MarketPrice"),
+        currency: getXmlString(position, "Currency"),
+        valuationDate: getXmlString(position, "ValuationDate")
+            ? new Date(getXmlString(position, "ValuationDate")!)
+            : undefined,
+        pieces: getXmlNumber(position, "Pieces"),
+        totalValue: getXmlNumber(position, "TotalValue"),
+        acquisitionPrice: getXmlNumber(position, "AcquisitionPrice"),
+    }));
+}
+
+/**
+ * Parse standing orders from a FinTS 4.1 XML response.
+ */
+function parseStandingOrders(xml: unknown): StandingOrder[] {
+    const orders = ensureArray(getXmlValue(xml, "StandingOrder") as Record<string, unknown>[]);
+    return orders.map((order) => ({
+        nextOrderDate: new Date(getXmlString(order, "NextOrderDate") || ""),
+        timeUnit: getXmlString(order, "TimeUnit") || "M",
+        interval: getXmlNumber(order, "Interval") || 1,
+        orderDay: getXmlNumber(order, "OrderDay"),
+        lastOrderDate: getXmlString(order, "LastOrderDate") ? new Date(getXmlString(order, "LastOrderDate")!) : undefined,
+        creationDate: new Date(getXmlString(order, "CreationDate") || ""),
+        debitor: {
+            name: getXmlString(order, "Debitor.Name") || "",
+            iban: getXmlString(order, "Debitor.IBAN") || "",
+            bic: getXmlString(order, "Debitor.BIC") || "",
+        },
+        creditor: {
+            name: getXmlString(order, "Creditor.Name") || "",
+            iban: getXmlString(order, "Creditor.IBAN") || "",
+            bic: getXmlString(order, "Creditor.BIC") || "",
+        },
+        amount: getXmlNumber(order, "Amount") || 0,
+        paymentPurpose: getXmlString(order, "PaymentPurpose") || "",
     }));
 }
 
@@ -424,6 +472,25 @@ export function parseResponse(xmlString: string, account?: SEPAAccount): FinTS4R
     const balanceSegment = findSegment(msgBody, "Balance");
     const balanceSegBody = balanceSegment ? getXmlValue(balanceSegment, "SegBody") : undefined;
 
+    // Parse holdings
+    const holdingsSegment = findSegment(msgBody, "Holdings");
+    const holdings = holdingsSegment
+        ? parseHoldings(getXmlValue(holdingsSegment, "SegBody") as Record<string, unknown>)
+        : undefined;
+
+    // Parse standing orders
+    const standingOrdersSegment = findSegment(msgBody, "StandingOrders");
+    const standingOrders = standingOrdersSegment
+        ? parseStandingOrders(getXmlValue(standingOrdersSegment, "SegBody") as Record<string, unknown>)
+        : undefined;
+
+    // Parse task IDs for order submissions
+    const creditTransferResponseSegment = findSegment(msgBody, "CreditTransferResponse");
+    const directDebitResponseSegment = findSegment(msgBody, "DirectDebitResponse");
+    const taskId =
+        getXmlString(getXmlValue(creditTransferResponseSegment, "SegBody"), "TaskId") ||
+        getXmlString(getXmlValue(directDebitResponseSegment, "SegBody"), "TaskId");
+
     // Parse segment versions from the response
     const segmentVersions = parseSegmentVersions(msgBody);
 
@@ -479,6 +546,9 @@ export function parseResponse(xmlString: string, account?: SEPAAccount): FinTS4R
         accounts,
         balance: account && balanceSegBody ? parseBalance(balanceSegBody, account) : undefined,
         camtData,
+        holdings,
+        standingOrders,
+        taskId,
         supportedHbciVersions,
         segmentVersions,
         painFormats,

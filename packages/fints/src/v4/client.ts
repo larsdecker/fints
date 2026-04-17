@@ -12,7 +12,18 @@
 import { FinTS4ClientConfig, FinTS4Connection, CamtStatement } from "./types";
 import { FinTS4Dialog } from "./dialog";
 import { FinTS4HttpConnection, createTlsAgent } from "./connection";
-import { SEPAAccount, Balance, Statement, BankCapabilities } from "../types";
+import {
+    SEPAAccount,
+    Balance,
+    Statement,
+    BankCapabilities,
+    Holding,
+    StandingOrder,
+    CreditTransferRequest,
+    CreditTransferSubmission,
+    DirectDebitRequest,
+    DirectDebitSubmission,
+} from "../types";
 import { PRODUCT_NAME } from "../constants";
 import { parseCamt053 } from "./camt-parser";
 import {
@@ -20,8 +31,18 @@ import {
     buildBalanceSegment,
     buildAccountStatementSegment,
     buildTanSegment,
+    buildHoldingsSegment,
+    buildStandingOrdersSegment,
+    buildCreditTransferSegment,
+    buildDirectDebitSegment,
 } from "./segments";
 import { XmlSegment } from "./xml-builder";
+import {
+    selectPain001Descriptor,
+    selectPain008Descriptor,
+    buildCreditTransferSubmission,
+    buildDirectDebitSubmission,
+} from "../pain";
 
 /**
  * Client for FinTS 4.1 XML-based protocol.
@@ -197,6 +218,141 @@ export class FinTS4Client {
     public async statements(account: SEPAAccount, startDate?: Date, endDate?: Date): Promise<Statement[]> {
         const camtStatements = await this.camtStatements(account, startDate, endDate);
         return this.convertCamtToStatements(camtStatements);
+    }
+
+    /**
+     * Fetch holdings for a depot account.
+     */
+    public async holdings(account: SEPAAccount): Promise<Holding[]> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+
+        const allHoldings: Holding[] = [];
+        let touchdown: string | undefined;
+
+        do {
+            const response = await dialog.send([
+                buildHoldingsSegment({
+                    segNo: 3,
+                    version: dialog.holdingsVersion,
+                    account,
+                    touchdown,
+                }),
+            ]);
+            allHoldings.push(...(response.holdings || []));
+            touchdown = response.touchdown;
+        } while (touchdown);
+
+        await dialog.end();
+        return allHoldings;
+    }
+
+    /**
+     * Fetch standing orders for an account.
+     */
+    public async standingOrders(account: SEPAAccount): Promise<StandingOrder[]> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+
+        const allOrders: StandingOrder[] = [];
+        let touchdown: string | undefined;
+
+        do {
+            const response = await dialog.send([
+                buildStandingOrdersSegment({
+                    segNo: 3,
+                    version: dialog.standingOrdersVersion,
+                    account,
+                    painFormats: dialog.painFormats,
+                    touchdown,
+                }),
+            ]);
+            allOrders.push(...(response.standingOrders || []));
+            touchdown = response.touchdown;
+        } while (touchdown);
+
+        await dialog.end();
+        return allOrders;
+    }
+
+    /**
+     * Submit a SEPA credit transfer.
+     */
+    public async creditTransfer(account: SEPAAccount, request: CreditTransferRequest): Promise<CreditTransferSubmission> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+
+        const descriptor = selectPain001Descriptor(dialog.painFormats);
+        const submission = buildCreditTransferSubmission(request, account, descriptor);
+        const segments: XmlSegment[] = [
+            buildCreditTransferSegment({
+                segNo: 3,
+                version: dialog.creditTransferVersion,
+                account,
+                painDescriptor: descriptor,
+                painMessage: submission.xml,
+            }),
+        ];
+        if (dialog.tanVersion >= 1 && dialog.tanMethods.length > 0) {
+            segments.push(
+                buildTanSegment({
+                    segNo: 4,
+                    version: dialog.tanVersion,
+                    process: "4",
+                    segmentReference: "CreditTransfer",
+                    medium: dialog.tanMethods[0]?.name,
+                }),
+            );
+        }
+
+        const response = await dialog.send(segments);
+        if (response.taskId) {
+            submission.taskId = response.taskId;
+        }
+        await dialog.end();
+        return submission;
+    }
+
+    /**
+     * Submit a SEPA direct debit.
+     */
+    public async directDebit(account: SEPAAccount, request: DirectDebitRequest): Promise<DirectDebitSubmission> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        await dialog.init();
+
+        const descriptor = selectPain008Descriptor(dialog.painFormats);
+        const submission = buildDirectDebitSubmission(request, account, descriptor);
+        const segments: XmlSegment[] = [
+            buildDirectDebitSegment({
+                segNo: 3,
+                version: dialog.directDebitVersion,
+                account,
+                painDescriptor: descriptor,
+                painMessage: submission.xml,
+            }),
+        ];
+        if (dialog.tanVersion >= 1 && dialog.tanMethods.length > 0) {
+            segments.push(
+                buildTanSegment({
+                    segNo: 4,
+                    version: dialog.tanVersion,
+                    process: "4",
+                    segmentReference: "DirectDebit",
+                    medium: dialog.tanMethods[0]?.name,
+                }),
+            );
+        }
+
+        const response = await dialog.send(segments);
+        if (response.taskId) {
+            submission.taskId = response.taskId;
+        }
+        await dialog.end();
+        return submission;
     }
 
     /**

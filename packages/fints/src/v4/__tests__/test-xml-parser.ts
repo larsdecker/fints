@@ -351,6 +351,79 @@ describe("xml-parser", () => {
             expect(result.camtData).toBe("camt xml content here");
         });
 
+        it("parses holdings from response", () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <FinTSMessage>
+                    <MsgHead><MsgNo>1</MsgNo><DialogID>d1</DialogID></MsgHead>
+                    <MsgBody>
+                        <Segment>
+                            <SegHead><Type>Holdings</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+                            <SegBody>
+                                <Holding>
+                                    <ISIN>DE000BASF111</ISIN>
+                                    <Name>BASF SE</Name>
+                                    <MarketPrice>49.25</MarketPrice>
+                                    <Currency>EUR</Currency>
+                                    <ValuationDate>2024-06-15</ValuationDate>
+                                    <Pieces>12</Pieces>
+                                    <TotalValue>591.00</TotalValue>
+                                    <AcquisitionPrice>42.10</AcquisitionPrice>
+                                </Holding>
+                            </SegBody>
+                        </Segment>
+                    </MsgBody>
+                </FinTSMessage>`;
+            const result = parseResponse(xml);
+            expect(result.holdings).toHaveLength(1);
+            expect(result.holdings![0].isin).toBe("DE000BASF111");
+            expect(result.holdings![0].pieces).toBe(12);
+        });
+
+        it("parses standing orders from response", () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <FinTSMessage>
+                    <MsgHead><MsgNo>1</MsgNo><DialogID>d1</DialogID></MsgHead>
+                    <MsgBody>
+                        <Segment>
+                            <SegHead><Type>StandingOrders</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+                            <SegBody>
+                                <StandingOrder>
+                                    <NextOrderDate>2024-07-01</NextOrderDate>
+                                    <TimeUnit>M</TimeUnit>
+                                    <Interval>1</Interval>
+                                    <OrderDay>1</OrderDay>
+                                    <CreationDate>2024-01-01</CreationDate>
+                                    <Debitor><Name>Max Mustermann</Name><IBAN>DE1</IBAN><BIC>BIC1</BIC></Debitor>
+                                    <Creditor><Name>Hausverwaltung</Name><IBAN>DE2</IBAN><BIC>BIC2</BIC></Creditor>
+                                    <Amount>850</Amount>
+                                    <PaymentPurpose>Miete</PaymentPurpose>
+                                </StandingOrder>
+                            </SegBody>
+                        </Segment>
+                    </MsgBody>
+                </FinTSMessage>`;
+            const result = parseResponse(xml);
+            expect(result.standingOrders).toHaveLength(1);
+            expect(result.standingOrders![0].timeUnit).toBe("M");
+            expect(result.standingOrders![0].amount).toBe(850);
+            expect(result.standingOrders![0].debitor.iban).toBe("DE1");
+        });
+
+        it("parses task id from transfer response segments", () => {
+            const xml = `<?xml version="1.0" encoding="UTF-8"?>
+                <FinTSMessage>
+                    <MsgHead><MsgNo>1</MsgNo><DialogID>d1</DialogID></MsgHead>
+                    <MsgBody>
+                        <Segment>
+                            <SegHead><Type>CreditTransferResponse</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
+                            <SegBody><TaskId>TASK-123</TaskId></SegBody>
+                        </Segment>
+                    </MsgBody>
+                </FinTSMessage>`;
+            const result = parseResponse(xml);
+            expect(result.taskId).toBe("TASK-123");
+        });
+
         it("parses segment versions", () => {
             const xml = `<?xml version="1.0" encoding="UTF-8"?>
                 <FinTSMessage>

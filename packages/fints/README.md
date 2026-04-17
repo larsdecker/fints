@@ -19,7 +19,7 @@ This library ships a `FinTS4Client` that implements the **FinTS 4.1 XML-based pr
 - **FinTS 4.0 does not exist as a broadly standardised version.** "FinTS 4.x" refers to the XML-based successor family; the only released version of this family is **4.1**. Any "4.0" fallback in the negotiation logic is a defensive measure for non-standard server implementations.
 - **TAN support is partial.** Interactive PIN+TAN, chipTAN, and pushTAN challenges are handled via a `tanCallback`, but complex multi-step flows (e.g. HHD Flickercode, QR-TAN) may require additional handling on your side.
 - **BPD/UPD parsing applies best-effort heuristics.** Different banks use slightly different element names and nesting structures in their XML responses. The parser tries several fallback paths, but previously unseen banks may require additional mapping.
-- **No write operations.** `FinTS4Client` is read-only (accounts, balances, camt statements). Transfers and direct debits are only available in `PinTanClient` (FinTS 3.0).
+- **Feature parity with FinTS 3.0 in progress.** `FinTS4Client` now also supports holdings, standing orders, credit transfers, and direct debits. As with all FinTS 4.1 support, behavior can differ between banks and should be validated per institute.
 
 ---
 
@@ -141,7 +141,7 @@ const statements = await client.camtStatements(accounts[0]);
 ## Features
 
 - **FinTS 3.0 (Stable)**: Full support for FinTS 3.0 (HBCI 300) — accounts, balances, statements, credit transfers, direct debits
-- **FinTS 4.1 (Experimental)**: XML-based protocol — accounts, balances, camt.053 statements, interactive TAN, version negotiation
+- **FinTS 4.1 (Experimental)**: XML-based protocol — accounts, balances, camt.053 statements, holdings, standing orders, credit transfers, direct debits, interactive TAN, version negotiation
 - **Enhanced Error Handling**: Comprehensive error code mapping with specific exception types
 - **Timeout & Retry**: Configurable HTTP timeouts and automatic retry with exponential backoff
 - **Multi-Step TAN Flows**: Enhanced support for complex TAN authentication flows

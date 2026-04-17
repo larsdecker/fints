@@ -8,9 +8,17 @@
  */
 import { FinTS4Dialog } from "../dialog";
 import { MockBankServer } from "../test-server/mock-bank-server";
-import { TEST_BANK, TEST_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
+import { TEST_BANK, TEST_ACCOUNTS, TEST_TAN_METHODS, TEST_HOLDINGS, TEST_STANDING_ORDERS } from "../test-server/test-data";
 import { parseCamt053 } from "../camt-parser";
-import { buildAccountListSegment, buildBalanceSegment, buildAccountStatementSegment } from "../segments";
+import {
+    buildAccountListSegment,
+    buildBalanceSegment,
+    buildAccountStatementSegment,
+    buildHoldingsSegment,
+    buildStandingOrdersSegment,
+    buildCreditTransferSegment,
+    buildDirectDebitSegment,
+} from "../segments";
 
 describe("FinTS 4.1 Integration: Mock Bank Server", () => {
     let server: MockBankServer;
@@ -398,6 +406,117 @@ describe("FinTS 4.1 Integration: Mock Bank Server", () => {
     });
 
     // -----------------------------------------------------------------------
+    // Holdings (§D.4)
+    // -----------------------------------------------------------------------
+
+    describe("Holdings", () => {
+        it("retrieves holdings for a known account", async () => {
+            await dialog.sync();
+            await dialog.init();
+
+            const response = await dialog.send([
+                buildHoldingsSegment({
+                    segNo: 3,
+                    version: dialog.holdingsVersion,
+                    account: {
+                        iban: TEST_ACCOUNTS[0].iban,
+                        bic: TEST_ACCOUNTS[0].bic,
+                        accountNumber: TEST_ACCOUNTS[0].accountNumber,
+                        blz: TEST_ACCOUNTS[0].blz,
+                    },
+                }),
+            ]);
+
+            expect(response.holdings).toBeDefined();
+            expect(response.holdings!.length).toBe(TEST_HOLDINGS.length);
+            expect(response.holdings![0].isin).toBe(TEST_HOLDINGS[0].isin);
+            await dialog.end();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Standing Orders (§D.5)
+    // -----------------------------------------------------------------------
+
+    describe("Standing Orders", () => {
+        it("retrieves standing orders for a known account", async () => {
+            await dialog.sync();
+            await dialog.init();
+
+            const response = await dialog.send([
+                buildStandingOrdersSegment({
+                    segNo: 3,
+                    version: dialog.standingOrdersVersion,
+                    account: {
+                        iban: TEST_ACCOUNTS[0].iban,
+                        bic: TEST_ACCOUNTS[0].bic,
+                        accountNumber: TEST_ACCOUNTS[0].accountNumber,
+                        blz: TEST_ACCOUNTS[0].blz,
+                    },
+                    painFormats: dialog.painFormats,
+                }),
+            ]);
+
+            expect(response.standingOrders).toBeDefined();
+            expect(response.standingOrders!.length).toBe(TEST_STANDING_ORDERS.length);
+            expect(response.standingOrders![0].paymentPurpose).toBe(TEST_STANDING_ORDERS[0].paymentPurpose);
+            await dialog.end();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SEPA Write Operations (§D.6)
+    // -----------------------------------------------------------------------
+
+    describe("SEPA Write Operations", () => {
+        it("acknowledges credit transfer submissions with task ID", async () => {
+            await dialog.sync();
+            await dialog.init();
+
+            const response = await dialog.send([
+                buildCreditTransferSegment({
+                    segNo: 3,
+                    version: dialog.creditTransferVersion,
+                    account: {
+                        iban: TEST_ACCOUNTS[0].iban,
+                        bic: TEST_ACCOUNTS[0].bic,
+                        accountNumber: TEST_ACCOUNTS[0].accountNumber,
+                        blz: TEST_ACCOUNTS[0].blz,
+                    },
+                    painDescriptor: "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03",
+                    painMessage: "<Document/>",
+                }),
+            ]);
+
+            expect(response.taskId).toMatch(/^CT-/);
+            await dialog.end();
+        });
+
+        it("acknowledges direct debit submissions with task ID", async () => {
+            await dialog.sync();
+            await dialog.init();
+
+            const response = await dialog.send([
+                buildDirectDebitSegment({
+                    segNo: 3,
+                    version: dialog.directDebitVersion,
+                    account: {
+                        iban: TEST_ACCOUNTS[0].iban,
+                        bic: TEST_ACCOUNTS[0].bic,
+                        accountNumber: TEST_ACCOUNTS[0].accountNumber,
+                        blz: TEST_ACCOUNTS[0].blz,
+                    },
+                    painDescriptor: "urn:iso:std:iso:20022:tech:xsd:pain.008.001.02",
+                    painMessage: "<Document/>",
+                }),
+            ]);
+
+            expect(response.taskId).toMatch(/^DD-/);
+            await dialog.end();
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // Server state and logging
     // -----------------------------------------------------------------------
 
@@ -424,16 +543,17 @@ describe("FinTS 4.1 Integration: Mock Bank Server", () => {
     // -----------------------------------------------------------------------
 
     describe("Bank Capabilities", () => {
-        it("capabilities reflect read-only support after sync", async () => {
+        it("capabilities reflect FinTS 3 parity after sync", async () => {
             await dialog.sync();
 
             const caps = dialog.capabilities;
             expect(caps.supportsAccounts).toBe(true);
             expect(caps.supportsBalance).toBe(true);
             expect(caps.supportsTransactions).toBe(true);
-            expect(caps.supportsCreditTransfer).toBe(false);
-            expect(caps.supportsDirectDebit).toBe(false);
-            expect(caps.supportsHoldings).toBe(false);
+            expect(caps.supportsCreditTransfer).toBe(true);
+            expect(caps.supportsDirectDebit).toBe(true);
+            expect(caps.supportsHoldings).toBe(true);
+            expect(caps.supportsStandingOrders).toBe(true);
         });
     });
 });

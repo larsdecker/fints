@@ -96,10 +96,64 @@ export const TEST_SEGMENT_CAPABILITIES = [
     { type: "Balance", version: 7 },
     { type: "AccountStatement", version: 2 },
     { type: "AccountList", version: 1 },
+    { type: "Holdings", version: 1 },
+    { type: "StandingOrders", version: 1 },
+    { type: "CreditTransfer", version: 1 },
+    { type: "DirectDebit", version: 1 },
     { type: "TAN", version: 7 },
     { type: "HISALS", version: 7 },
     { type: "HICAZS", version: 2 },
+    { type: "HIWPDS", version: 1 },
+    { type: "HICDBS", version: 1 },
+    { type: "HICCSS", version: 1 },
+    { type: "HIDSES", version: 1 },
     { type: "HITANS", version: 7 },
+];
+
+export const TEST_HOLDINGS = [
+    {
+        isin: "DE000BASF111",
+        name: "BASF SE",
+        marketPrice: 49.25,
+        currency: "EUR",
+        valuationDate: "2024-06-15",
+        pieces: 12,
+        totalValue: 591,
+        acquisitionPrice: 42.1,
+    },
+    {
+        isin: "US0378331005",
+        name: "Apple Inc.",
+        marketPrice: 179.32,
+        currency: "EUR",
+        valuationDate: "2024-06-15",
+        pieces: 3,
+        totalValue: 537.96,
+        acquisitionPrice: 140.5,
+    },
+];
+
+export const TEST_STANDING_ORDERS = [
+    {
+        nextOrderDate: "2024-07-01",
+        timeUnit: "M",
+        interval: 1,
+        orderDay: 1,
+        lastOrderDate: "2026-12-01",
+        creationDate: "2024-01-01",
+        debitor: {
+            name: "Max Mustermann",
+            iban: "DE89370400440532013000",
+            bic: "SSKNDE77XXX",
+        },
+        creditor: {
+            name: "Hausverwaltung Test GmbH",
+            iban: "DE27100777770209299700",
+            bic: "COBADEFFXXX",
+        },
+        amount: 850,
+        paymentPurpose: "Miete Wohnung 4B",
+    },
 ];
 
 /**
