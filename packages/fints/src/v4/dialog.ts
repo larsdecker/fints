@@ -426,8 +426,7 @@ export class FinTS4Dialog {
         this.supportsStatements = stmtVer > 0;
         if (stmtVer > 0) this.statementVersion = stmtVer;
 
-        const holdingsVer =
-            this.segmentVersions.get("Holdings") || this.segmentVersions.get("HIWPDS") || 0;
+        const holdingsVer = this.segmentVersions.get("Holdings") || this.segmentVersions.get("HIWPDS") || 0;
         this.supportsHoldings = holdingsVer > 0;
         if (holdingsVer > 0) this.holdingsVersion = holdingsVer;
 

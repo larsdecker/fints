@@ -99,8 +99,8 @@ const client = new FinTS4Client({
 });
 
 const accounts = await client.accounts();
-const balance  = await client.balance(accounts[0]);
-const stmts    = await client.camtStatements(accounts[0]);
+const balance = await client.balance(accounts[0]);
+const stmts = await client.camtStatements(accounts[0]);
 ```
 
 ### CLI Quick Start
@@ -128,7 +128,7 @@ const client = new PinTanClient({
 });
 
 const accounts = await client.accounts();
-const balance  = await client.balance(accounts[0]);
+const balance = await client.balance(accounts[0]);
 console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
 ```
 
@@ -137,10 +137,12 @@ console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
 ```typescript
 import { PinTanClient } from "fints-lib";
 
-const client = new PinTanClient({ /* ... */ });
+const client = new PinTanClient({
+    /* ... */
+});
 const accounts = await client.accounts();
 
-const endDate   = new Date();
+const endDate = new Date();
 const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 const statements = await client.statements(accounts[0], startDate, endDate);
 
@@ -156,7 +158,9 @@ statements.forEach((statement) => {
 ```typescript
 import { PinTanClient, TanRequiredError } from "fints-lib";
 
-const client = new PinTanClient({ /* ... */ });
+const client = new PinTanClient({
+    /* ... */
+});
 const accounts = await client.accounts();
 
 try {
@@ -169,7 +173,12 @@ try {
 } catch (error) {
     if (error instanceof TanRequiredError) {
         const tan = await promptUser(error.challengeText); // your UI
-        await client.completeCreditTransfer(error.dialog, error.transactionReference, tan, error.creditTransferSubmission);
+        await client.completeCreditTransfer(
+            error.dialog,
+            error.transactionReference,
+            tan,
+            error.creditTransferSubmission,
+        );
     }
 }
 ```
@@ -285,19 +294,23 @@ Report security vulnerabilities privately via GitHub's **Security** tab instead 
 ### Common Issues
 
 **Authentication Errors:**
+
 - Verify username, PIN, and BLZ.
 - Some banks require enabling FinTS/HBCI access in online banking settings.
 - Check if your bank requires product registration.
 
 **TAN Requirements:**
+
 - Use `tanCallback` (FinTS 4.1) or `TanRequiredError` catch (FinTS 3.0) to handle TAN challenges.
 
 **Timeout Issues:**
+
 ```typescript
 const client = new PinTanClient({ timeout: 60000, maxRetries: 5 });
 ```
 
 **FinTS 4.1 not working with my bank:**
+
 - Most German retail banks use FinTS 3.0 — switch to `PinTanClient`.
 - Check the bank's FinTS URL: some banks have separate endpoints for v3 and v4.
 
@@ -322,7 +335,6 @@ Contributions in the form of well-documented issues or pull requests are welcome
 
 - Frederick Gnodtke (Original author)
 - Lars Decker (Fork maintainer)
-
 
 This fork includes several enhancements over the original project:
 
