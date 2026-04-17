@@ -175,6 +175,8 @@ export class FinTS4Client {
 
             if (response.mt535Data) {
                 const lines = response.mt535Data.split(/\r?\n/);
+                // MT535 data from some banks starts with a leading empty line — remove it
+                // so the MT535Parser does not produce an empty leading clause.
                 if (lines.length > 0 && lines[0] === "") {
                     lines.shift();
                 }
