@@ -33,8 +33,10 @@ import {
     TEST_USERS,
     TEST_TAN_METHODS,
     TEST_ACCOUNTS,
+    TEST_DEPOT_ACCOUNTS,
     TEST_SEGMENT_CAPABILITIES,
     buildTestCamt053,
+    buildTestMt535,
 } from "./test-data";
 
 /**
@@ -134,6 +136,9 @@ export class MockBankServer {
             } else if (segmentTypes.includes("AccountStatement")) {
                 const stmtSeg = segments.find((s) => s.type === "AccountStatement");
                 response = this.handleAccountStatement(msgNo, dialogId, stmtSeg?.body);
+            } else if (segmentTypes.includes("Holdings")) {
+                const holdingsSeg = segments.find((s) => s.type === "Holdings");
+                response = this.handleHoldings(msgNo, dialogId, holdingsSeg?.body);
             } else {
                 response = this.buildErrorResponse(msgNo, dialogId, "9010", "Unbekannter Geschäftsvorfall");
             }
@@ -326,6 +331,32 @@ export class MockBankServer {
             this.buildReturnValue("0010", "Nachricht entgegengenommen") +
                 this.buildReturnValue("0020", "Auftrag ausgeführt") +
                 stmtSeg,
+        );
+    }
+
+    private handleHoldings(msgNo: number, dialogId: string, body?: Record<string, unknown>): string {
+        const dialog = this.dialogs.get(dialogId);
+        if (!dialog) {
+            return this.buildErrorResponse(msgNo, dialogId, "9800", "Dialogkontext ungültig");
+        }
+
+        const iban = this.extractIban(body);
+        // Accept both regular accounts and depot accounts
+        const allAccounts = [...TEST_ACCOUNTS, ...TEST_DEPOT_ACCOUNTS];
+        const account = allAccounts.find((a) => a.iban === iban);
+        if (!account) {
+            return this.buildErrorResponse(msgNo, dialogId, "9010", `Konto ${iban || "unbekannt"} nicht gefunden`);
+        }
+
+        const mt535Data = buildTestMt535();
+        const holdingsSeg = this.buildSegment("Holdings", 6, 3, `<Mt535Data>${this.escapeXml(mt535Data)}</Mt535Data>`);
+
+        return this.buildResponse(
+            msgNo,
+            dialogId,
+            this.buildReturnValue("0010", "Nachricht entgegengenommen") +
+                this.buildReturnValue("0020", "Auftrag ausgeführt") +
+                holdingsSeg,
         );
     }
 

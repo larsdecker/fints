@@ -167,6 +167,8 @@ export interface FinTS4Response {
     balance?: Balance;
     /** Raw camt XML data for statement parsing. */
     camtData?: string;
+    /** Raw MT535 data for holdings parsing. */
+    mt535Data?: string;
     /** Supported HBCI versions. */
     supportedHbciVersions?: string[];
     /** Supported segment versions (segment type -> max version). */

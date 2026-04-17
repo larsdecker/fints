@@ -78,6 +78,8 @@ export class FinTS4Dialog {
     public supportsBalance = false;
     /** Whether the bank supports account statements. */
     public supportsStatements = false;
+    /** Whether the bank supports holdings/depot queries. */
+    public supportsHoldings = false;
     /** Whether the bank supports account listing. */
     public supportsAccounts = true;
     /** Supported camt formats. */
@@ -88,6 +90,8 @@ export class FinTS4Dialog {
     public balanceVersion = 1;
     /** The version for account statement segment. */
     public statementVersion = 1;
+    /** The version for holdings segment. */
+    public holdingsVersion = 1;
     /** The version for TAN segment. */
     public tanVersion = 1;
     /** Security function to use. */
@@ -422,6 +426,11 @@ export class FinTS4Dialog {
         this.supportsStatements = stmtVer > 0;
         if (stmtVer > 0) this.statementVersion = stmtVer;
 
+        const holdingsVer =
+            this.segmentVersions.get("Holdings") || this.segmentVersions.get("HIWPDS") || 0;
+        this.supportsHoldings = holdingsVer > 0;
+        if (holdingsVer > 0) this.holdingsVersion = holdingsVer;
+
         const tanVer = this.segmentVersions.get("TAN") || this.segmentVersions.get("HITANS") || 0;
         if (tanVer > 0) this.tanVersion = tanVer;
 
@@ -442,7 +451,7 @@ export class FinTS4Dialog {
             supportsAccounts: true,
             supportsBalance: this.supportsBalance,
             supportsTransactions: this.supportsStatements,
-            supportsHoldings: false, // Not yet implemented in v4.1
+            supportsHoldings: this.supportsHoldings,
             supportsStandingOrders: false, // Not yet implemented in v4.1
             supportsCreditTransfer: false, // Read-only for now
             supportsDirectDebit: false, // Read-only for now

@@ -89,6 +89,21 @@ export const TEST_ACCOUNTS = [
 ];
 
 /**
+ * Depot accounts for the mock server (securities/holdings).
+ */
+export const TEST_DEPOT_ACCOUNTS = [
+    {
+        iban: "DE12345678901234567890",
+        bic: "SSKNDE77XXX",
+        accountNumber: "1234567890",
+        blz: "76050101",
+        ownerName: "Max Mustermann",
+        accountName: "Wertpapierdepot",
+        currency: "EUR",
+    },
+];
+
+/**
  * Segment capabilities advertised by the mock server.
  * These follow the FinTS 4.1 specification's parameter segments.
  */
@@ -97,9 +112,11 @@ export const TEST_SEGMENT_CAPABILITIES = [
     { type: "AccountStatement", version: 2 },
     { type: "AccountList", version: 1 },
     { type: "TAN", version: 7 },
+    { type: "Holdings", version: 6 },
     { type: "HISALS", version: 7 },
     { type: "HICAZS", version: 2 },
     { type: "HITANS", version: 7 },
+    { type: "HIWPDS", version: 6 },
 ];
 
 /**
@@ -248,4 +265,51 @@ export function buildTestCamt053(iban: string, currency = "EUR", startDate?: Dat
     </Stmt>
   </BkToCstmrStmt>
 </Document>`;
+}
+
+/**
+ * Build a realistic MT535 depot statement with German banking test data.
+ *
+ * Returns a multi-line MT535 string containing two sample securities positions
+ * for testing the holdings parser.
+ */
+export function buildTestMt535(): string {
+    const today = new Date();
+    const fmtDate = (d: Date) =>
+        `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+
+    return `:16R:GENL
+:28E:1/ONLY
+:13A::STAT//001
+:98C::PREP//${fmtDate(today)}120000
+:16S:GENL
+:16R:SUBSAFE
+:16R:SAFEKEEPING
+:95P::SAFE//TEST0000
+:97A::SAFE//12345678
+:16R:FIN
+:35B:ISIN LU0000000001
+/DE/TEST01
+Testfonds A EUR
+:90B::MRKT//ACTU/EUR100,50
+:98A::PRIC//${fmtDate(today)}
+:93B::AGGR//UNIT/10,0000
+:19A::HOLD//EUR1005,00
+:70E::HOLD//10STK
+290,00+EUR
+:16S:FIN
+:16R:FIN
+:35B:ISIN DE0000000002
+/DE/TEST02
+Deutsche Aktie B
+:90B::MRKT//ACTU/EUR55,20
+:98A::PRIC//${fmtDate(today)}
+:93B::AGGR//UNIT/20,0000
+:19A::HOLD//EUR1104,00
+:70E::HOLD//20STK
+250,00+EUR
+:16S:FIN
+:16S:SAFEKEEPING
+:16S:SUBSAFE
+-`;
 }
