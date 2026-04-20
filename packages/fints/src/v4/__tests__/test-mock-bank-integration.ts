@@ -8,7 +8,7 @@
  */
 import { FinTS4Dialog } from "../dialog";
 import { MockBankServer } from "../test-server/mock-bank-server";
-import { TEST_BANK, TEST_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
+import { TEST_BANK, TEST_ACCOUNTS, TEST_DEPOT_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
 import { parseCamt053 } from "../camt-parser";
 import {
     buildAccountListSegment,
@@ -438,10 +438,10 @@ describe("FinTS 4.1 Integration: Mock Bank Server", () => {
                     segNo: 3,
                     version: dialog.holdingsVersion,
                     account: {
-                        iban: TEST_ACCOUNTS[0].iban,
-                        bic: TEST_ACCOUNTS[0].bic,
-                        accountNumber: TEST_ACCOUNTS[0].accountNumber,
-                        blz: TEST_ACCOUNTS[0].blz,
+                        iban: TEST_DEPOT_ACCOUNTS[0].iban,
+                        bic: TEST_DEPOT_ACCOUNTS[0].bic,
+                        accountNumber: TEST_DEPOT_ACCOUNTS[0].accountNumber,
+                        blz: TEST_DEPOT_ACCOUNTS[0].blz,
                     },
                 }),
             ]);
