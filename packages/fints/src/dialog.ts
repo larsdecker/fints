@@ -262,7 +262,7 @@ export class Dialog extends DialogConfig {
         }
         const returnValues = response.returnValues();
         const hasTanRequiredCode = returnValues.has("0030");
-        let hitan;
+        let hitan: HITAN | undefined;
         let tanRequiredCode: "0030" | "3955" | undefined;
         if (hasTanRequiredCode) {
             tanRequiredCode = "0030";
@@ -281,8 +281,9 @@ export class Dialog extends DialogConfig {
             // - "3956": Indicates strong customer authentication (SCA) is pending on trusted device
             // - "3076": PSD2-mandated strong customer authentication required
             // - "3955": Security approval takes place in another channel
-            // When either code is present alongside "0030", it signals decoupled TAN flow
-            // where the user must approve the transaction in a separate app (e.g., mobile banking)
+            // These codes indicate a decoupled TAN flow where the user must approve the
+            // transaction in a separate app or device. "3955" can either accompany "0030"
+            // or be the primary TAN-required return code itself when returned with HITAN.
             const isDecoupled = returnValues.has("3956") || returnValues.has("3076") || returnValues.has("3955");
             const fallbackMessage =
                 tanRequiredCode === "3955"
