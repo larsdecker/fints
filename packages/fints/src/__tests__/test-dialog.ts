@@ -2,6 +2,7 @@ import { Dialog, DialogConfig } from "../dialog";
 import { Request } from "../request";
 import { TanRequiredError } from "../errors/tan-required-error";
 import { ResponseError } from "../errors/response-error";
+import { DecoupledTanState } from "../decoupled-tan";
 
 describe("Dialog", () => {
     const baseConfig: DialogConfig = { blz: "1", name: "user", pin: "123", systemId: "0" } as any;
@@ -51,6 +52,24 @@ describe("Dialog", () => {
             expect((error as TanRequiredError).dialog.dialogId).toBe("4711");
             expect(dialog.dialogId).toBe("4711");
         }
+    });
+
+    test("send throws decoupled TanRequiredError for 3955 + HITAN without 0030", async () => {
+        const hitan = { transactionReference: "ref", challengeText: "text", challengeMedia: Buffer.alloc(0) };
+        const connection = {
+            send: jest.fn().mockResolvedValue({
+                success: true,
+                returnValues: () => new Map([["3955", { message: "Sicherheitsfreigabe erfolgt über anderen Kanal." }]]),
+                findSegment: () => hitan,
+                dialogId: "4711",
+            }),
+        };
+        const dialog = new Dialog(baseConfig, connection as any);
+        const error = (await dialog.send(new Request(baseConfig)).catch((err) => err)) as TanRequiredError;
+        expect(error).toBeInstanceOf(TanRequiredError);
+        expect(error.decoupledTanState).toBe(DecoupledTanState.INITIATED);
+        expect(error.context?.returnCode).toBe("3955");
+        expect(dialog.dialogId).toBe("4711");
     });
 
     test("capabilities getter reflects fields set during sync", () => {
