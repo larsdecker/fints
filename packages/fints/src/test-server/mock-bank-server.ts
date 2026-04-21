@@ -7,8 +7,12 @@
  *
  * Features:
  * - Full dialog lifecycle support (Sync → Init → Business → End)
- * - PIN authentication validation
+ * - PIN authentication and PIN change (HKPAE)
  * - Account listing (HISPA), balance queries (HISAL), statements (HIKAZ)
+ * - SEPA credit transfers (HKCCS) and direct debits (HKDSE)
+ * - Scheduled credit transfers (HKCSE / Terminüberweisungen)
+ * - Standing orders (HKCDB)
+ * - Securities portfolio (HKWPD)
  * - Realistic return codes per FinTS 3.0 specification
  * - TAN method advertisement (HITANS)
  * - System ID assignment (HISYN)
@@ -18,7 +22,16 @@ import { Connection } from "../types";
 import { Request } from "../request";
 import { Response } from "../response";
 import { HEADER_LENGTH } from "../constants";
-import { TEST_BANK_V3, TEST_USERS_V3, TEST_TAN_METHODS_V3, TEST_ACCOUNTS_V3, buildTestMT940 } from "./test-data";
+import {
+    TEST_BANK_V3,
+    TEST_USERS_V3,
+    TEST_TAN_METHODS_V3,
+    TEST_ACCOUNTS_V3,
+    TEST_TASK_ID,
+    buildTestMT940,
+    buildTestMT535,
+    buildTestPain001ForStandingOrder,
+} from "./test-data";
 
 /**
  * State of a dialog in the mock server.
@@ -146,6 +159,34 @@ export class MockBankServerV3 implements Connection {
             return this.handleStatements(dialogId, msgNo, hkkaz);
         }
 
+        if (segmentTypes.includes("HKCCS")) {
+            const hkccs = request.segments.find((s) => s.type === "HKCCS");
+            return this.handleCreditTransfer(dialogId, msgNo, hkccs);
+        }
+
+        if (segmentTypes.includes("HKDSE")) {
+            const hkdse = request.segments.find((s) => s.type === "HKDSE");
+            return this.handleDirectDebit(dialogId, msgNo, hkdse);
+        }
+
+        if (segmentTypes.includes("HKCSE")) {
+            const hkcse = request.segments.find((s) => s.type === "HKCSE");
+            return this.handleScheduledCreditTransfer(dialogId, msgNo, hkcse);
+        }
+
+        if (segmentTypes.includes("HKCDB")) {
+            return this.handleStandingOrders(dialogId, msgNo);
+        }
+
+        if (segmentTypes.includes("HKWPD")) {
+            return this.handleHoldings(dialogId, msgNo);
+        }
+
+        if (segmentTypes.includes("HKPAE")) {
+            const hkpae = request.segments.find((s) => s.type === "HKPAE");
+            return this.handlePinChange(userId, dialogId, msgNo, hkpae);
+        }
+
         return this.buildErrorResponse(dialogId, msgNo, "9010", "Unbekannter Geschäftsvorfall");
     }
 
@@ -197,21 +238,35 @@ export class MockBankServerV3 implements Connection {
             // HIBPA (bank parameter data)
             this.buildBPASegment(6),
             // HISPAS (SEPA account parameter)
+            // All supported PAIN formats are packed into the 4th data group (DEG), separated by ':'
             this.buildSegment("HISPAS", 7, 1, [
                 `1`,
                 `1`,
                 `1`,
-                `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`,
-                `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.002.003.03`,
+                [
+                    `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`,
+                    `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.002.003.03`,
+                    `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.008.003.02`,
+                ].join(":"),
             ]),
             // HISALS (balance parameter)
             this.buildSegment("HISALS", 8, 7, [`1`, `1`]),
             // HIKAZS (statement parameter)
             this.buildSegment("HIKAZS", 9, 7, [`1`, `1`, `365`, `J`]),
+            // HICCSS (credit transfer parameter)
+            this.buildSegment("HICCSS", 10, 1, []),
+            // HIDSES (direct debit parameter)
+            this.buildSegment("HIDSES", 11, 1, []),
+            // HICSES (scheduled credit transfer parameter)
+            this.buildSegment("HICSES", 12, 1, [`1`, `1`]),
+            // HICDBS (standing order parameter)
+            this.buildSegment("HICDBS", 13, 1, [`1`, `1`, `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`]),
+            // HIWPDS (holdings parameter) - version 6 to match HKWPD supported versions
+            this.buildSegment("HIWPDS", 14, 6, [`1`, `1`]),
             // HITANS (TAN methods)
-            this.buildTanMethodsSegment(10),
+            this.buildTanMethodsSegment(15),
             // HIUPD (user data)
-            ...this.buildHIUPDSegments(11, userId),
+            ...this.buildHIUPDSegments(16, userId),
             // HNSHA (signature end)
             this.buildSegment("HNSHA", 99, 2, [`2`, ``, ``, ``]),
         ];
@@ -352,6 +407,181 @@ export class MockBankServerV3 implements Connection {
         return this.wrapResponse(dialogId, msgNo, innerSegments);
     }
 
+    private handleCreditTransfer(dialogId: string, msgNo: number, segment: any): string {
+        const segNo = segment?.segNo || 3;
+        const innerSegments = [
+            this.buildSegment("HNSHK", 2, 4, [
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
+                `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
+            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Auftrag ausgefuehrt`]),
+            // HICCS: reference back to the HKCCS segment, include task ID
+            `HICCS:5:1:${segNo}+${TEST_TASK_ID}'`,
+            this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
+        ];
+
+        return this.wrapResponse(dialogId, msgNo, innerSegments);
+    }
+
+    private handleDirectDebit(dialogId: string, msgNo: number, segment: any): string {
+        const segNo = segment?.segNo || 3;
+        const innerSegments = [
+            this.buildSegment("HNSHK", 2, 4, [
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
+                `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
+            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Auftrag ausgefuehrt`]),
+            // HIDSE: reference back to the HKDSE segment, include task ID
+            `HIDSE:5:1:${segNo}+${TEST_TASK_ID}'`,
+            this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
+        ];
+
+        return this.wrapResponse(dialogId, msgNo, innerSegments);
+    }
+
+    private handleScheduledCreditTransfer(dialogId: string, msgNo: number, segment: any): string {
+        const segNo = segment?.segNo || 3;
+        const innerSegments = [
+            this.buildSegment("HNSHK", 2, 4, [
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
+                `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
+            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Terminüberweisung entgegengenommen`]),
+            // HICSE: reference back to the HKCSE segment, include task ID
+            `HICSE:5:1:${segNo}+${TEST_TASK_ID}'`,
+            this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
+        ];
+
+        return this.wrapResponse(dialogId, msgNo, innerSegments);
+    }
+
+    private handleStandingOrders(dialogId: string, msgNo: number): string {
+        const account = TEST_ACCOUNTS_V3[0];
+        const pain001Xml = buildTestPain001ForStandingOrder();
+        const today = new Date();
+        const nextDate = new Date(today);
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        const nextDateStr = nextDate.toISOString().slice(0, 10).replace(/-/g, "");
+        const lastDateStr = "20261231";
+
+        // HICDB format: segNo, version, ref to HKCDB
+        // Fields: [account_deg]+[pain_descriptor]+[pain_xml]+[order_status_deg]+[schedule_deg]
+        // Simplified format: use binary notation for the XML
+        const xmlBin = `@${pain001Xml.length}@${pain001Xml}`;
+        const hicdb =
+            `HICDB:5:1:3` +
+            `+${account.accountType}::${TEST_BANK_V3.countryCode}:${account.blz}:${account.accountNumber}` +
+            `+urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03` +
+            `+${xmlBin}` +
+            `+J:J:J` +
+            `+${nextDateStr}:M:1:1:${lastDateStr}` +
+            `'`;
+
+        const innerSegments = [
+            this.buildSegment("HNSHK", 2, 4, [
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
+                `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
+            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Daueraufträge ermittelt`]),
+            hicdb,
+            this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
+        ];
+
+        return this.wrapResponse(dialogId, msgNo, innerSegments);
+    }
+
+    private handleHoldings(dialogId: string, msgNo: number): string {
+        const mt535 = buildTestMT535();
+
+        const innerSegments = [
+            this.buildSegment("HNSHK", 2, 4, [
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
+                `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
+            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::Wertpapierinformationen ermittelt`]),
+            this.buildHIWPDSegment(5, mt535),
+            this.buildSegment("HNSHA", 6, 2, [`2`, ``, ``, ``]),
+        ];
+
+        return this.wrapResponse(dialogId, msgNo, innerSegments);
+    }
+
+    private handlePinChange(userId: string, dialogId: string, msgNo: number, _segment: any): string {
+        // In a real server the new PIN would be extracted from the HKPAE segment
+        // and the user's credentials would be updated. Here we simply accept the
+        // request and confirm success.
+        const innerSegments = [
+            this.buildSegment("HNSHK", 2, 4, [
+                `PIN:1`,
+                `999`,
+                `1`,
+                `1`,
+                `1`,
+                `2::0`,
+                `1`,
+                `1:19700101:000000`,
+                `1:999:1`,
+                `6:10:16`,
+                `${TEST_BANK_V3.countryCode}:${TEST_BANK_V3.blz}:${TEST_BANK_V3.bankName}:S:0:0`,
+            ]),
+            this.buildSegment("HIRMG", 3, 2, [`0010::Nachricht entgegengenommen`]),
+            this.buildSegment("HIRMS", 4, 2, [`0020::PIN erfolgreich geaendert`]),
+            this.buildSegment("HNSHA", 5, 2, [`2`, ``, ``, ``]),
+        ];
+
+        return this.wrapResponse(dialogId, msgNo, innerSegments);
+    }
+
     // -----------------------------------------------------------------------
     // Helper methods
     // -----------------------------------------------------------------------
@@ -372,6 +602,9 @@ export class MockBankServerV3 implements Connection {
      * Format: TYPE:SEGNO:VERSION+field1+field2'
      */
     private buildSegment(type: string, segNo: number, version: number, fields: string[]): string {
+        if (fields.length === 0) {
+            return `${type}:${segNo}:${version}'`;
+        }
         return `${type}:${segNo}:${version}+${fields.join("+")}` + "'";
     }
 
@@ -505,7 +738,7 @@ export class MockBankServerV3 implements Connection {
                 user?.name || "",
                 ``, // account limit
                 ``, // extension
-                `HKSPA:1+HKSAL:1+HKKAZ:1`, // allowed transactions
+                `HKSPA:1+HKSAL:1+HKKAZ:1+HKCCS:1+HKDSE:1+HKCSE:1+HKCDB:1+HKWPD:1+HKPAE:1`, // allowed transactions
             ]);
         });
     }
@@ -525,17 +758,23 @@ export class MockBankServerV3 implements Connection {
         const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
 
         return this.buildSegment("HISAL", segNo, 7, [
-            `${account.accountType}::${TEST_BANK_V3.countryCode}:${account.blz}:${account.accountNumber}`,
+            `${account.accountNumber}:${account.subAccount}:${TEST_BANK_V3.countryCode}:${account.blz}`,
             account.accountNumber,
             account.currency,
             `C:13095,67:EUR:${dateStr}`, // Booked balance
-            `C:13095,67:EUR:${dateStr}`, // Available balance (same)
-            `5000,00:EUR`, // Credit limit
+            `C:13095,67:EUR:${dateStr}`, // Pre-booked balance
+            `5000,00:EUR`, // Credit limit (Dispositionskredit)
+            `13095,67:EUR`, // Available balance (Verfügbarer Betrag)
         ]);
     }
 
     private buildHIKAZSegment(segNo: number, mt940Data: string): string {
         // HIKAZ wraps MT940 data using @length@ binary notation
         return `HIKAZ:${segNo}:7:4+@${mt940Data.length}@${mt940Data}'`;
+    }
+
+    private buildHIWPDSegment(segNo: number, mt535Data: string): string {
+        // HIWPD wraps MT535 data using @length@ binary notation
+        return `HIWPD:${segNo}:6:3+@${mt535Data.length}@${mt535Data}'`;
     }
 }

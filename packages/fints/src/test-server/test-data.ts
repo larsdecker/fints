@@ -92,6 +92,53 @@ export const TEST_ACCOUNTS_V3 = [
 ];
 
 /**
+ * Test task IDs assigned by the mock server for submitted orders.
+ */
+export const TEST_TASK_ID = "TASK-001-TEST";
+
+/**
+ * A minimal PAIN.001 XML used in standing order test responses.
+ */
+export function buildTestPain001ForStandingOrder(): string {
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10);
+    return [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.003.03">',
+        "  <CstmrCdtTrfInitn>",
+        "    <GrpHdr>",
+        `      <MsgId>STND-${dateStr}</MsgId>`,
+        `      <CreDtTm>${dateStr}T00:00:00</CreDtTm>`,
+        "      <NbOfTxs>1</NbOfTxs>",
+        "      <CtrlSum>500.00</CtrlSum>",
+        "      <InitgPty><Nm>Max Mustermann</Nm></InitgPty>",
+        "    </GrpHdr>",
+        "    <PmtInf>",
+        "      <PmtInfId>PII-001</PmtInfId>",
+        "      <PmtMtd>TRF</PmtMtd>",
+        "      <NbOfTxs>1</NbOfTxs>",
+        "      <CtrlSum>500.00</CtrlSum>",
+        "      <PmtTpInf><SvcLvl><Cd>SEPA</Cd></SvcLvl></PmtTpInf>",
+        `      <ReqdExctnDt>${dateStr}</ReqdExctnDt>`,
+        "      <Dbtr><Nm>Max Mustermann</Nm></Dbtr>",
+        "      <DbtrAcct><Id><IBAN>DE89370400440532013000</IBAN></Id></DbtrAcct>",
+        "      <DbtrAgt><FinInstnId><BIC>SSKNDE77XXX</BIC></FinInstnId></DbtrAgt>",
+        "      <ChrgBr>SLEV</ChrgBr>",
+        "      <CdtTrfTxInf>",
+        "        <PmtId><EndToEndId>STND-E2E-001</EndToEndId></PmtId>",
+        "        <Amt><InstdAmt Ccy=\"EUR\">500.00</InstdAmt></Amt>",
+        "        <CdtrAgt><FinInstnId><BIC>COBADEFFXXX</BIC></FinInstnId></CdtrAgt>",
+        "        <Cdtr><Nm>Immobilien Verwaltung GmbH</Nm></Cdtr>",
+        "        <CdtrAcct><Id><IBAN>DE27100777770209299700</IBAN></Id></CdtrAcct>",
+        "        <RmtInf><Ustrd>Miete Monat</Ustrd></RmtInf>",
+        "      </CdtTrfTxInf>",
+        "    </PmtInf>",
+        "  </CstmrCdtTrfInitn>",
+        "</Document>",
+    ].join(" ");
+}
+
+/**
  * Build a realistic MT940 statement for a test account.
  * MT940 is the SWIFT format used by FinTS 3.0 for account statements.
  */
@@ -123,6 +170,39 @@ export function buildTestMT940(accountNumber: string, blz: string, currency = "E
         `:61:${dateShort}${dateShort}DR54,01N051NONREF`,
         `:86:166?00SEPA Credit Transfer?10GROCRY?20SVWZ+REWE SAGT DANKE 54712?21EREF+EINKAUF-${dateShort}?30COBADEFFXXX?31DE86200800000970375700?32REWE Markt GmbH?34912`,
         `:62F:C${dateShort}${currency}13095,67`,
+        `-`,
+    ].join("\r\n");
+}
+
+/**
+ * Build a minimal MT535 holdings report for a test depot account.
+ * MT535 is the SWIFT format used by FinTS 3.0 for securities portfolios.
+ */
+export function buildTestMT535(): string {
+    const today = new Date();
+    const yy = String(today.getFullYear()).slice(2);
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const date6 = `${yy}${mm}${dd}`;
+
+    return [
+        `:16R:GENL`,
+        `:28E:1/LAST`,
+        `:20C::SEME//NONREF`,
+        `:23G:NEWM`,
+        `:98C::PREP//${date6}000000`,
+        `:16S:GENL`,
+        `:16R:SUBSAFE`,
+        `:16R:FIN`,
+        `:35B:ISIN DE0007664039`,
+        `/DE/766403`,
+        `Volkswagen AG`,
+        `:90B::MRKT//EUR/175,50`,
+        `:93B::AGGR//FAMT/10,`,
+        `:94B::SAFE//NCSD/CLEARSTREM`,
+        `:98A::PRIC//20240101`,
+        `:16S:FIN`,
+        `:16S:SUBSAFE`,
         `-`,
     ].join("\r\n");
 }

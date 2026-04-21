@@ -13,6 +13,7 @@ import {
     HIWPDS,
     HIDSES,
     HICCSS,
+    HICSES,
     Segment,
 } from "./segments";
 import { Request } from "./request";
@@ -129,6 +130,15 @@ export class Dialog extends DialogConfig {
      */
     public supportsDirectDebit = false;
     /**
+     * Whether the bank supports scheduled SEPA credit transfers (HKCSE).
+     * Set to `true` during synchronization if the bank returns a HICSES parameter segment.
+     */
+    public supportsScheduledCreditTransfer = false;
+    /**
+     * Negotiated version for HKCSE (scheduled credit transfer).
+     */
+    public hkcseVersion = 1;
+    /**
      * Minimum number of signatures required to fetch bank statements (from HIKAZS).
      * A value greater than `0` means a TAN is required.
      */
@@ -200,6 +210,9 @@ export class Dialog extends DialogConfig {
         this.supportsCreditTransfer = hkccsVersion > 0;
         this.hiwpdsVersion = response.segmentMaxVersion(HIWPDS);
         this.hktanVersion = response.segmentMaxVersion(HITANS);
+        const hkcseVersion = response.segmentMaxVersion(HICSES);
+        this.hkcseVersion = hkcseVersion > 0 ? hkcseVersion : 1;
+        this.supportsScheduledCreditTransfer = hkcseVersion > 0;
         this.tanMethods = response.supportedTanMethods;
         this.painFormats = response.painFormats;
         const hikazs = response.findSegment(HIKAZS);
@@ -390,6 +403,7 @@ export class Dialog extends DialogConfig {
             supportsStandingOrders: this.supportsStandingOrders,
             supportsCreditTransfer: this.supportsCreditTransfer,
             supportsDirectDebit: this.supportsDirectDebit,
+            supportsScheduledCreditTransfer: this.supportsScheduledCreditTransfer,
             requiresTanForTransactions: this.hikazsMinSignatures > 0,
             requiresTanForBalance: this.hisalsMinSignatures > 0,
         };

@@ -289,6 +289,22 @@ export interface CreditTransferSubmission {
 }
 
 /**
+ * Request for a scheduled (future-dated) SEPA credit transfer (Terminüberweisung).
+ * Extends the regular credit transfer with a mandatory execution date.
+ */
+export interface ScheduledCreditTransferRequest extends CreditTransferRequest {
+    /**
+     * The desired execution date for this transfer (must be a future date).
+     */
+    executionDate: Date;
+}
+
+/**
+ * Submission result of a scheduled SEPA credit transfer (Terminüberweisung).
+ */
+export type ScheduledCreditTransferSubmission = CreditTransferSubmission;
+
+/**
  * Represents a creditor or debitor identification object.
  */
 export interface PartyIdentification {
@@ -436,6 +452,11 @@ export interface BankCapabilities {
      * Derived from the presence of a HIDSES parameter segment in the sync response.
      */
     supportsDirectDebit: boolean;
+    /**
+     * Whether the bank supports scheduled (future-dated) SEPA credit transfers (HKCSE).
+     * Derived from the presence of a HICSES parameter segment in the sync response.
+     */
+    supportsScheduledCreditTransfer: boolean;
     /**
      * Whether a TAN is required to fetch bank statements.
      * Derived from the `minSignatures` field of the HIKAZS parameter segment (`minSignatures > 0`).

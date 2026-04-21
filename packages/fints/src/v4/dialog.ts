@@ -446,6 +446,7 @@ export class FinTS4Dialog {
             supportsStandingOrders: false, // Not yet implemented in v4.1
             supportsCreditTransfer: false, // Read-only for now
             supportsDirectDebit: false, // Read-only for now
+            supportsScheduledCreditTransfer: false, // Not yet implemented in v4.1
             requiresTanForTransactions: this.statementsMinSignatures > 0,
             requiresTanForBalance: this.balanceMinSignatures > 0,
         };
