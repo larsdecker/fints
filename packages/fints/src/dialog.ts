@@ -262,9 +262,11 @@ export class Dialog extends DialogConfig {
         }
         const returnValues = response.returnValues();
         const hasTanRequiredCode = returnValues.has("0030");
-        let hitan = undefined;
-        let tanRequiredCode: "0030" | "3955" | undefined = hasTanRequiredCode ? "0030" : undefined;
-        if (!tanRequiredCode && returnValues.has("3955")) {
+        let hitan;
+        let tanRequiredCode: "0030" | "3955" | undefined;
+        if (hasTanRequiredCode) {
+            tanRequiredCode = "0030";
+        } else if (returnValues.has("3955")) {
             hitan = response.findSegment(HITAN);
             tanRequiredCode = hitan ? "3955" : undefined;
         }
@@ -282,9 +284,13 @@ export class Dialog extends DialogConfig {
             // When either code is present alongside "0030", it signals decoupled TAN flow
             // where the user must approve the transaction in a separate app (e.g., mobile banking)
             const isDecoupled = returnValues.has("3956") || returnValues.has("3076") || returnValues.has("3955");
+            const fallbackMessage =
+                tanRequiredCode === "3955"
+                    ? "TAN required: Security approval via alternate channel (3955)"
+                    : "TAN required";
 
             const error = new TanRequiredError(
-                returnValue?.message ?? "TAN required",
+                returnValue?.message ?? fallbackMessage,
                 hitan.transactionReference,
                 hitan.challengeText,
                 hitan.challengeMedia,

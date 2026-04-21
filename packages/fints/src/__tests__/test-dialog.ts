@@ -65,16 +65,11 @@ describe("Dialog", () => {
             }),
         };
         const dialog = new Dialog(baseConfig, connection as any);
-        expect.assertions(4);
-        try {
-            await dialog.send(new Request(baseConfig));
-            throw new Error("Expected decoupled TAN challenge to trigger TanRequiredError.");
-        } catch (error) {
-            expect(error).toBeInstanceOf(TanRequiredError);
-            expect((error as TanRequiredError).decoupledTanState).toBe(DecoupledTanState.INITIATED);
-            expect((error as TanRequiredError).context?.returnCode).toBe("3955");
-            expect(dialog.dialogId).toBe("4711");
-        }
+        const error = (await dialog.send(new Request(baseConfig)).catch((err) => err)) as TanRequiredError;
+        expect(error).toBeInstanceOf(TanRequiredError);
+        expect(error.decoupledTanState).toBe(DecoupledTanState.INITIATED);
+        expect(error.context?.returnCode).toBe("3955");
+        expect(dialog.dialogId).toBe("4711");
     });
 
     test("capabilities getter reflects fields set during sync", () => {
