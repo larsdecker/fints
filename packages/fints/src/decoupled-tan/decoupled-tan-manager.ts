@@ -5,6 +5,7 @@ import { HKTAN } from "../segments";
 import { Response } from "../response";
 import { TanMethod } from "../tan-method";
 import { Request } from "../request";
+import { escapeFinTS } from "../utils";
 
 /**
  * FinTS return code constants for decoupled TAN authentication
@@ -15,7 +16,8 @@ const RETURN_CODE_PENDING_CONFIRMATION = "3956"; // Strong customer authenticati
 /**
  * HKTAN process type for decoupled TAN status polling
  */
-const HKTAN_PROCESS_DECOUPLED_STATUS = "2"; // Decoupled/asynchronous authentication status check
+// FinTS 3.0 Security PIN/TAN spec §TAN-Prozess=S: status polling for decoupled TAN
+const HKTAN_PROCESS_DECOUPLED_STATUS = "S";
 
 /**
  * Default configuration for decoupled TAN
@@ -85,16 +87,17 @@ export class DecoupledTanManager {
             ...config,
         };
 
-        // Override with server-provided values if available
+        // Override with server-provided values if available.
+        // HITANS timing fields are in seconds; convert to ms for internal use.
         if (tanMethod) {
             if (tanMethod.decoupledMaxStatusRequests !== undefined) {
                 this.config.maxStatusRequests = tanMethod.decoupledMaxStatusRequests;
             }
             if (tanMethod.decoupledWaitBeforeFirstStatusRequest !== undefined) {
-                this.config.waitBeforeFirstStatusRequest = tanMethod.decoupledWaitBeforeFirstStatusRequest;
+                this.config.waitBeforeFirstStatusRequest = tanMethod.decoupledWaitBeforeFirstStatusRequest * 1000;
             }
             if (tanMethod.decoupledWaitBetweenStatusRequests !== undefined) {
-                this.config.waitBetweenStatusRequests = tanMethod.decoupledWaitBetweenStatusRequests;
+                this.config.waitBetweenStatusRequests = tanMethod.decoupledWaitBetweenStatusRequests * 1000;
             }
         }
 
@@ -307,7 +310,7 @@ export class DecoupledTanManager {
                 segNo: 3, // Standard position for HKTAN in status-only requests
                 version,
                 process: HKTAN_PROCESS_DECOUPLED_STATUS,
-                aref: this.status.transactionReference,
+                aref: escapeFinTS(this.status.transactionReference),
             }),
         ];
 
@@ -327,6 +330,10 @@ export class DecoupledTanManager {
 
         // Send the request using the dialog's connection
         const response = await this.dialog.connection.send(request);
+
+        // Keep dialog state in sync (dialog.send() is not used here to avoid TanRequiredError on 0030)
+        this.dialog.dialogId = response.dialogId;
+        this.dialog.msgNo++;
 
         return response;
     }

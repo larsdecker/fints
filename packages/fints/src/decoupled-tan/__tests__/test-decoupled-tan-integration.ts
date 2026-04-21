@@ -43,8 +43,10 @@ describe("Decoupled TAN Integration", () => {
                 tanProcess: "2",
                 name: "pushTAN",
                 decoupledMaxStatusRequests: 60,
-                decoupledWaitBeforeFirstStatusRequest: 2000,
-                decoupledWaitBetweenStatusRequests: 2000,
+                // Values are in seconds per HITANS spec (converted to ms by DecoupledTanManager).
+                // Use 0 so the test config (10ms) effectively drives timing.
+                decoupledWaitBeforeFirstStatusRequest: 0,
+                decoupledWaitBetweenStatusRequests: 0,
             } as any,
         ];
     });
@@ -220,35 +222,57 @@ describe("Decoupled TAN Integration", () => {
         }, 10000);
 
         test("should handle cancellation gracefully", async () => {
-            // Mock pending response
-            mockConnection.send = jest.fn().mockResolvedValue({
-                dialogId: "test-dialog",
-                returnValues: jest.fn().mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
-                success: true,
-            });
+            // Mock pending response with a delay so cancel fires while a request is in flight
+            mockConnection.send = jest.fn().mockImplementation(
+                () =>
+                    new Promise((resolve) =>
+                        setTimeout(
+                            () =>
+                                resolve({
+                                    dialogId: "test-dialog",
+                                    returnValues: jest
+                                        .fn()
+                                        .mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
+                                    success: true,
+                                }),
+                            30,
+                        ),
+                    ),
+            );
 
             const pollPromise = dialog.handleDecoupledTan("ref123", "Please confirm");
 
-            // Cancel after a short delay
+            // Cancel before the first mock response resolves
             setTimeout(() => {
                 dialog.cancelDecoupledTan();
-            }, 100);
+            }, 10);
 
             await expect(pollPromise).rejects.toThrow(/cancelled/i);
         }, 10000);
 
         test("should track status during polling", async () => {
-            // Mock pending response
-            mockConnection.send = jest.fn().mockResolvedValue({
-                dialogId: "test-dialog",
-                returnValues: jest.fn().mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
-                success: true,
-            });
+            // Mock pending response with a delay so status check runs while request is in flight
+            mockConnection.send = jest.fn().mockImplementation(
+                () =>
+                    new Promise((resolve) =>
+                        setTimeout(
+                            () =>
+                                resolve({
+                                    dialogId: "test-dialog",
+                                    returnValues: jest
+                                        .fn()
+                                        .mockReturnValue(new Map([["3956", { code: "3956", message: "Pending" }]])),
+                                    success: true,
+                                }),
+                            50,
+                        ),
+                    ),
+            );
 
             const pollPromise = dialog.handleDecoupledTan("ref123", "Please confirm");
 
-            // Check status while polling
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            // Check status while the first mock response is still pending
+            await new Promise((resolve) => setTimeout(resolve, 20));
             const status = dialog.checkDecoupledTanStatus();
 
             expect(status).toBeDefined();
