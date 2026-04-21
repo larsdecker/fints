@@ -260,9 +260,17 @@ export class Dialog extends DialogConfig {
         if (!response.success) {
             throw new ResponseError(response);
         }
-        if (response.returnValues().has("0030")) {
-            const hitan = response.findSegment(HITAN);
-            const returnValue = response.returnValues().get("0030");
+        const returnValues = response.returnValues();
+        const hasTanRequiredCode = returnValues.has("0030");
+        let hitan = undefined;
+        let tanRequiredCode: "0030" | "3955" | undefined = hasTanRequiredCode ? "0030" : undefined;
+        if (!tanRequiredCode && returnValues.has("3955")) {
+            hitan = response.findSegment(HITAN);
+            tanRequiredCode = hitan ? "3955" : undefined;
+        }
+        if (tanRequiredCode) {
+            hitan = hitan ?? response.findSegment(HITAN);
+            const returnValue = returnValues.get(tanRequiredCode);
 
             // Determine which segment triggered the TAN requirement
             const triggeringSegment = request.segments.length > 0 ? request.segments[0].type : undefined;
@@ -270,13 +278,13 @@ export class Dialog extends DialogConfig {
             // Check for decoupled TAN indicators per FinTS 3.0 PINTAN specification:
             // - "3956": Indicates strong customer authentication (SCA) is pending on trusted device
             // - "3076": PSD2-mandated strong customer authentication required
+            // - "3955": Security approval takes place in another channel
             // When either code is present alongside "0030", it signals decoupled TAN flow
             // where the user must approve the transaction in a separate app (e.g., mobile banking)
-            const returnValues = response.returnValues();
-            const isDecoupled = returnValues.has("3956") || returnValues.has("3076");
+            const isDecoupled = returnValues.has("3956") || returnValues.has("3076") || returnValues.has("3955");
 
             const error = new TanRequiredError(
-                returnValue.message,
+                returnValue?.message ?? "TAN required",
                 hitan.transactionReference,
                 hitan.challengeText,
                 hitan.challengeMedia,
@@ -284,7 +292,7 @@ export class Dialog extends DialogConfig {
                 TanProcessStep.CHALLENGE_RESPONSE_NEEDED,
                 triggeringSegment,
                 {
-                    returnCode: "0030",
+                    returnCode: tanRequiredCode,
                     requestSegments: request.segments.map((s) => s.type),
                 },
             );
