@@ -238,13 +238,16 @@ export class MockBankServerV3 implements Connection {
             // HIBPA (bank parameter data)
             this.buildBPASegment(6),
             // HISPAS (SEPA account parameter)
+            // All supported PAIN formats are packed into the 4th data group (DEG), separated by ':'
             this.buildSegment("HISPAS", 7, 1, [
                 `1`,
                 `1`,
                 `1`,
-                `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`,
-                `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.002.003.03`,
-                `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.008.003.02`,
+                [
+                    `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`,
+                    `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.002.003.03`,
+                    `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.008.003.02`,
+                ].join(":"),
             ]),
             // HISALS (balance parameter)
             this.buildSegment("HISALS", 8, 7, [`1`, `1`]),
@@ -257,11 +260,7 @@ export class MockBankServerV3 implements Connection {
             // HICSES (scheduled credit transfer parameter)
             this.buildSegment("HICSES", 12, 1, [`1`, `1`]),
             // HICDBS (standing order parameter)
-            this.buildSegment("HICDBS", 13, 1, [
-                `1`,
-                `1`,
-                `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`,
-            ]),
+            this.buildSegment("HICDBS", 13, 1, [`1`, `1`, `urn?:iso?:std?:iso?:20022?:tech?:xsd?:pain.001.003.03`]),
             // HIWPDS (holdings parameter) - version 6 to match HKWPD supported versions
             this.buildSegment("HIWPDS", 14, 6, [`1`, `1`]),
             // HITANS (TAN methods)
@@ -557,7 +556,7 @@ export class MockBankServerV3 implements Connection {
         return this.wrapResponse(dialogId, msgNo, innerSegments);
     }
 
-    private handlePinChange(userId: string, dialogId: string, msgNo: number, segment: any): string {
+    private handlePinChange(userId: string, dialogId: string, msgNo: number, _segment: any): string {
         // In a real server the new PIN would be extracted from the HKPAE segment
         // and the user's credentials would be updated. Here we simply accept the
         // request and confirm success.
@@ -764,8 +763,8 @@ export class MockBankServerV3 implements Connection {
             account.currency,
             `C:13095,67:EUR:${dateStr}`, // Booked balance
             `C:13095,67:EUR:${dateStr}`, // Pre-booked balance
-            `5000,00:EUR`,              // Credit limit (Dispositionskredit)
-            `C:13095,67:EUR`,           // Available balance (Verfügbarer Betrag)
+            `5000,00:EUR`, // Credit limit (Dispositionskredit)
+            `13095,67:EUR`, // Available balance (Verfügbarer Betrag)
         ]);
     }
 

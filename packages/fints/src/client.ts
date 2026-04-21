@@ -607,13 +607,17 @@ export abstract class Client {
     ): Promise<ScheduledCreditTransferSubmission> {
         const dialog = this.createDialog();
         await dialog.sync();
+        if (!dialog.supportsScheduledCreditTransfer) {
+            await dialog.end();
+            throw new Error("Scheduled credit transfers (HKCSE) are not supported by this bank.");
+        }
         await dialog.init();
         const descriptor = selectPain001Descriptor(dialog.painFormats);
         const submission = buildCreditTransferSubmission(request, account, descriptor);
         const segments: Segment<any>[] = [
             new HKCSE({
                 segNo: 3,
-                version: dialog.hicseVersion || 1,
+                version: dialog.hkcseVersion || 1,
                 account,
                 painDescriptor: descriptor,
                 painMessage: submission.xml,

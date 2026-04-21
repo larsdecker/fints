@@ -9,14 +9,21 @@ import { Dialog, DialogConfig } from "../../dialog";
 import { MockBankServerV3 } from "../mock-bank-server";
 import { TEST_BANK_V3, TEST_ACCOUNTS_V3 } from "../test-data";
 import {
-    HKSPA, HISPA,
-    HKSAL, HISAL,
-    HKKAZ, HIKAZ,
-    HKCCS, HICCS,
-    HKDSE, HIDSE,
-    HKCSE, HICSE,
+    HKSPA,
+    HISPA,
+    HKSAL,
+    HISAL,
+    HKKAZ,
+    HIKAZ,
+    HKCCS,
+    HICCS,
+    HKDSE,
+    HIDSE,
+    HKCSE,
+    HICSE,
     HKCDB,
-    HKWPD, HIWPD,
+    HKWPD,
+    HIWPD,
     HKPAE,
 } from "../../segments";
 import { Request } from "../../request";
@@ -225,6 +232,13 @@ describe("FinTS 3.0 Integration: Mock Bank Server", () => {
             expect(caps.supportsCreditTransfer).toBe(true);
             expect(caps.supportsDirectDebit).toBe(true);
             expect(caps.supportsScheduledCreditTransfer).toBe(true);
+        });
+
+        it("receives all three advertised PAIN formats from HISPAS", async () => {
+            await dialog.sync();
+            expect(dialog.painFormats).toContain("urn:iso:std:iso:20022:tech:xsd:pain.001.003.03");
+            expect(dialog.painFormats).toContain("urn:iso:std:iso:20022:tech:xsd:pain.008.003.02");
+            expect(dialog.painFormats.length).toBeGreaterThanOrEqual(3);
         });
     });
 
@@ -501,7 +515,7 @@ describe("FinTS 3.0 Integration: Mock Bank Server", () => {
             const segments = [
                 new HKCSE({
                     segNo: 3,
-                    version: dialog.hicseVersion || 1,
+                    version: dialog.hkcseVersion || 1,
                     account: makeAccount(),
                     painDescriptor: "urn:iso:std:iso:20022:tech:xsd:pain.001.003.03",
                     painMessage: painXml,
@@ -523,7 +537,7 @@ describe("FinTS 3.0 Integration: Mock Bank Server", () => {
             const segments = [
                 new HKCSE({
                     segNo: 3,
-                    version: dialog.hicseVersion || 1,
+                    version: dialog.hkcseVersion || 1,
                     account: makeAccount(),
                     painDescriptor: "urn:iso:std:iso:20022:tech:xsd:pain.001.003.03",
                     painMessage: painXml,
@@ -621,9 +635,7 @@ describe("FinTS 3.0 Integration: Mock Bank Server", () => {
             await dialog.init();
 
             const { blz, name, pin, systemId, dialogId, msgNo } = dialog;
-            const segments = [
-                new HKPAE({ segNo: 3, version: 3, newPin: "99999" }),
-            ];
+            const segments = [new HKPAE({ segNo: 3, version: 3, newPin: "99999" })];
             const request = new Request({ blz, name, pin, systemId, dialogId, msgNo, segments });
             const response = await dialog.send(request);
 
@@ -735,6 +747,36 @@ describe("FinTS 3.0 Integration: Mock Bank Server", () => {
             expect(submission).toBeDefined();
             expect(submission.taskId).toBeDefined();
             expect(submission.xml).toContain("<CstmrCdtTrfInitn>");
+        });
+
+        it("throws when bank does not support scheduled credit transfers", async () => {
+            // Swap to a server that omits the HICSES parameter segment by not exposing
+            // that capability. We can simulate this by overriding the dialog after sync.
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const account = makeAccount();
+
+            // Patch the createDialog method to return a dialog that reports the feature as unsupported
+            const originalCreateDialog = (client as any).createDialog.bind(client);
+            (client as any).createDialog = (...args: any[]): any => {
+                const dlg = originalCreateDialog(...args);
+                const origSync = dlg.sync.bind(dlg);
+                dlg.sync = async (): Promise<void> => {
+                    await origSync();
+                    dlg.supportsScheduledCreditTransfer = false;
+                };
+                return dlg;
+            };
+
+            await expect(
+                client.scheduledCreditTransfer(account, {
+                    debtorName: "Max Mustermann",
+                    creditor: { name: "Empf", iban: "DE27100777770209299700", bic: "COBADEFFXXX" },
+                    amount: 50,
+                    executionDate: tomorrow,
+                }),
+            ).rejects.toThrow("not supported by this bank");
         });
     });
 

@@ -137,7 +137,7 @@ export class Dialog extends DialogConfig {
     /**
      * Negotiated version for HKCSE (scheduled credit transfer).
      */
-    public hicseVersion = 1;
+    public hkcseVersion = 1;
     /**
      * Minimum number of signatures required to fetch bank statements (from HIKAZS).
      * A value greater than `0` means a TAN is required.
@@ -210,9 +210,9 @@ export class Dialog extends DialogConfig {
         this.supportsCreditTransfer = hkccsVersion > 0;
         this.hiwpdsVersion = response.segmentMaxVersion(HIWPDS);
         this.hktanVersion = response.segmentMaxVersion(HITANS);
-        const hicseVersion = response.segmentMaxVersion(HICSES);
-        this.hicseVersion = hicseVersion > 0 ? hicseVersion : 1;
-        this.supportsScheduledCreditTransfer = hicseVersion > 0;
+        const hkcseVersion = response.segmentMaxVersion(HICSES);
+        this.hkcseVersion = hkcseVersion > 0 ? hkcseVersion : 1;
+        this.supportsScheduledCreditTransfer = hkcseVersion > 0;
         this.tanMethods = response.supportedTanMethods;
         this.painFormats = response.painFormats;
         const hikazs = response.findSegment(HIKAZS);
