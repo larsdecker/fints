@@ -171,6 +171,15 @@ export class FinTS4Client {
                 }),
             ];
 
+            if (!touchdown && dialog.tanVersion >= 1 && dialog.tanMethods.length > 0) {
+                segments.push(
+                    buildTanSegment({
+                        segNo: 4,
+                        version: dialog.tanVersion,
+                        process: "4",
+                    }),
+                );
+            }
             // Add TAN segment on the first request for banks that require SCA for depot queries
             if (!touchdown && dialog.tanVersion >= 1 && dialog.tanMethods.length > 0) {
                 segments.push(
