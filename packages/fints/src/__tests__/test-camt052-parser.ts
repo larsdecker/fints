@@ -68,7 +68,9 @@ describe("parseCamt052", () => {
         const [statement] = parse(MINIMAL_XML);
         expect(statement.openingBalance?.value).toBe(1000.0);
         expect(statement.openingBalance?.currency).toBe("EUR");
+        expect(statement.openingBalance?.date).toEqual(new Date("2024-01-01"));
         expect(statement.closingBalance?.value).toBe(950.0);
+        expect(statement.closingBalance?.date).toEqual(new Date("2024-01-02"));
     });
 
     test("parses correct number of transactions", () => {

@@ -397,12 +397,13 @@ export abstract class Client {
         let touchdown: string;
         const responses: Response[] = [];
         do {
+            (segments[0] as HKCAZ).touchdown = touchdown;
             const request = this.createRequest(dialog, segments);
             let response: Response;
             try {
                 response = await dialog.send(request);
             } catch (error) {
-                if (error instanceof TanRequiredError) {
+                if (error instanceof TanRequiredError && error.isDecoupledTan()) {
                     // 0030: standard decoupled TAN challenge
                     response = await dialog.handleDecoupledTan(
                         error.transactionReference,

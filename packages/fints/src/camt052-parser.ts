@@ -1,100 +1,137 @@
 import { Statement, Transaction, StructuredDescription } from "./types";
+import { XMLParser } from "fast-xml-parser";
 
-function getTag(xml: string, tag: string): string | undefined {
-    const match = xml.match(new RegExp(`<(?:[^:>]+:)?${tag}[^>]*>([\\s\\S]*?)<\\/(?:[^:>]+:)?${tag}>`, "i"));
-    return match?.[1]?.trim();
-}
+const parserOptions = {
+    ignoreAttributes: false,
+    attributeNamePrefix: "@_",
+    parseAttributeValue: false,
+    parseTagValue: false,
+    trimValues: true,
+    removeNSPrefix: true,
+    isArray: (name: string) => ["Rpt", "Ntry", "Bal", "Ustrd", "TxDtls"].includes(name),
+};
 
-function getAllTags(xml: string, tag: string): string[] {
-    const results: string[] = [];
-    const regex = new RegExp(`<(?:[^:>]+:)?${tag}[^>]*>([\\s\\S]*?)<\\/(?:[^:>]+:)?${tag}>`, "gi");
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(xml)) !== null) {
-        results.push(match[1].trim());
+function getVal(obj: unknown, path: string): unknown {
+    const parts = path.split(".");
+    let cur: unknown = obj;
+    for (const p of parts) {
+        if (cur == null || typeof cur !== "object") return undefined;
+        cur = (cur as Record<string, unknown>)[p];
     }
-    return results;
+    return cur;
 }
 
-function getAttr(xml: string, tag: string, attr: string): string | undefined {
-    const match = xml.match(new RegExp(`<(?:[^:>]+:)?${tag}[^>]*\\s${attr}="([^"]*)"`, "i"));
-    return match?.[1];
+function getStr(obj: unknown, path: string): string | undefined {
+    const v = getVal(obj, path);
+    return v == null ? undefined : String(v);
 }
 
 function parseDate(dateStr: string | undefined): Date {
     if (!dateStr) return new Date(0);
-    return new Date(dateStr.trim());
+    const d = new Date(dateStr.trim());
+    return isNaN(d.getTime()) ? new Date(0) : d;
 }
 
-/**
- * Parse CAMT.052 XML into Statement objects compatible with the mt940-js Statement interface.
- */
+function parseAmount(amtNode: unknown): { value: number; currency: string } {
+    if (amtNode == null) return { value: 0, currency: "EUR" };
+    if (typeof amtNode === "object") {
+        const obj = amtNode as Record<string, unknown>;
+        return {
+            value: parseFloat(String(obj["#text"] ?? 0)) || 0,
+            currency: String(obj["@_Ccy"] ?? "EUR"),
+        };
+    }
+    return { value: parseFloat(String(amtNode)) || 0, currency: "EUR" };
+}
+
+function ensureArray<T>(value: T | T[] | undefined | null): T[] {
+    if (value == null) return [];
+    return Array.isArray(value) ? value : [value];
+}
+
 export function parseCamt052(xml: string): Statement[] {
-    const reports = getAllTags(xml, "Rpt");
+    if (!xml?.trim()) return [];
+
+    const parser = new XMLParser(parserOptions);
+    const parsed = parser.parse(xml);
+    const doc = parsed.Document || parsed;
+    const report = doc.BkToCstmrAcctRpt || doc;
+    const reports: Record<string, unknown>[] = ensureArray(report.Rpt);
+
     if (reports.length === 0) return [];
 
     return reports.map((rpt) => {
-        const ibanTag = getTag(rpt, "IBAN");
-        const accountIdentification = ibanTag || getTag(rpt, "Id") || "";
+        const accountIdentification = getStr(rpt, "Acct.Id.IBAN") || getStr(rpt, "Acct.Id.Id") || "";
 
-        const openingBalanceXml = getAllTags(rpt, "Bal").find(
-            (b) => getTag(b, "Tp") && /OPBD|PRCD/.test(getTag(b, "Cd") || ""),
-        );
-        const closingBalanceXml = getAllTags(rpt, "Bal").find(
-            (b) => getTag(b, "Tp") && /CLBD|CLAV/.test(getTag(b, "Cd") || ""),
-        );
+        const balances: Record<string, unknown>[] = ensureArray(rpt.Bal as Record<string, unknown>[]);
+        const openingBal = balances.find((b) => /OPBD|PRCD/.test(getStr(b, "Tp.CdOrPrtry.Cd") || ""));
+        const closingBal = balances.find((b) => /CLBD|CLAV/.test(getStr(b, "Tp.CdOrPrtry.Cd") || ""));
 
-        const openingBalance = openingBalanceXml
-            ? {
-                  date: parseDate(getTag(openingBalanceXml, "Dt")),
-                  currency: getAttr(openingBalanceXml, "Amt", "Ccy") || "EUR",
-                  value: parseFloat(getTag(openingBalanceXml, "Amt") || "0"),
-              }
-            : undefined;
+        const toBalance = (bal: Record<string, unknown> | undefined) => {
+            if (!bal) return undefined;
+            const { value, currency } = parseAmount(getVal(bal, "Amt"));
+            const dateStr = getStr(bal, "Dt.Dt") || getStr(bal, "Dt.DtTm");
+            return { date: parseDate(dateStr), currency, value };
+        };
 
-        const closingBalance = closingBalanceXml
-            ? {
-                  date: parseDate(getTag(closingBalanceXml, "Dt")),
-                  currency: getAttr(closingBalanceXml, "Amt", "Ccy") || "EUR",
-                  value: parseFloat(getTag(closingBalanceXml, "Amt") || "0"),
-              }
-            : undefined;
+        const entries: Record<string, unknown>[] = ensureArray(rpt.Ntry as Record<string, unknown>[]);
 
-        const ntryElements = getAllTags(rpt, "Ntry");
-        const transactions: Transaction[] = ntryElements.map((ntry) => {
-            const amtStr = getTag(ntry, "Amt");
-            const currency = getAttr(ntry, "Amt", "Ccy") || "EUR";
-            const amount = parseFloat(amtStr || "0");
-            const cdtDbtInd = getTag(ntry, "CdtDbtInd") || "";
-            const isCredit = cdtDbtInd.trim().toUpperCase() === "CRDT";
-            const isReversal = (getTag(ntry, "RvslInd") || "").trim().toLowerCase() === "true";
+        const transactions: Transaction[] = entries.map((ntry) => {
+            const { value: amount, currency } = parseAmount(getVal(ntry, "Amt"));
+            const cdtDbtInd = (getStr(ntry, "CdtDbtInd") || "").trim().toUpperCase();
+            const isCredit = cdtDbtInd === "CRDT";
+            const isReversal = (getStr(ntry, "RvslInd") || "").trim().toLowerCase() === "true";
 
-            const bookgDt = getTag(ntry, "BookgDt");
-            const valDt = getTag(ntry, "ValDt");
-            const date = parseDate(getTag(bookgDt || "", "Dt") || bookgDt);
-            const valueDate = parseDate(getTag(valDt || "", "Dt") || valDt);
+            const date = parseDate(getStr(ntry, "BookgDt.Dt") || getStr(ntry, "BookgDt.DtTm"));
+            const valueDate = parseDate(getStr(ntry, "ValDt.Dt") || getStr(ntry, "ValDt.DtTm"));
+            const acctSvcrRef = getStr(ntry, "AcctSvcrRef") || "";
 
-            const acctSvcrRef = getTag(ntry, "AcctSvcrRef") || "";
-            const txDtls = getTag(ntry, "TxDtls") || ntry;
+            const ntryDtls = getVal(ntry, "NtryDtls") as Record<string, unknown> | undefined;
+            const txDtlsList: Record<string, unknown>[] = ntryDtls
+                ? ensureArray(ntryDtls.TxDtls as Record<string, unknown>[])
+                : [];
+            const txDtls = txDtlsList[0] as Record<string, unknown> | undefined;
 
-            const debtorName = getTag(getTag(txDtls, "Dbtr") || "", "Nm");
-            const creditorName = getTag(getTag(txDtls, "Cdtr") || "", "Nm");
+            const debtorName =
+                getStr(txDtls, "RltdPties.Dbtr.Pty.Nm") ||
+                getStr(txDtls, "RltdPties.Dbtr.Nm") ||
+                getStr(txDtls, "Dbtr.Nm");
+            const creditorName =
+                getStr(txDtls, "RltdPties.Cdtr.Pty.Nm") ||
+                getStr(txDtls, "RltdPties.Cdtr.Nm") ||
+                getStr(txDtls, "Cdtr.Nm");
             const name = (isCredit ? debtorName : creditorName) || "";
 
-            const dbtrIban = getTag(getTag(txDtls, "DbtrAcct") || "", "IBAN");
-            const cdtrIban = getTag(getTag(txDtls, "CdtrAcct") || "", "IBAN");
+            const dbtrIban =
+                getStr(txDtls, "RltdPties.DbtrAcct.Id.IBAN") || getStr(txDtls, "DbtrAcct.Id.IBAN");
+            const cdtrIban =
+                getStr(txDtls, "RltdPties.CdtrAcct.Id.IBAN") || getStr(txDtls, "CdtrAcct.Id.IBAN");
             const counterpartyIban = (isCredit ? dbtrIban : cdtrIban) || "";
 
-            const dbtrBic = getTag(getTag(txDtls, "DbtrAgt") || "", "BICFI") || getTag(getTag(txDtls, "DbtrAgt") || "", "BIC");
-            const cdtrBic = getTag(getTag(txDtls, "CdtrAgt") || "", "BICFI") || getTag(getTag(txDtls, "CdtrAgt") || "", "BIC");
+            const dbtrBic =
+                getStr(txDtls, "RltdAgts.DbtrAgt.FinInstnId.BICFI") ||
+                getStr(txDtls, "RltdAgts.DbtrAgt.FinInstnId.BIC") ||
+                getStr(txDtls, "DbtrAgt.FinInstnId.BICFI") ||
+                getStr(txDtls, "DbtrAgt.FinInstnId.BIC");
+            const cdtrBic =
+                getStr(txDtls, "RltdAgts.CdtrAgt.FinInstnId.BICFI") ||
+                getStr(txDtls, "RltdAgts.CdtrAgt.FinInstnId.BIC") ||
+                getStr(txDtls, "CdtrAgt.FinInstnId.BICFI") ||
+                getStr(txDtls, "CdtrAgt.FinInstnId.BIC");
             const counterpartyBic = (isCredit ? dbtrBic : cdtrBic) || "";
 
-            const ustrd = getAllTags(txDtls, "Ustrd").join(" ");
-            const addtlNtryInf = getTag(ntry, "AddtlNtryInf") || getTag(ntry, "AddtlTxInf") || "";
+            const rmtInf = getVal(txDtls, "RmtInf") as Record<string, unknown> | undefined;
+            const ustrdArr: string[] = rmtInf ? ensureArray(rmtInf.Ustrd as string[]).map(String) : [];
+            const ustrd = ustrdArr.join(" ");
+            const addtlNtryInf = getStr(ntry, "AddtlNtryInf") || getStr(ntry, "AddtlTxInf") || "";
             const description = ustrd || addtlNtryInf;
 
-            const endToEndId = getTag(txDtls, "EndToEndId") || "";
-            const mandateId = getTag(txDtls, "MndtId") || "";
-            const creditorId = getTag(txDtls, "CdtrId") || "";
+            const endToEndId = getStr(txDtls, "Refs.EndToEndId") || "";
+            const mandateId = getStr(txDtls, "Refs.MndtId") || "";
+            const creditorId =
+                getStr(txDtls, "RltdPties.Cdtr.Pty.Id.PrvtId.Othr.Id") ||
+                getStr(txDtls, "RltdPties.Cdtr.Id.PrvtId.Othr.Id") ||
+                "";
 
             const descriptionStructured: Partial<StructuredDescription> = {
                 name,
@@ -129,8 +166,8 @@ export function parseCamt052(xml: string): Statement[] {
 
         return {
             accountIdentification,
-            openingBalance,
-            closingBalance,
+            openingBalance: toBalance(openingBal),
+            closingBalance: toBalance(closingBal),
             transactions,
         } as unknown as Statement;
     });
