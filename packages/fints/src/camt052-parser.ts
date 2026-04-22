@@ -102,10 +102,8 @@ export function parseCamt052(xml: string): Statement[] {
                 getStr(txDtls, "Cdtr.Nm");
             const name = (isCredit ? debtorName : creditorName) || "";
 
-            const dbtrIban =
-                getStr(txDtls, "RltdPties.DbtrAcct.Id.IBAN") || getStr(txDtls, "DbtrAcct.Id.IBAN");
-            const cdtrIban =
-                getStr(txDtls, "RltdPties.CdtrAcct.Id.IBAN") || getStr(txDtls, "CdtrAcct.Id.IBAN");
+            const dbtrIban = getStr(txDtls, "RltdPties.DbtrAcct.Id.IBAN") || getStr(txDtls, "DbtrAcct.Id.IBAN");
+            const cdtrIban = getStr(txDtls, "RltdPties.CdtrAcct.Id.IBAN") || getStr(txDtls, "CdtrAcct.Id.IBAN");
             const counterpartyIban = (isCredit ? dbtrIban : cdtrIban) || "";
 
             const dbtrBic =

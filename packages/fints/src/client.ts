@@ -405,10 +405,7 @@ export abstract class Client {
             } catch (error) {
                 if (error instanceof TanRequiredError && error.isDecoupledTan()) {
                     // 0030: standard decoupled TAN challenge
-                    response = await dialog.handleDecoupledTan(
-                        error.transactionReference,
-                        error.challengeText || "",
-                    );
+                    response = await dialog.handleDecoupledTan(error.transactionReference, error.challengeText || "");
                 } else {
                     throw error;
                 }
@@ -418,10 +415,7 @@ export abstract class Client {
             if (returnValues.has("3955") || returnValues.has("3956")) {
                 const hitan = response.findSegment(HITAN);
                 if (hitan?.transactionReference) {
-                    response = await dialog.handleDecoupledTan(
-                        hitan.transactionReference,
-                        hitan.challengeText || "",
-                    );
+                    response = await dialog.handleDecoupledTan(hitan.transactionReference, hitan.challengeText || "");
                 }
             }
             touchdowns = response.getTouchdowns(request);

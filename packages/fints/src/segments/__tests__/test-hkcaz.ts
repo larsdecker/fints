@@ -12,7 +12,8 @@ testSegment(
     HKCAZ,
     [
         {
-            serialized: "HKCAZ:3:1+DE27100777770209299700:DEUTDEFF500:01234::280:12345678+camt.052+N+20181010+20181101++'",
+            serialized:
+                "HKCAZ:3:1+DE27100777770209299700:DEUTDEFF500:01234::280:12345678+camt.052+N+20181010+20181101++'",
             structured: {
                 type: "HKCAZ",
                 segNo: 3,
