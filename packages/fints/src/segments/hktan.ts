@@ -22,7 +22,7 @@ export class HKTAN extends SegmentClass(HKTANProps) {
 
     protected serialize() {
         const { process, segmentReference, aref, medium, version } = this;
-        if (!["2", "4"].includes(process)) {
+        if (!["2", "4", "S"].includes(process)) {
             throw new Error(`HKTAN process ${process} not implemented.`);
         }
         if (![3, 4, 5, 6, 7].includes(version)) {
@@ -49,7 +49,7 @@ export class HKTAN extends SegmentClass(HKTANProps) {
                     return [process];
                 }
             }
-        } else if (process === "2") {
+        } else if (process === "2" || process === "S") {
             if (version === 6 || version === 7) {
                 return [process, "", "", "", aref, "N"];
             }

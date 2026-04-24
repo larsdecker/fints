@@ -7,6 +7,7 @@ import {
     HKEND,
     HISALS,
     HIKAZS,
+    HICAZS,
     HICDBS,
     HIUPD,
     HITANS,
@@ -114,6 +115,15 @@ export class Dialog extends DialogConfig {
      */
     public supportsTransactions = false;
     /**
+     * Whether the bank supports fetching CAMT account transactions (HKCAZ).
+     * Set to `true` during synchronization if the bank returns a HICAZS parameter segment.
+     */
+    public supportsCamtTransactions = false;
+    /** Version of the HKCAZ segment supported by the bank (from HICAZS). */
+    public hicazsVersion = 1;
+    /** CAMT format URI advertised by the bank in HICAZS, required in HKCAZ requests. */
+    public hicazsCamtFormat = "";
+    /**
      * Whether the bank supports fetching standing orders (HKCDB).
      * Set to `true` during synchronization if the bank returns a HICDBS parameter segment.
      */
@@ -189,6 +199,11 @@ export class Dialog extends DialogConfig {
         const hikazsVer = response.segmentMaxVersion(HIKAZS);
         this.supportsTransactions = hikazsVer > 0;
         if (hikazsVer > 0) this.hikazsVersion = hikazsVer;
+        const hicazsVer = response.segmentMaxVersion(HICAZS);
+        this.supportsCamtTransactions = hicazsVer > 0;
+        if (hicazsVer > 0) this.hicazsVersion = hicazsVer;
+        const hicazs = response.findSegment(HICAZS);
+        if (hicazs?.camtFormat) this.hicazsCamtFormat = hicazs.camtFormat;
         const hicdbVer = response.segmentMaxVersion(HICDBS);
         this.supportsStandingOrders = hicdbVer > 0;
         if (hicdbVer > 0) this.hicdbVersion = hicdbVer;
