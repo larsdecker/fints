@@ -7,6 +7,8 @@ import {
     HISPA,
     HKKAZ,
     HIKAZ,
+    HKCAZ,
+    HICAZ,
     HKSAL,
     HISAL,
     HKCDB,
@@ -19,6 +21,7 @@ import {
     HKCCS,
     HICCS,
 } from "./segments";
+import { parseCamt052 } from "./camt052-parser";
 import { Request } from "./request";
 import { Response } from "./response";
 import {
@@ -43,6 +46,7 @@ import {
     buildCreditTransferSubmission,
 } from "./pain";
 import { TanRequiredError } from "./errors/tan-required-error";
+import { HITAN } from "./segments/hitan";
 
 /**
  * An abstract class for communicating with a fints server.
@@ -240,6 +244,32 @@ export abstract class Client {
             await dialog.sync();
             await dialog.init();
         }
+        // Prefer HKCAZ (CAMT) when bank doesn't support HKKAZ (MT940)
+        if (!dialog.supportsTransactions && dialog.supportsCamtTransactions) {
+            const camtSegments: Segment<any>[] = [
+                new HKCAZ({
+                    segNo: 3,
+                    version: dialog.hicazsVersion,
+                    account,
+                    startDate,
+                    endDate,
+                    camtFormat: dialog.hicazsCamtFormat,
+                }),
+            ];
+            if (dialog.hktanVersion >= 6 && dialog.tanMethods.length > 0) {
+                const version = dialog.hktanVersion >= 7 ? 7 : 6;
+                camtSegments.push(
+                    new HKTAN({
+                        segNo: 4,
+                        version,
+                        process: "4",
+                        segmentReference: "HKCAZ",
+                        medium: dialog.tanMethods[0].name,
+                    }),
+                );
+            }
+            return await this.sendCamtStatementRequest(dialog, camtSegments, shouldInitializeDialog);
+        }
         const segments: Segment<any>[] = [];
         segments.push(
             new HKKAZ({
@@ -250,7 +280,7 @@ export abstract class Client {
                 endDate,
             }),
         );
-        if (dialog.hktanVersion >= 6) {
+        if (shouldInitializeDialog && dialog.hktanVersion >= 6) {
             const version = dialog.hktanVersion >= 7 ? 7 : 6;
             segments.push(
                 new HKTAN({
@@ -356,6 +386,53 @@ export abstract class Client {
             });
             return { ...statement, transactions };
         });
+    }
+
+    private async sendCamtStatementRequest(
+        dialog: Dialog,
+        segments: Segment<any>[],
+        shouldEndDialog = true,
+    ): Promise<Statement[]> {
+        let touchdowns: Map<string, string>;
+        let touchdown: string;
+        const responses: Response[] = [];
+        do {
+            (segments[0] as HKCAZ).touchdown = touchdown;
+            const request = this.createRequest(dialog, segments);
+            let response: Response;
+            try {
+                response = await dialog.send(request);
+            } catch (error) {
+                if (error instanceof TanRequiredError && error.isDecoupledTan()) {
+                    // 0030: standard decoupled TAN challenge
+                    response = await dialog.handleDecoupledTan(error.transactionReference, error.challengeText || "");
+                } else {
+                    throw error;
+                }
+            }
+            // 3955/3956: Sparda-style push notification without 0030 — bank sent push to trusted device
+            const returnValues = response.returnValues();
+            if (returnValues.has("3955") || returnValues.has("3956")) {
+                const hitan = response.findSegment(HITAN);
+                if (hitan?.transactionReference) {
+                    response = await dialog.handleDecoupledTan(hitan.transactionReference, hitan.challengeText || "");
+                }
+            }
+            touchdowns = response.getTouchdowns(request);
+            touchdown = touchdowns.get("HKCAZ");
+            responses.push(response);
+        } while (touchdown);
+        if (shouldEndDialog) {
+            await dialog.end();
+        }
+        const camtXml = responses
+            .reduce((result, response: Response) => {
+                result.push(...response.findSegments(HICAZ));
+                return result;
+            }, [] as HICAZ[])
+            .map((segment) => segment.bookedTransactions || "")
+            .join("");
+        return parseCamt052(camtXml);
     }
 
     /**
