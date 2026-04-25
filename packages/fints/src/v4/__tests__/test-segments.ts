@@ -5,6 +5,7 @@ import {
     buildAccountListSegment,
     buildBalanceSegment,
     buildAccountStatementSegment,
+    buildHoldingsSegment,
     buildTanSegment,
 } from "../segments";
 import { FINTS_VERSION, COUNTRY_CODE } from "../constants";
@@ -256,6 +257,45 @@ describe("v4 segments", () => {
             expect(seg.body).not.toContain("<SegmentReference>");
             expect(seg.body).not.toContain("<TANMedium>");
             expect(seg.body).not.toContain("<TransactionReference>");
+        });
+    });
+
+    describe("buildHoldingsSegment", () => {
+        it("creates a Holdings segment with account info", () => {
+            const seg = buildHoldingsSegment({
+                segNo: 3,
+                version: 6,
+                account: testAccount,
+            });
+
+            expect(seg.type).toBe("Holdings");
+            expect(seg.version).toBe(6);
+            expect(seg.segNo).toBe(3);
+            expect(seg.body).toContain("<IBAN>DE89370400440532013000</IBAN>");
+            expect(seg.body).toContain("<BIC>COBADEFFXXX</BIC>");
+            expect(seg.body).toContain("<AccountNumber>0532013000</AccountNumber>");
+            expect(seg.body).toContain("<BLZ>37040044</BLZ>");
+        });
+
+        it("includes touchdown token for pagination", () => {
+            const seg = buildHoldingsSegment({
+                segNo: 3,
+                version: 6,
+                account: testAccount,
+                touchdown: "touch-depot-123",
+            });
+
+            expect(seg.body).toContain("<Touchdown>touch-depot-123</Touchdown>");
+        });
+
+        it("omits touchdown when not specified", () => {
+            const seg = buildHoldingsSegment({
+                segNo: 3,
+                version: 6,
+                account: testAccount,
+            });
+
+            expect(seg.body).not.toContain("<Touchdown>");
         });
     });
 });

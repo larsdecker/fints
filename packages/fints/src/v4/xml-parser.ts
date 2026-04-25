@@ -420,6 +420,12 @@ export function parseResponse(xmlString: string, account?: SEPAAccount): FinTS4R
         ? getXmlString(getXmlValue(statementSegment, "SegBody") as Record<string, unknown>, "CamtData")
         : undefined;
 
+    // Parse MT535 holdings data
+    const holdingsSegment = findSegment(msgBody, "Holdings");
+    const mt535Data = holdingsSegment
+        ? getXmlString(getXmlValue(holdingsSegment, "SegBody") as Record<string, unknown>, "Mt535Data")
+        : undefined;
+
     // Parse balance data (requires the account from the caller)
     const balanceSegment = findSegment(msgBody, "Balance");
     const balanceSegBody = balanceSegment ? getXmlValue(balanceSegment, "SegBody") : undefined;
@@ -479,6 +485,7 @@ export function parseResponse(xmlString: string, account?: SEPAAccount): FinTS4R
         accounts,
         balance: account && balanceSegBody ? parseBalance(balanceSegBody, account) : undefined,
         camtData,
+        mt535Data,
         supportedHbciVersions,
         segmentVersions,
         painFormats,
