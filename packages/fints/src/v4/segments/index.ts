@@ -176,6 +176,37 @@ function formatDate(date: Date): string {
 }
 
 /**
+ * Build a holdings request segment (equivalent to HKWPD in v3).
+ *
+ * Requests the depot statement (Depotaufstellung) for a securities account.
+ */
+export function buildHoldingsSegment(options: {
+    segNo: number;
+    version: number;
+    account: SEPAAccount;
+    touchdown?: string;
+}): XmlSegment {
+    const accountXml =
+        xmlElement("IBAN", escapeXml(options.account.iban)) +
+        xmlElement("BIC", escapeXml(options.account.bic)) +
+        xmlElement("AccountNumber", escapeXml(options.account.accountNumber)) +
+        xmlElement("BLZ", escapeXml(options.account.blz));
+
+    let body = xmlElement("Account", accountXml);
+
+    if (options.touchdown) {
+        body += xmlElement("Touchdown", escapeXml(options.touchdown));
+    }
+
+    return {
+        type: "Holdings",
+        version: options.version,
+        segNo: options.segNo,
+        body,
+    };
+}
+
+/**
  * Build a TAN submission segment for the two-step TAN flow (process 2).
  *
  * Use this after receiving a TAN challenge (return code `0030`) to submit the

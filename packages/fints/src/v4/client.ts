@@ -12,16 +12,18 @@
 import { FinTS4ClientConfig, FinTS4Connection, CamtStatement } from "./types";
 import { FinTS4Dialog } from "./dialog";
 import { FinTS4HttpConnection, createTlsAgent } from "./connection";
-import { SEPAAccount, Balance, Statement, BankCapabilities } from "../types";
+import { SEPAAccount, Balance, Statement, BankCapabilities, Holding } from "../types";
 import { PRODUCT_NAME } from "../constants";
 import { parseCamt053 } from "./camt-parser";
 import {
     buildAccountListSegment,
     buildBalanceSegment,
     buildAccountStatementSegment,
+    buildHoldingsSegment,
     buildTanSegment,
 } from "./segments";
 import { XmlSegment } from "./xml-builder";
+import { MT535Parser } from "../mt535";
 
 /**
  * Client for FinTS 4.1 XML-based protocol.
@@ -136,6 +138,78 @@ export class FinTS4Client {
             pendingBalance: 0,
             productName: "",
         };
+    }
+
+    /**
+     * Fetch the list of holdings for a depot account.
+     *
+     * Returns parsed holdings from the MT535 data transmitted by the FinTS server.
+     * Throws if the bank does not support holdings queries (`supportsHoldings` is false).
+     *
+     * @param account The depot account to fetch holdings for.
+     * @return A list of holdings contained in the depot.
+     */
+    public async holdings(account: SEPAAccount): Promise<Holding[]> {
+        const dialog = this.createDialog();
+        await dialog.sync();
+        if (!dialog.supportsHoldings) {
+            throw new Error("Holdings are not supported by this bank.");
+        }
+        await dialog.init();
+
+        const allHoldings: Holding[] = [];
+        let touchdown: string | undefined;
+        const parser = new MT535Parser();
+
+        do {
+            const segments: XmlSegment[] = [
+                buildHoldingsSegment({
+                    segNo: 3,
+                    version: dialog.holdingsVersion,
+                    account,
+                    touchdown,
+                }),
+            ];
+
+            if (!touchdown && dialog.tanVersion >= 1 && dialog.tanMethods.length > 0) {
+                segments.push(
+                    buildTanSegment({
+                        segNo: 4,
+                        version: dialog.tanVersion,
+                        process: "4",
+                    }),
+                );
+            }
+            // Add TAN segment on the first request for banks that require SCA for depot queries
+            if (!touchdown && dialog.tanVersion >= 1 && dialog.tanMethods.length > 0) {
+                segments.push(
+                    buildTanSegment({
+                        segNo: 4,
+                        version: dialog.tanVersion,
+                        process: "4",
+                        segmentReference: "Holdings",
+                        medium: dialog.tanMethods[0]?.name,
+                    }),
+                );
+            }
+
+            const response = await dialog.send(segments);
+
+            if (response.mt535Data) {
+                const lines = response.mt535Data.split(/\r?\n/);
+                // MT535 data from some banks starts with a leading empty line — remove it
+                // so the MT535Parser does not produce an empty leading clause.
+                if (lines.length > 0 && lines[0] === "") {
+                    lines.shift();
+                }
+                allHoldings.push(...parser.parse(lines));
+            }
+
+            touchdown = response.touchdown;
+        } while (touchdown);
+
+        await dialog.end();
+        return allHoldings;
     }
 
     /**

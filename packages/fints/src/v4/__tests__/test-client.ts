@@ -45,6 +45,37 @@ function buildSyncResponse(): string {
                     <SegHead><Type>AccountStatement</Type><Version>1</Version><SegNo>4</SegNo></SegHead>
                     <SegBody></SegBody>
                 </Segment>
+                <Segment>
+                    <SegHead><Type>Holdings</Type><Version>6</Version><SegNo>5</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+            </MsgBody>
+            <MsgTail><MsgNo>1</MsgNo></MsgTail>
+        </FinTSMessage>`;
+}
+
+function buildSyncResponseWithoutHoldings(): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+        <FinTSMessage xmlns="${FINTS_NAMESPACE}">
+            <MsgHead><MsgNo>1</MsgNo><DialogID>sync-d1</DialogID></MsgHead>
+            <MsgBody>
+                <ReturnValue><Code>0010</Code><Message>OK</Message></ReturnValue>
+                <Segment>
+                    <SegHead><Type>SyncRes</Type><Version>1</Version><SegNo>1</SegNo></SegHead>
+                    <SegBody><SystemID>sys-1</SystemID></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>BPD</Type><Version>1</Version><SegNo>2</SegNo></SegHead>
+                    <SegBody><BPD><BankName>Test Bank</BankName></BPD></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>Balance</Type><Version>2</Version><SegNo>3</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
+                <Segment>
+                    <SegHead><Type>AccountStatement</Type><Version>1</Version><SegNo>4</SegNo></SegHead>
+                    <SegBody></SegBody>
+                </Segment>
             </MsgBody>
             <MsgTail><MsgNo>1</MsgNo></MsgTail>
         </FinTSMessage>`;
@@ -88,6 +119,34 @@ function buildStatementsResponse(): string {
             <SegHead><Type>AccountStatement</Type><Version>1</Version><SegNo>3</SegNo></SegHead>
             <SegBody>
                 <CamtData>${camtData}</CamtData>
+            </SegBody>
+        </Segment>`,
+    );
+}
+
+function buildHoldingsResponse(): string {
+    const mt535Data = `:16R:FIN
+:35B:ISIN LU0000000001
+/DE/TEST01
+Testfonds A
+:90B::MRKT//ACTU/EUR100,50
+:98A::PRIC//20240101
+:93B::AGGR//UNIT/10,0000
+:19A::HOLD//EUR1005,00
+:16S:FIN
+-`;
+    // Escape the MT535 data for embedding in XML
+    const escapedMt535 = mt535Data
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    return buildOkResponse(
+        "hold-d1",
+        `<Segment>
+            <SegHead><Type>Holdings</Type><Version>6</Version><SegNo>3</SegNo></SegHead>
+            <SegBody>
+                <Mt535Data>${escapedMt535}</Mt535Data>
             </SegBody>
         </Segment>`,
     );
@@ -222,6 +281,50 @@ describe("FinTS4Client", () => {
             expect(statements[0].transactions.length).toBe(1);
             expect(statements[0].transactions[0].amount).toBe(100.0);
             expect(statements[0].transactions[0].isCredit).toBe(true);
+        });
+    });
+
+    describe("holdings", () => {
+        it("fetches and parses MT535 holdings", async () => {
+            mockFetch([
+                buildSyncResponse(), // sync (with Holdings capability)
+                buildOkResponse("0"), // end sync dialog
+                buildOkResponse("init-d1"), // init
+                buildHoldingsResponse(), // holdings
+                buildOkResponse("0"), // end dialog
+            ]);
+
+            const client = new FinTS4Client(clientConfig);
+            const account = {
+                iban: "DE89370400440532013000",
+                bic: "COBADEFFXXX",
+                accountNumber: "0532013000",
+                blz: "37040044",
+            };
+            const holdings = await client.holdings(account);
+
+            expect(holdings.length).toBe(1);
+            expect(holdings[0].isin).toBe("LU0000000001");
+            expect(holdings[0].name).toBe("Testfonds A");
+            expect(holdings[0].marketPrice).toBe(100.5);
+            expect(holdings[0].pieces).toBe(10);
+            expect(holdings[0].totalValue).toBe(1005);
+        });
+
+        it("throws when holdings are not supported by the bank", async () => {
+            mockFetch([
+                buildSyncResponseWithoutHoldings(), // sync (without Holdings capability)
+                buildOkResponse("0"), // end sync dialog
+            ]);
+
+            const client = new FinTS4Client(clientConfig);
+            const account = {
+                iban: "DE89370400440532013000",
+                bic: "COBADEFFXXX",
+                accountNumber: "0532013000",
+                blz: "37040044",
+            };
+            await expect(client.holdings(account)).rejects.toThrow("Holdings are not supported by this bank.");
         });
     });
 });

@@ -22,11 +22,16 @@ export class HKWPD extends SegmentClass(HKWPDProps) {
 
     protected serialize() {
         const { version, account, currency, quality, maxEntries, touchdown } = this;
-        const { accountNumber, subAccount, blz } = account;
+        const { iban, bic, accountNumber, subAccount, blz } = account;
         if (![5, 6].includes(version)) {
             throw new Error(`Unsupported HKWPD version ${version}.`);
         }
-        const serializedAccount = [accountNumber, subAccount, String(COUNTRY_CODE), blz];
+        // Version 6 uses the SEPA / international account format (KTIN) — IBAN + BIC.
+        // Version 5 uses the legacy domestic format (KTV) — account number + BLZ.
+        const serializedAccount =
+            version === 6
+                ? [iban, bic, accountNumber, subAccount, String(COUNTRY_CODE), blz]
+                : [accountNumber, subAccount, String(COUNTRY_CODE), blz];
         return [
             serializedAccount,
             currency || Format.empty(),
