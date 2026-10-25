@@ -59,6 +59,7 @@ export {
     buildAccountListSegment,
     buildBalanceSegment,
     buildAccountStatementSegment,
+    buildHoldingsSegment,
     buildTanSegment,
     buildTanSubmitSegment,
 } from "./segments";

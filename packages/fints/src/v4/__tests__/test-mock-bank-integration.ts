@@ -8,9 +8,14 @@
  */
 import { FinTS4Dialog } from "../dialog";
 import { MockBankServer } from "../test-server/mock-bank-server";
-import { TEST_BANK, TEST_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
+import { TEST_BANK, TEST_ACCOUNTS, TEST_DEPOT_ACCOUNTS, TEST_TAN_METHODS } from "../test-server/test-data";
 import { parseCamt053 } from "../camt-parser";
-import { buildAccountListSegment, buildBalanceSegment, buildAccountStatementSegment } from "../segments";
+import {
+    buildAccountListSegment,
+    buildBalanceSegment,
+    buildAccountStatementSegment,
+    buildHoldingsSegment,
+} from "../segments";
 
 describe("FinTS 4.1 Integration: Mock Bank Server", () => {
     let server: MockBankServer;
@@ -420,6 +425,57 @@ describe("FinTS 4.1 Integration: Mock Bank Server", () => {
     });
 
     // -----------------------------------------------------------------------
+    // Holdings (Depot)
+    // -----------------------------------------------------------------------
+
+    describe("Holdings", () => {
+        it("fetches holdings for a known account and parses MT535 data", async () => {
+            await dialog.sync();
+            await dialog.init();
+
+            const response = await dialog.send([
+                buildHoldingsSegment({
+                    segNo: 3,
+                    version: dialog.holdingsVersion,
+                    account: {
+                        iban: TEST_DEPOT_ACCOUNTS[0].iban,
+                        bic: TEST_DEPOT_ACCOUNTS[0].bic,
+                        accountNumber: TEST_DEPOT_ACCOUNTS[0].accountNumber,
+                        blz: TEST_DEPOT_ACCOUNTS[0].blz,
+                    },
+                }),
+            ]);
+
+            expect(response.mt535Data).toBeDefined();
+            expect(response.mt535Data).toContain(":35B:");
+
+            await dialog.end();
+        });
+
+        it("rejects holdings request for unknown account", async () => {
+            await dialog.sync();
+            await dialog.init();
+
+            await expect(
+                dialog.send([
+                    buildHoldingsSegment({
+                        segNo: 3,
+                        version: 6,
+                        account: {
+                            iban: "DE00000000000000000000",
+                            bic: "UNKNOWN",
+                            accountNumber: "0000000000",
+                            blz: "00000000",
+                        },
+                    }),
+                ]),
+            ).rejects.toThrow("9010");
+
+            await dialog.end();
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // Bank Capabilities (end-to-end)
     // -----------------------------------------------------------------------
 
@@ -433,7 +489,7 @@ describe("FinTS 4.1 Integration: Mock Bank Server", () => {
             expect(caps.supportsTransactions).toBe(true);
             expect(caps.supportsCreditTransfer).toBe(false);
             expect(caps.supportsDirectDebit).toBe(false);
-            expect(caps.supportsHoldings).toBe(false);
+            expect(caps.supportsHoldings).toBe(true);
         });
     });
 });

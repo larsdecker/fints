@@ -46,7 +46,7 @@ const client = new PinTanClient({
 });
 
 const accounts = await client.accounts();
-const balance  = await client.balance(accounts[0]);
+const balance = await client.balance(accounts[0]);
 console.log(`Balance: ${balance.value.value} ${balance.value.currency}`);
 ```
 
@@ -63,8 +63,8 @@ const client = new FinTS4Client({
     blz: "12345678",
 });
 
-const accounts   = await client.accounts();
-const balance    = await client.balance(accounts[0]);
+const accounts = await client.accounts();
+const balance = await client.balance(accounts[0]);
 const statements = await client.camtStatements(accounts[0]);
 ```
 
@@ -73,11 +73,13 @@ const statements = await client.camtStatements(accounts[0]);
 ```typescript
 import { PinTanClient } from "fints-lib";
 
-const client = new PinTanClient({ /* ... */ });
+const client = new PinTanClient({
+    /* ... */
+});
 const accounts = await client.accounts();
 
 const startDate = new Date("2024-01-01");
-const endDate   = new Date("2024-12-31");
+const endDate = new Date("2024-12-31");
 const statements = await client.statements(accounts[0], startDate, endDate);
 
 statements.forEach((statement) => {
@@ -101,7 +103,7 @@ try {
         console.log("TAN Challenge:", error.challengeText);
         console.log("Process Step:", error.getStepDescription());
 
-        const dialog  = await client.completeLogin(error.dialog, error.transactionReference, "123456");
+        const dialog = await client.completeLogin(error.dialog, error.transactionReference, "123456");
         const accounts = await client.accounts(dialog);
         await dialog.end();
     }
@@ -117,7 +119,10 @@ import * as readline from "readline";
 async function promptTan(challenge: { challengeText?: string; transactionReference: string }): Promise<string> {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     return new Promise((resolve) => {
-        rl.question(`TAN: ${challenge.challengeText ?? ""}\nEnter TAN: `, (tan) => { rl.close(); resolve(tan.trim()); });
+        rl.question(`TAN: ${challenge.challengeText ?? ""}\nEnter TAN: `, (tan) => {
+            rl.close();
+            resolve(tan.trim());
+        });
     });
 }
 
@@ -129,7 +134,7 @@ const client = new FinTS4Client({
     tanCallback: promptTan, // invoked automatically when the bank issues a challenge
 });
 
-const accounts   = await client.accounts();
+const accounts = await client.accounts();
 const statements = await client.camtStatements(accounts[0]);
 ```
 
@@ -158,10 +163,10 @@ const client = new PinTanClient({
     name: "username",
     pin: "12345",
     blz: "12345678",
-    timeout: 45000,    // ms, default 30000
-    maxRetries: 5,     // default 3
-    retryDelay: 2000,  // ms, default 1000
-    debug: true,       // logs XML – disable in production
+    timeout: 45000, // ms, default 30000
+    maxRetries: 5, // default 3
+    retryDelay: 2000, // ms, default 1000
+    debug: true, // logs XML – disable in production
 });
 ```
 
@@ -195,12 +200,7 @@ const client = new FinTS4Client({
 ## Error Handling
 
 ```typescript
-import {
-    FinTSError,
-    AuthenticationError,
-    PinError,
-    StrongAuthenticationRequiredError,
-} from "fints-lib";
+import { FinTSError, AuthenticationError, PinError, StrongAuthenticationRequiredError } from "fints-lib";
 
 try {
     const accounts = await client.accounts();
@@ -240,14 +240,14 @@ try {
 
 ```typescript
 const accounts = await client.accounts();
-const balance  = await client.balance(accounts[0]);
+const balance = await client.balance(accounts[0]);
 console.log(`Current Balance: ${balance.value.value} ${balance.value.currency}`);
 ```
 
 ### Fetch Recent Transactions
 
 ```typescript
-const endDate   = new Date();
+const endDate = new Date();
 const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
 const statements = await client.statements(accounts[0], startDate, endDate);
 
@@ -265,10 +265,10 @@ if (!process.env.FINTS_URL || !process.env.FINTS_USERNAME || !process.env.FINTS_
     throw new Error("Required environment variables are not set");
 }
 const client = new PinTanClient({
-    url:   process.env.FINTS_URL,
-    name:  process.env.FINTS_USERNAME,
-    pin:   process.env.FINTS_PIN,
-    blz:   process.env.FINTS_BLZ,
+    url: process.env.FINTS_URL,
+    name: process.env.FINTS_USERNAME,
+    pin: process.env.FINTS_PIN,
+    blz: process.env.FINTS_BLZ,
     debug: process.env.NODE_ENV === "development",
 });
 ```
@@ -291,8 +291,11 @@ try {
 } catch (error) {
     if (error instanceof TanRequiredError) {
         const submission = error.creditTransferSubmission!;
-        const completed  = await client.completeCreditTransfer(
-            error.dialog, error.transactionReference, "123456", submission,
+        const completed = await client.completeCreditTransfer(
+            error.dialog,
+            error.transactionReference,
+            "123456",
+            submission,
         );
         console.log(completed.taskId);
     }
@@ -321,8 +324,11 @@ try {
 } catch (error) {
     if (error instanceof TanRequiredError) {
         const submission = error.directDebitSubmission!;
-        const completed  = await client.completeDirectDebit(
-            error.dialog, error.transactionReference, "123456", submission,
+        const completed = await client.completeDirectDebit(
+            error.dialog,
+            error.transactionReference,
+            "123456",
+            submission,
         );
         console.log(completed.taskId);
     }
@@ -334,7 +340,6 @@ try {
 - [API Reference](https://prior99.gitlab.io/fints)
 - [Official specification](https://www.hbci-zka.de/spec/3_0.htm)
 - [Database of banks with their URLs](https://github.com/jhermsmeier/fints-institute-db)
-
 
 ## Installation
 
